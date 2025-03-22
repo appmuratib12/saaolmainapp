@@ -8,24 +8,7 @@ class MedicineProgressDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Map<String, double> dataMap = {
-      "Missed": 20,
-      "Skip": 10,
-      "Taken": 30,
-      "Upcoming": 40,
-    };
 
-    double total = dataMap.values.reduce((a, b) => a + b);
-    Map<String, double> percentageDataMap = dataMap.map(
-      (key, value) => MapEntry(key, (value / total) * 100),
-    );
-
-    final colorList = <Color>[
-      Colors.redAccent,
-      Colors.teal,
-      Colors.lightBlueAccent,
-      Colors.grey,
-    ];
 
 
     return Scaffold(

@@ -1,9 +1,10 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-
 import '../../responsemodel/Medicine.dart';
 
+
 class DatabaseHelper {
+
   static final DatabaseHelper _instance = DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
   static Database? _database;
@@ -16,6 +17,7 @@ class DatabaseHelper {
     return _database!;
   }
 
+
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'medicine_reminder.db');
     return openDatabase(
@@ -23,11 +25,12 @@ class DatabaseHelper {
       version: 1,
       onCreate: (db, version) {
         return db.execute(
-          'CREATE TABLE medicines(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, type TEXT, time TEXT, schedule TEXT)',
+          'CREATE TABLE medicines(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, type TEXT, time TEXT, schedule TEXT,medicineIcon TEXT)',
         );
       },
     );
   }
+
 
   Future<int> insertMedicine(MedicineModel medicine) async {
     Database db = await database;

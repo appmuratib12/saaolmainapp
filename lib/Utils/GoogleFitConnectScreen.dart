@@ -138,8 +138,7 @@ class GoogleFitConnectScreen extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-
-            SizedBox(
+            const SizedBox(
               height: 30,
             ),
             // Connect Button

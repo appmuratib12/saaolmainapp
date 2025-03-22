@@ -1,10 +1,12 @@
 import 'dart:io';
-
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:saaoldemo/data/network/BaseApiService.dart';
 import '../common/app_colors.dart';
+import 'PillReminderScreen.dart';
 
 class UploadPrescriptionScreen extends StatefulWidget {
   const UploadPrescriptionScreen({super.key});
@@ -17,6 +19,7 @@ class UploadPrescriptionScreen extends StatefulWidget {
 class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   final ImagePicker _picker = ImagePicker();
   File? _image;
+  File? _pdfFile;
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
@@ -30,8 +33,24 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
   void _removeImage() {
     setState(() {
       _image = null;
+      _pdfFile = null;
     });
   }
+
+  Future<void> _pickPDF() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        _pdfFile = File(result.files.single.path!);
+        _image = null; // Reset image if a PDF is picked
+      });
+    }
+  }
+
 
 
   void _showRemoveConfirmationDialog(BuildContext context) {
@@ -105,10 +124,30 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
     );
   }
 
+  void uploadFile(BuildContext context) async {
+    try {
+      if (_image != null) {
+        await BaseApiService().uploadPrescription(_image!);
+      } else if (_pdfFile != null) {
+        await BaseApiService().uploadPrescription(_pdfFile!);
+      } else {
+        Fluttertoast.showToast(msg: 'No file selected.');
+        Navigator.of(context).pop(); // Dismiss the progress dialog
+        return;
+      }
+      Fluttertoast.showToast(msg: 'Upload successful.');
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Upload failed: $e');
+    } finally {
+      Navigator.of(context).pop();
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Colors.white,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -120,7 +159,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -133,7 +172,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -148,7 +187,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                     ),
                     const SizedBox(height: 15),
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      padding: const EdgeInsets.symmetric(vertical: 5,horizontal:5),
                       decoration: BoxDecoration(
                         color: Colors.redAccent,
                         borderRadius: BorderRadius.circular(30),
@@ -173,45 +212,47 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                             label: 'My Prescription',
                             onTap: () => _pickImage(ImageSource.gallery),
                           ),
+                          _buildVerticalDivider(),
+                          _buildUploadOption(
+                            icon: FontAwesomeIcons.filePdf,
+                            label: 'Pick PDF',
+                            onTap: _pickPDF,
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (_image == null) ...[
-                      const Row(
-                        children: [
-                          Icon(Icons.security, color: Colors.grey, size: 40),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Your attached prescription will be secure and private.',
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 14,
-                                  fontFamily: 'FontPoppins',
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
+                    if (_image != null || _pdfFile != null) ...[
                       const Text(
-                        'ATTACHED PRESCRIPTION',
+                        'ATTACHED FILE',
                         style: TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'FontPoppins',
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black54),
+                          fontSize: 14,
+                          fontFamily: 'FontPoppins',
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black54,
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Stack(
                         children: [
-                          Image.file(
-                            _image!,
-                            width: 100,
-                            height: 140,
-                            fit: BoxFit.cover,
-                          ),
+                          if (_image != null)
+                            Image.file(
+                              _image!,
+                              width: 100,
+                              height: 140,
+                              fit: BoxFit.cover,
+                            )
+                          else if (_pdfFile != null)
+                            Container(
+                              color: Colors.grey[300],
+                              width: 100,
+                              height: 140,
+                              child: const Icon(
+                                FontAwesomeIcons.filePdf,
+                                size: 50,
+                                color: Colors.red,
+                              ),
+                            ),
                           Positioned(
                             right: 0,
                             top: 0,
@@ -226,6 +267,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                         ],
                       ),
                     ],
+
                     const SizedBox(height: 15),
                     const Text(
                       'What is Valid Prescription?',
@@ -238,10 +280,9 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                     const SizedBox(height: 15),
                     const Center(
                       child: Image(
-                        image:
-                            AssetImage('assets/images/Prescription.jpg'),
+                        image: AssetImage('assets/images/Prescription.jpg'),
                         height: 250,
-                        width:double.infinity,
+                        width: double.infinity,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -285,7 +326,6 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                     ),
                     const SizedBox(height: 30),
                     Container(
-                      height: 70,
                       decoration: BoxDecoration(
                         color: Colors.blue[50],
                         borderRadius: BorderRadius.circular(10),
@@ -294,7 +334,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                         padding: EdgeInsets.all(10),
                         child: Row(
                           children: [
-                            Column(
+                            Expanded(child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
@@ -306,6 +346,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black),
                                 ),
+                                SizedBox(height:5,),
                                 Text(
                                   'Tap here to book a tele-consultation now!',
                                   style: TextStyle(
@@ -316,45 +357,59 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                                 )
                               ],
                             ),
+                            ),
                             Image(
                               image:
                                   AssetImage('assets/images/female_dcotor.png'),
-                              fit: BoxFit.fill,
-                              height: 60,
-                              width: 60,
+                              fit: BoxFit.cover,
+                              height:90,
+                              width:90,
                             )
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height:10),
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
-              SizedBox(
-                height: 50,
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Fluttertoast.showToast(msg: 'Click');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    'UPLOAD PRESCRIPTION',
-                    style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
-                  ),
-                ),
-              ),
+
+             Padding(padding: EdgeInsets.only(left:10,right:10),child: SizedBox(
+               height: 45,
+               width: double.infinity,
+               child: ElevatedButton(
+                 onPressed: () async {
+                   if (_image != null || _pdfFile != null) {
+                     Fluttertoast.showToast(msg: 'Uploading Prescription');
+                     showDialog(
+                       context: context,
+                       barrierDismissible: false,
+                       builder: (BuildContext context) {
+                         return const CustomProgressIndicator();
+                       },
+                     );
+                     uploadFile(context);  // Pass context here to dismiss the dialog
+                   } else {
+                     Fluttertoast.showToast(msg: 'Please select an image or PDF to upload');
+                   }
+                 },
+                 style: ElevatedButton.styleFrom(
+                   backgroundColor: AppColors.primaryColor,
+                   shape: RoundedRectangleBorder(
+                     borderRadius: BorderRadius.circular(10),
+                   ),
+                 ),
+                 child: const Text(
+                   'UPLOAD PRESCRIPTION',
+                   style: TextStyle(
+                       fontFamily: 'FontPoppins',
+                       fontSize: 15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.white),
+                 ),
+               ),
+             ),
+             ),
             ],
           ),
         ),

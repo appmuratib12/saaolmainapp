@@ -24,7 +24,7 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -41,7 +41,6 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
             ),
             const Image(
               image: AssetImage('assets/icons/safety_circle.jpg'),
-              height: 270,
               width: double.infinity,
               fit: BoxFit.cover,
             ),
@@ -63,7 +62,7 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
                     children: [
                       Icon(
                         Icons.check,
-                        color: AppColors.primaryColor,
+                        color:Colors.red,
                         size: 18,
                       ),
                       SizedBox(
@@ -75,7 +74,7 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w500,
                             fontSize: 13,
-                            color: Colors.black87),
+                            color: Colors.red),
                       )
                     ],
                   ),
@@ -83,19 +82,19 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
                     children: [
                       Icon(
                         Icons.check,
-                        color: AppColors.primaryColor,
+                        color: Colors.yellow,
                         size: 18,
                       ),
                       SizedBox(
                         width: 8,
                       ),
                       Text(
-                        'Red (means high risk)',
+                        'Yellow (medium risk or prevention range)',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w500,
                             fontSize: 13,
-                            color: Colors.black87),
+                            color: Colors.yellow),
                       )
                     ],
                   ),
@@ -103,7 +102,7 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
                     children: [
                       Icon(
                         Icons.check,
-                        color: AppColors.primaryColor,
+                        color:Colors.green,
                         size: 18,
                       ),
                       SizedBox(
@@ -115,7 +114,7 @@ class _SafetyCircleScreenState extends State<SafetyCircleScreen> {
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w500,
                             fontSize: 13,
-                            color: Colors.black87),
+                            color: Colors.green),
                       )
                     ],
                   ),

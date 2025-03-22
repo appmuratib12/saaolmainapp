@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../common/app_colors.dart';
-import '../responsemodel/HomePageScreen1.dart';
 import 'AppointmentsScreen.dart';
+import 'HomePageScreen1.dart';
 import 'MyProfileScreen.dart';
 import 'NavBarScreens/OurCenterScreen.dart';
 import 'NavBarScreens/TreatmentScreen.dart';
@@ -32,7 +32,7 @@ class HomePage extends StatefulWidget {
         Icons.calendar_month,
         color: Colors.white,
       ),
-      label: 'Appointments',
+      label: 'Appointment',
     ),
     const NavigationDestination(
       selectedIcon: Image(
@@ -104,7 +104,10 @@ class _MainHomeScreenState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: pages[currentIndex],
+      body: IndexedStack(
+        index: currentIndex,
+        children: pages,
+      ),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           indicatorColor: Colors.white,

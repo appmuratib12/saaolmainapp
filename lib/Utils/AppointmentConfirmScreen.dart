@@ -1,16 +1,27 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:group_radio_button/group_radio_button.dart';
+import 'package:provider/provider.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:saaoldemo/constant/ApiConstants.dart';
+import 'package:saaoldemo/responsemodel/AppointmentDatabaseHelper.dart';
+import 'package:saaoldemo/responsemodel/PatientAppointmentModel.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../common/app_colors.dart';
 import 'package:http/http.dart' as http;
-import 'MyHomePageScreen.dart';
-
+import '../data/model/requestmodel/PaymentRecordRequest.dart';
+import '../data/network/ChangeNotifier.dart';
+import 'ChooseMemberScreen.dart';
+import 'PaymentHistoryScreen.dart';
 
 class AppointmentConfirmScreen extends StatefulWidget {
-  const AppointmentConfirmScreen({super.key});
+  final String centerID;
+  final String centerLocationName;
+  final String appointmentDate;
+  final String saveTimeValue;
+  const AppointmentConfirmScreen({super.key,required this.appointmentDate,
+    required this.centerID,required this.centerLocationName, required this.saveTimeValue});
 
   @override
   State<AppointmentConfirmScreen> createState() =>
@@ -18,7 +29,6 @@ class AppointmentConfirmScreen extends StatefulWidget {
 }
 
 class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
-  String _selectedGender = "Riya Jain";
   bool value = false;
   bool checkedValue = true;
   String getValue = '';
@@ -28,7 +38,23 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
   String getConsultationFees = '';
   String appointmentType = '';
   String getUserName = '';
-
+  String getDataValue = '';
+  String getDayValue = '';
+  final TextEditingController patientController = TextEditingController(text: 'Mohd Muratib'); // Default value
+  late Razorpay razorpay;
+  String RazorpayApiKey = 'rzp_test_PpBV2fG1JPCaUQ';
+  String mobileNumber = '';
+  String totalAmount = '';
+  String paidAmount = '';
+  String savePaymentID = '';
+  String saveOrderID = '';
+  String saveSignature = '';
+  String patientEmail = '';
+  String getOfflineFees = '';
+  String fees = '';
+  late AppointmentDatabaseHelper appointmentDatabaseHelper;
+  
+  
   Future<void> initiatePayment() async {
     setState(() {
       isLoading = true;
@@ -77,11 +103,170 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
     });
   }
 
+  void showAutoDismissAlert(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        Future.delayed(const Duration(seconds:4), () {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (context) => const MyPurchase(),
+            ),
+          );
+
+        });
+        return Center(
+          child: Container(
+            width: 60.0,
+            height: 60.0,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4.0),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: CupertinoActivityIndicator(
+                color: AppColors.primaryDark,
+                radius: 20,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  _saveValue() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      prefs.setString('PaymentID', savePaymentID.toString());
+      print('paymentID:$savePaymentID');
+      prefs.setString('orderID', saveOrderID.toString());
+      prefs.setString('signatureID', saveSignature.toString());
+      prefs.setString('appointmentDate', widget.appointmentDate);
+      prefs.setString('appointmentTime', widget.saveTimeValue);
+      print('AppointmentSaveDate${widget.appointmentDate}');
+    });
+  }
+
+   void addPayment() async {
+     final appointment = PatientAppointmentModel(
+       date: widget.appointmentDate,  // Assume you have these variables
+       time: widget.saveTimeValue,
+       mode: appointmentType,
+       centerLocation:widget.centerLocationName,totalAmount:fees,paymentID:savePaymentID);
+     await AppointmentDatabaseHelper().insertAppointment(appointment);
+  }
+
+
+
+  @override
+  void dispose() {
+    razorpay.clear(); // Disposing the Razorpay instance
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     _loadCounter();
+  /*  appointmentDatabaseHelper = AppointmentDatabaseHelper();
+    appointmentDatabaseHelper.initializedDB().whenComplete(() async {
+      await addPayment();
+      setState(() {});
+    });*/
+    razorpay = Razorpay();
+    razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, errorHandler);
+    razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, successHandler);
+    razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, externalWalletHandler);
   }
+
+  void errorHandler(PaymentFailureResponse response) {
+   // showAlertDialog(context, "Payment Failed", "Code: ${response.code}\nDescription:
+    // ""${response.message}\nMetadata:${response.error.toString()}");
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(response.message!),
+      backgroundColor: Colors.red,
+    ));
+  }
+
+
+  void successHandler(PaymentSuccessResponse response) {
+    savePaymentID = response.paymentId.toString();
+    saveOrderID = response.orderId.toString();
+    saveSignature = response.signature.toString();
+    if(response.paymentId != null){
+        savePayment();
+        showAutoDismissAlert(context);
+        _saveValue();
+         addPayment();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(response.paymentId!),
+          backgroundColor: Colors.green,
+        ));
+    }
+  }
+  void externalWalletHandler(ExternalWalletResponse response) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(response.walletName!),
+      backgroundColor: Colors.green,
+    ));
+  }
+  void openCheckout() {
+    if(appointmentType == 'Offline'){
+       fees = getOfflineFees.toString();
+    }else if(appointmentType == 'Online'){
+      fees = getConsultationFees.toString();
+    }
+    var options = {
+      "key": "rzp_live_k1Q4kKwidvbaAl",
+      "amount":num.parse(fees) * 100,
+      "name": "Saaol Health Pvt Ltd",
+      "description": "Live Payment",
+      "send_sms_hash": true,
+      "timeout": "180",
+      "currency": 'INR',
+      "amount_paid": 0,
+      "amount_due": 100,
+      "status": "created",
+      "attempts": 0,
+      "prefill": {
+        "contact": "9068544483",
+        "email": "mohdmuratib0@gmail.com",
+      }
+    };
+    try {
+      razorpay.open(options);
+    } catch (e) {
+      print('Error opening Razorpay: $e');
+    }
+  }
+
+
+
+
+
+
+  void showAlertDialog(BuildContext context, String title, String message) {
+    Widget continueButton = ElevatedButton(
+      child: const Text("Continue"),
+      onPressed: () {
+      },
+    );
+    AlertDialog alert = AlertDialog(
+      title: Text(title),
+      content: Text(message),
+    );
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
 
   _loadCounter() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -93,33 +278,52 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
       getConsultationFees = (prefs.getString('ConsultationFees') ?? '');
       appointmentType = (prefs.getString('Appointment Type') ?? '');
       getUserName = (prefs.getString('userName') ?? '');
+      getDataValue = (prefs.getString('selectedDate') ?? '');
+      getDayValue = (prefs.getString('selectedDay') ?? '');
+      patientEmail = (prefs.getString(ApiConstants.USER_EMAIL) ?? '');
+      patientEmail = (prefs.getString('patientEmail') ?? '');
+      getOfflineFees = (prefs.getString('offlineFees') ?? '');
+      print('OfflineFees:$getOfflineFees');
+
     });
   }
 
-
-  _incrementCounter() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      prefs.setString('appointmentDate', getDate.toString());
-      prefs.setString('appointmentTime',  getValue.toString());
-    });
-  }
 
 
   bool isLoading = false;
 
   final String apiKey = 'b6b01cd4f6d5559eb180cf0e63d26435';
   final String authToken = 'ed5d4f5dda8e9551722b5ae97ff2b5c4';
-  final String paymentUrl =
-      'https://www.instamojo.com/api/1.1/payment-requests/';
+  final String paymentUrl = 'https://www.instamojo.com/api/1.1/payment-requests/';
+
+
+  Future<void> savePayment() async {
+    final paymentRecordRequest = PaymentRecordRequest(
+      appointment_mode: appointmentType,
+      total_amount: getConsultationFees,
+      pending_amount: '1',
+      paid_amount: getConsultationFees,
+      email: patientEmail,
+      date: widget.appointmentDate,
+      txn_id: savePaymentID,
+    );
+
+    final provider = Provider.of<DataClass>(context, listen: false);
+    await provider.saveUserPaymentRecord(paymentRecordRequest);
+    if (provider.isBack && context.mounted) {
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
+
+
     return Scaffold(
+      backgroundColor:Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title: const Text(
-          '',
+        title: const Text('Confirm Appointment',
           style: TextStyle(
               fontFamily: 'FontPoppins',
               fontSize: 17,
@@ -127,7 +331,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white,size:20,),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -153,7 +357,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -223,25 +427,25 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                                   color: Colors.white),
                             ),
                             Expanded(child: Container()),
-                            Column(
+                            Row(
                               children: [
-                                Text("$getDate,2024",
+                                Text(widget.appointmentDate,
                                     style: const TextStyle(
                                         fontSize: 15,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w500,
                                         color: Colors.white)),
                                 const SizedBox(
-                                  height: 5,
+                                  width: 5,
                                 ),
-                                Text(getValue,
-                                    style: const TextStyle(
-                                        fontSize: 15,
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white)),
                               ],
-                            )
+                            ),
+                            const Text('',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    fontFamily: 'FontPoppins',
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white)),
                           ],
                         ),
                         const SizedBox(
@@ -270,14 +474,14 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                         RichText(
                           text: TextSpan(
                             text: "Center Location: ",
-                            style: const TextStyle(
+                            style:  const TextStyle(
                                 fontFamily: 'FontPoppins',
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.white),
                             children: [
                               TextSpan(
-                                text: getCityName,
+                                text: widget.centerLocationName.toString(),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
@@ -293,7 +497,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                 ),
               ),
               const SizedBox(
-                height: 10,
+                height: 15,
               ),
               const Text(
                 'This is in-clinic appointment for:',
@@ -306,7 +510,89 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
               const SizedBox(
                 height: 10,
               ),
-              Card(
+              Padding(
+                padding: const EdgeInsets.all(4),
+                child: GestureDetector(
+                  onTap: () async {
+                    // Navigate to Member Selection Screen and await the selected result
+                    final selectedPatient = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SelectMemberScreen(),
+                      ),
+                    );
+
+                    // Update the TextField with the selected patient
+                    if (selectedPatient != null) {
+                      setState(() {
+                        patientController.text = selectedPatient;
+                      });
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12.0, vertical: 12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          patientController.text.isEmpty
+                              ? 'Select Patient'
+                              : patientController.text,
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'FontPoppins',
+                            color: patientController.text.isEmpty
+                                ? Colors.black54
+                                : Colors.black,
+                          ),
+                        ),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 22,
+                          color: Colors.black54,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Row(
+                children: [
+                  Checkbox(
+                    value: this.value,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        this.value = value!;
+                      });
+                    },
+                  ),
+                  const Expanded(
+                    child: Text(
+                      "Send me Updates On Whatsapp.",
+                      textAlign: TextAlign.start,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+
+              /*   Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -326,25 +612,29 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                       children: [
                         RadioGroup<String>.builder(
                           groupValue: _selectedGender,
-                          onChanged: (value) => setState(() {
-                            _selectedGender = value!;
-                          }),
+                          onChanged: (value) =>
+                              setState(() {
+                                _selectedGender = value!;
+                              }),
                           items: const ["Mohd Muratib"],
-                          itemBuilder: (item) => RadioButtonBuilder(
-                            item,
-                          ),
+                          itemBuilder: (item) =>
+                              RadioButtonBuilder(
+                                item,
+                              ),
                           activeColor: AppColors
                               .primaryDark, // Change this to your desired active color
                         ),
                         RadioGroup<String>.builder(
                           groupValue: _selectedGender,
-                          onChanged: (value) => setState(() {
-                            _selectedGender = value!;
-                          }),
+                          onChanged: (value) =>
+                              setState(() {
+                                _selectedGender = value!;
+                              }),
                           items: const ["Someone Else"],
-                          itemBuilder: (item) => RadioButtonBuilder(
-                            item,
-                          ),
+                          itemBuilder: (item) =>
+                              RadioButtonBuilder(
+                                item,
+                              ),
                           activeColor: AppColors
                               .primaryDark, // Change this to your desired active color
                         ),
@@ -376,7 +666,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                     ),
                   ),
                 ),
-              ),
+              ),*/
               const SizedBox(
                 height: 40,
               ),
@@ -387,28 +677,45 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,
                     shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(30))),
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
                   ),
-                  onPressed: () {
-                    //initiatePayment();
-                    _incrementCounter();
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => const HomePage(initialIndex:0),
-                      ),
-                    );
+                  onPressed: () async {
+                    if (appointmentType == 'Online') {
+                        openCheckout(); // Navigate to payment screen
+                    } else if (appointmentType == 'Offline') {
+                     /* print('AppointmentTime:${widget.saveTimeValue}');
+                      final appointment = PatientAppointmentModel(
+                        date: widget.appointmentDate,  // Assume you have these variables
+                        time: widget.saveTimeValue,
+                        mode: appointmentType,
+                        centerLocation:widget.centerLocationName,
+                        totalAmount:'2000',
+                        paymentID:'543213'
+                      );
+                      await AppointmentDatabaseHelper().insertAppointment(appointment);
+                      _incrementCounter();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AppointmentBookScreen(),
+                        ),
+                      );*/
+                      openCheckout();
+                    }
                   },
-                  child: const Text(
-                    'Pay Now',
-                    style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white),
+                  child: Text(
+                    appointmentType == 'Online' ? 'Pay Now' : 'Confirm Now',
+                    style: const TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
+
               const SizedBox(
                 height: 15,
               ),

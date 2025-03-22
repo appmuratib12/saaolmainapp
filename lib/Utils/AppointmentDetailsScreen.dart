@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:saaoldemo/constant/ApiConstants.dart';
 import '../common/app_colors.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
-  const AppointmentDetailScreen({super.key});
+  final String patientID;
+  final String appointmentCategory;
+  final String appointmentDate;
+  final String appointmentTime;
+  final String appointmentDuration;
+  final String appointmentID;
+
+  const AppointmentDetailScreen({super.key, required this.appointmentCategory,
+    required this.appointmentDate,required this.appointmentDuration,required this.appointmentTime,
+    required this.appointmentID,
+    required this.patientID});
 
   @override
   State<AppointmentDetailScreen> createState() =>
@@ -10,13 +24,11 @@ class AppointmentDetailScreen extends StatefulWidget {
 }
 
 class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
-  final propertyDetails = {
-    'Full Name': 'Mohd Muratib',
-    'Gender': 'Male',
-    'Age': '24',
-    'Problem.': 'Fever',
-  };
-  /*late GoogleMapController mapController;
+
+  final Map<String, String> propertyDetails = {};
+
+  late GoogleMapController mapController;
+  late SharedPreferences sharedPreferences;
 
   final LatLng _center = const LatLng(28.4829, 77.1640); // Example: Dubai
   final Set<Marker> _markers = {
@@ -33,7 +45,54 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
-*/
+
+  String getPatientID = '';
+  String? patientName;
+  String? patientGender;
+  String? patientAge;
+  String? patientLastName;
+  String? patientMiddleName;
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  void _loadUserData() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    setState(() {
+      getPatientID = sharedPreferences.getString('pmId') ?? '';
+      if (getPatientID == widget.patientID && widget.patientID != null && widget.appointmentID != null) {
+        patientName = sharedPreferences.getString('PatientFirstName') ?? '';
+        patientLastName = sharedPreferences.getString('PatientLastName') ?? '';
+        patientAge = sharedPreferences.getString('PatientDob') ?? '';
+        patientGender = sharedPreferences.getString('PatientGender') ?? '';
+        patientMiddleName = sharedPreferences.getString('PatientMiddleName') ?? '';
+
+      } else {
+        patientName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+        patientMiddleName = sharedPreferences.getString(ApiConstants.USER_MIDDLE_NAME) ?? '';
+        patientLastName = sharedPreferences.getString(ApiConstants.USER_LASTNAME) ?? '';
+      }
+      // Update propertyDetails map
+      propertyDetails['Full Name'] = '${patientName ?? ''} ${patientMiddleName ?? ''} ${patientLastName ?? ''}'.trim();
+      propertyDetails['Gender'] = patientGender ?? '';
+      propertyDetails['Age'] = patientAge ?? '';
+
+    });
+  }
+
+  String _convertTo12HourFormat(String time24) {
+    try {
+      final DateTime time = DateFormat("HH:mm").parse(time24);
+      return DateFormat("hh:mm a").format(time);
+    } catch (e) {
+      return time24;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,7 +122,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Container(
-                height: 140,
+                height: 150,
                 width: double.infinity,
                 decoration: BoxDecoration(
                     color: Colors.white,
@@ -140,23 +199,98 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                                   ),
                                 ),
                               ),*/
-
                             ],
                           ),
                         ],
                       ),
-                      SizedBox(height:10,),
-                      Row(
+                      const SizedBox(
+                        height: 10,
+                      ),
+                       Row(
                         children: [
-                          Text('Appointment Mode:',
-                            style:TextStyle(fontFamily:'FontPoppins',
-                                fontSize:15,fontWeight:FontWeight.w500,color:Colors.black),),
-                          SizedBox(width:5,),
-                          Text('Offline',style:TextStyle(fontFamily:'FontPoppins',fontSize:15,
-                              letterSpacing:0.1,
-                              fontWeight:FontWeight.w600,color:AppColors.primaryDark),)
+                          const Text(
+                            'Appointment Mode:',
+                            style: TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black),
+                          ),
+                          const SizedBox(
+                            width: 5,
+                          ),
+
+
+                          if (widget.appointmentID.isNotEmpty) ...[
+                               Text(
+                              widget.appointmentCategory == '1'
+                                  ? 'Online'
+                                  : widget.appointmentCategory == '0'
+                                  ? 'Offline'
+                                  : 'Unknown',
+                              style: const TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 15,
+                                letterSpacing: 0.1,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ] else ...[
+                            const Text('Online',
+                              style: TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 15,
+                                letterSpacing: 0.1,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ],
                         ],
-                      )
+                      ),
+                      const SizedBox(
+                        height:6,
+                      ),
+                       Row(
+                         children: [
+                           const Text(
+                             'Appointment Duration:',
+                             style: TextStyle(
+                                 fontFamily: 'FontPoppins',
+                                 fontSize: 15,
+                                 fontWeight: FontWeight.w500,
+                                 color: Colors.black),
+                           ),
+                           const SizedBox(
+                             width: 5,
+                           ),
+                           if (widget.appointmentID.isNotEmpty) ...[
+                             Text(
+                               getPatientID == widget.patientID
+                                   ? '${widget.appointmentDuration.toString()} minutes'
+                                   : 'Appointment Duration:${'30'}',
+                               style:  const TextStyle(
+                                 fontSize: 15,
+                                 letterSpacing:0.1,
+                                 fontFamily: 'FontPoppins',
+                                 fontWeight: FontWeight.w600,
+                                 color:AppColors.primaryDark,
+                               ),
+                             ),
+                           ] else ...[
+                             const Text('40 minutes',
+                               style:  TextStyle(
+                                 fontSize: 15,
+                                 letterSpacing:0.1,
+                                 fontFamily: 'FontPoppins',
+                                 fontWeight: FontWeight.w600,
+                                 color:AppColors.primaryDark,
+                               ),
+                             ),
+                           ],
+                         ],
+                       ),
                     ],
                   ),
                 ),
@@ -198,27 +332,59 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                                 color: Colors.black),
                           ),
                           Expanded(child: Container()),
-                          const Column(
+                          Column(
                             children: [
-                              Text(
-                                'Today,20 August,2024',
-                                style: TextStyle(
+                              if (widget.appointmentID.isNotEmpty) ...[
+                                Text(
+                                  getPatientID == widget.patientID
+                                      ? widget.appointmentDate.toString()
+                                      : '24-11-2024',
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black),
-                              ),
-                              SizedBox(
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ] else ...[
+                                Text(widget.appointmentDate,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontFamily: 'FontPoppins',
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
+
+                              const SizedBox(
                                 height: 6,
                               ),
-                              Text(
-                                '9 AM - 10 AM(1 hour)',
-                                style: TextStyle(
+
+                              if (widget.appointmentID.isNotEmpty) ...[
+                                Text(
+                                  getPatientID == widget.patientID
+                                      ? _convertTo12HourFormat(widget.appointmentTime.toString())
+                                      : '12:00 PM',
+                                  style: const TextStyle(
                                     fontSize: 14,
+                                    letterSpacing: 0.5,
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black),
-                              )
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ] else ...[
+                                Text(widget.appointmentTime,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    letterSpacing: 0.5,
+                                    fontFamily: 'FontPoppins',
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ],
@@ -341,10 +507,13 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               const SizedBox(
                 height: 20,
               ),
-              /*ClipRRect(
+              ClipRRect(
                 borderRadius: BorderRadius.circular(15.0),
                 child: Container(
-                  width: MediaQuery.of(context).size.width,
+                  width: MediaQuery
+                      .of(context)
+                      .size
+                      .width,
                   height: 200,
                   decoration: BoxDecoration(
                       border: Border.all(
@@ -358,7 +527,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     markers: _markers,
                   ),
                 ),
-              ),*/
+              ),
               const SizedBox(
                 height: 40,
               )

@@ -1,59 +1,126 @@
 import 'package:flutter/material.dart';
+import 'package:heart_bpm/chart.dart';
 import 'package:heart_bpm/heart_bpm.dart';
 
-
-class HeartRateScreen extends StatefulWidget {
-  const HeartRateScreen({super.key});
+class HeartRateMonitor extends StatefulWidget {
+  const HeartRateMonitor({super.key});
 
   @override
-  _HeartRateScreenState createState() => _HeartRateScreenState();
+  _HeartRateMonitorState createState() => _HeartRateMonitorState();
 }
 
-class _HeartRateScreenState extends State<HeartRateScreen> {
-  int? _bpm;
-
-  void _startHeartRateDetection() {
-    showDialog(
-      context: context,
-      builder: (context) => HeartBPMDialog(
-        context: context,
-        onRawData: (value) {
-          // You can process raw data here, but it’s optional.
-        },
-        onBPM: (bpm) {
-          // Called when the heart rate (BPM) is calculated.
-          setState(() {
-            _bpm = bpm;
-          });
-        },
-        sampleDelay: 1000 ~/ 30, // Set the sampling rate (30 FPS).
-      ),
-    );
-  }
+class _HeartRateMonitorState extends State<HeartRateMonitor> {
+  List<SensorValue> rawData = [];
+  List<SensorValue> bpmValues = [];
+  bool isBPMEnabled = false;
+  double? currentBPM; // Store the current BPM value
+  Widget? dialog;
+  double bpmThreshold = 100; // Limit BPM to under 100
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('Heart Rate Measurement'),
+        backgroundColor: Colors.white,
+        title: const Text('Heart BPM Demo'),
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _bpm != null
-                ? Text(
-              'BPM: $_bpm',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            )
-                : Text(
-              'Press Start to Measure',
-              style: TextStyle(fontSize: 18),
+            isBPMEnabled
+                ? dialog = HeartBPMDialog(
+                    context: context,
+                    showTextValues: true,
+                    borderRadius: 10,
+                    onRawData: (value) {
+                      setState(() {
+                        // Filter the raw data for more accuracy
+                        if (rawData.length >= 200) rawData.removeAt(0);
+                        rawData.add(value);
+                      });
+                    },
+                    onBPM: (value) => setState(() {
+                      double bpm = value.toDouble();
+
+                      if (bpm > 0 && bpm <= bpmThreshold) {
+                        if (bpmValues.length >= 200) bpmValues.removeAt(0);
+                        bpmValues
+                            .add(SensorValue(value: bpm, time: DateTime.now()));
+                        currentBPM = bpm; // Update current BPM if valid
+                      }
+                    }),
+                    sampleDelay: 1000 ~/
+                        30, // Capture at a rate of 30 samples per second
+                  )
+                : const SizedBox(),
+            isBPMEnabled && rawData.isNotEmpty
+                ? Container(
+                    decoration: BoxDecoration(border: Border.all()),
+                    height: 180,
+                    child: BPMChart(rawData),
+                  )
+                : const SizedBox(),
+            isBPMEnabled && bpmValues.isNotEmpty
+                ? Container(
+                    decoration: BoxDecoration(border: Border.all()),
+                    constraints: const BoxConstraints.expand(height: 180),
+                    child: BPMChart(bpmValues),
+                  )
+                : const SizedBox(),
+            isBPMEnabled && currentBPM != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      'Current BPM: ${currentBPM!.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
+                    ),
+                  )
+                : const SizedBox(),
+            const SizedBox(
+              height: 50,
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _startHeartRateDetection,
-              child: Text('Start Measuring'),
+            Center(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    isBPMEnabled = !isBPMEnabled;
+                  });
+                },
+                child: Container(
+                  height: 160,
+                  width: 160,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isBPMEnabled ? "Stop Measurement" : "Measure BPM",
+                        style: const TextStyle(
+                            fontFamily: 'FontPoppins',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      const Icon(
+                        Icons.favorite,
+                        color: Colors.white,
+                        size: 35,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

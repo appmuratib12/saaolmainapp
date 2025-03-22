@@ -1,14 +1,19 @@
+import 'package:fan_carousel_image_slider/fan_carousel_image_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:saaoldemo/data/model/apiresponsemodel/CenterDetailsResponse.dart';
+import 'package:saaoldemo/data/network/BaseApiService.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
-import 'AppointmentBookScreen.dart';
+import 'AppointmentsScreen.dart';
 
 class CenterDetailsPageScreen extends StatefulWidget {
-  const CenterDetailsPageScreen({super.key});
+  final String centerName;
+  const CenterDetailsPageScreen({super.key,required this.centerName});
 
   @override
   State<CenterDetailsPageScreen> createState() =>
@@ -21,6 +26,8 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
     'https://saaol.com/assets/images/life-style/young-beautiful-woman-doing-yoga.jpg',
     'https://saaol.com/all-center-list/assets/images/franchise-img.jpg',
   ];
+  String? getLocationLat;
+  String? getLocationLong;
 
   final List<Map<String, String>> items = [
     {
@@ -51,6 +58,19 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
 
   late GoogleMapController mapController;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadPatientData();
+  }
+
+  Future<void> _loadPatientData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    getLocationLat = prefs.getString('lat') ?? '';
+    getLocationLong = prefs.getString('long') ?? '';
+    print('LocationLat:$getLocationLat');
+  }
+
   final LatLng _center = const LatLng(28.4829, 77.1640); // Example: Dubai
 
   final Set<Marker> _markers = {
@@ -65,7 +85,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
   };
 
   _makingPhoneCall() async {
-    var url = Uri.parse("tel:9068544483");
+    var url = Uri.parse("tel:$storePhone");
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
     } else {
@@ -77,21 +97,33 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
     mapController = controller;
   }
 
+  String storePhone = '';
+
+  void openGoogleMap() async {
+    final url = Uri.parse("https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d224613.04467973346!2d77.00722519231887!3d28.401786416064873!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d1e4cf24cfafb%3A0xc36e9ab2e960b500!2sSaaol%20Heart%20Centre%20%3A%20EECP%20Treatment%20%7C%20Best%20Cardiologist%20%26%20Heart%20Specialist%20in%20Delhi!5e0!3m2!1sen!2sus!4v1704447278841!5m2!1sen!2sus");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      throw "Could not launch $url";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title: const Text(
-          'ECP Treatment In Chhattarpur-SAAOL Heart Center',
-          style: TextStyle(
+        title:  Text(
+          'ECP Treatment In ${widget.centerName}-SAAOL Heart Center',
+          style: const TextStyle(
               fontFamily: 'FontPoppins',
               fontSize: 17,
               fontWeight: FontWeight.w600,
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -104,7 +136,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                /*FanCarouselImageSlider.sliderType2(
+                FanCarouselImageSlider.sliderType2(
                   imagesLink: sampleImages,
                   isAssets: false,
                   autoPlay: true,
@@ -113,191 +145,219 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                   sliderDuration: const Duration(milliseconds: 200),
                   imageRadius: 0,
                   slideViewportFraction: 1.2,
-                ),*/
-                Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Transformative EECP Treatment Center In Aligarh',
-                        style: TextStyle(
+                ),
+                FutureBuilder<CenterDetailsResponse>(
+            future: BaseApiService().centerDetailsData(widget.centerName), // Replace 'centerName' with actual value
+            builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return const Center(child: Text('Failed to load data'));
+            } else if (snapshot.hasData && snapshot.data!.data != null) {
+              final details = snapshot.data!.data!;
+              // Extract first valid phone number using RegExp
+              final phoneNumbers = RegExp(r'\d{10,}')
+                  .allMatches(details.phoneNo.toString()) // Extracts all valid numbers
+                  .map((match) => match.group(0)) // Converts to a list
+                  .where((num) => num != null) // Removes nulls
+                  .toList();
+              storePhone = phoneNumbers.isNotEmpty ? phoneNumbers.first! : 'N/A'; // Get first number
+              print('StorePhone: $storePhone'); // Debugging
+
+              return Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                     Text('Transformative EECP Treatment Center${details.cityAddr}',
+                      style: const TextStyle(
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: Colors.black,
+                      ),
+                    ),
+                      const SizedBox(
+                      height: 15,
+                    ),
+                  ],
+                ),
+              ) ;
+            } else {
+              return const Center(child: Text('No Data Found'));
+            }
+          },
+        ),
+                Padding(padding: const EdgeInsets.all(15),
+                  child:Column(crossAxisAlignment:CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Text(
+                      aboutCenterTxt,
+                      textAlign: TextAlign.justify,
+                      style: TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                      const Text(
-                        aboutCenterTxt,
-                        textAlign: TextAlign.justify,
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            height: 1.5,
-                            color: Colors.black),
-                      ),
-                      Divider(
-                        height: 15,
-                        thickness: 5,
-                        color: Colors.lightBlue[50],
-                      ),
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        color: Colors.lightBlue[50],
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              aboutEECP,
-                              textAlign: TextAlign.justify,
-                              style: TextStyle(
-                                  fontFamily: 'FontPoppins',
-                                  height: 1.5,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 15,
-                                  color: Colors.black),
-                            ),
-                            const SizedBox(
-                              height: 15,
-                            ),
-                            Column(
-                              children: [
-                                _buildTimelineTile(
-                                  icon: Icons.check_circle,
-                                  title: 'No Pain',
-                                  isCompleted: true,
-                                ),
-                                _buildTimelineTile(
-                                  icon: Icons.check_circle,
-                                  title: 'No Surgery',
-                                  isCompleted: true,
-                                ),
-                                _buildTimelineTile(
-                                  icon: Icons.check_circle,
-                                  title: 'No Hospitalization',
-                                  isCompleted: true,
-                                ),
-                                _buildTimelineTile(
-                                  icon: Icons.check_circle,
-                                  title: 'US-FDA Approved',
-                                  isCompleted: true,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(
-                        height: 20,
-                        thickness: 5,
-                        color: Colors.lightBlue[50],
-                      ),
-                      const Text(
-                          'Benefits of EECP Therapy Compared to Bypass Surgery (CABG)',
-                          style: TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                              color: Colors.black)),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      SizedBox(
-                        height: 470,
-                        child: ListView.builder(
-                          itemCount: items.length,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8.0),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 4.0,
-                                      spreadRadius: 1.0,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: ExpansionTile(
-                                  title: Text(
-                                    items[index]['title']!,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'FontPoppins',
-                                      fontSize: 16,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  children: <Widget>[
-                                    Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Text(
-                                        items[index]['description']!,
-                                        style: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                            color: Colors.black87),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          fontWeight: FontWeight.w500,
+                          fontSize:15,
+                          height: 1.5,
+                          color: Colors.black),
+                    ),
+                    const Divider(
+                      height:30,
+                      thickness: 5,
+                      color:AppColors.primaryColor,
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            aboutEECP,
+                            textAlign: TextAlign.justify,
+                            style: TextStyle(
+                                fontFamily: 'FontPoppins',
+                                height: 1.5,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 15,
+                                color: Colors.black),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Column(
+                            children: [
+                              _buildTimelineTile(
+                                icon: Icons.check_circle,
+                                title: 'No Pain',
+                                isCompleted: true,
                               ),
-                            );
-                          },
-                        ),
+                              _buildTimelineTile(
+                                icon: Icons.check_circle,
+                                title: 'No Surgery',
+                                isCompleted: true,
+                              ),
+                              _buildTimelineTile(
+                                icon: Icons.check_circle,
+                                title: 'No Hospitalization',
+                                isCompleted: true,
+                              ),
+                              _buildTimelineTile(
+                                icon: Icons.check_circle,
+                                title: 'US-FDA Approved',
+                                isCompleted: true,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Divider(
-                        height: 20,
-                        thickness: 5,
-                        color: Colors.lightBlue[50],
-                      ),
-                      const Text(
-                        'Location',
+                    ),
+                     const Divider(
+                      height: 30,
+                      thickness: 5,
+                      color:AppColors.primaryDark
+                    ),
+                    const Text(
+                        'Benefits of EECP Therapy Compared to Bypass Surgery (CABG)',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
-                            color: Colors.black),
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(15.0),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 250,
-                          decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: AppColors.primaryColor, width: 0.3)),
-                          child: GoogleMap(
-                            onMapCreated: _onMapCreated,
-                            initialCameraPosition: CameraPosition(
-                              target: _center,
-                              zoom: 10.0,
+                            color: Colors.black)),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    ListView.builder(
+                      itemCount: items.length,
+                      shrinkWrap: true,
+                      clipBehavior:Clip.antiAliasWithSaveLayer,
+                      physics:const NeverScrollableScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding:
+                          const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4.0,
+                                  spreadRadius: 1.0,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            markers: _markers,
+                            child: ExpansionTile(
+                              title: Text(
+                                items[index]['title']!,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    items[index]['description']!,
+                                    style: const TextStyle(
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                        color: Colors.black87),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        );
+                      },
+                    ),
+                    Divider(
+                      height: 20,
+                      thickness: 5,
+                      color: Colors.lightBlue[50],
+                    ),
+                    const Text(
+                      'Location',
+                      style: TextStyle(
+                          fontFamily: 'FontPoppins',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.black),
+                    ),
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15.0),
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 250,
+                        decoration: BoxDecoration(
+                            border: Border.all(
+                                color: AppColors.primaryColor, width: 0.3)),
+                        child: GoogleMap(
+                          onMapCreated: _onMapCreated,
+                          initialCameraPosition: CameraPosition(
+                            target: _center,
+                            zoom: 10.0,
+                          ),
+                          markers: _markers,
                         ),
                       ),
-                      const SizedBox(
-                        height: 70,
-                      ),
-                    ],
-                  ),
-                )
+                    ),
+                    const SizedBox(
+                      height: 70,
+                    ),
+                  ],
+                ),
+                ),
               ],
             ),
           ),
@@ -327,7 +387,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                             context,
                             CupertinoPageRoute(
                                 builder: (context) =>
-                                    const AppointmentBookScreen()),
+                                    const MyAppointmentsScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(

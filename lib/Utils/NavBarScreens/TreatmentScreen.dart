@@ -1,8 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:html/parser.dart';
 import '../../common/app_colors.dart';
 import '../../constant/text_strings.dart';
+import '../../data/model/apiresponsemodel/TreatmentsResponseData.dart';
+import '../../data/network/BaseApiService.dart';
+import '../SafetyCircleScreen.dart';
+import '../TreatmentDetailsPageScreen.dart';
+import 'DetoxScreen.dart';
+import 'LifeStylePageScreen.dart';
+import 'TreatmentsOverviewScreen.dart';
+import 'ZeroOilPageScreen.dart';
 
 class ExpandableListView extends StatefulWidget {
   const ExpandableListView({super.key});
@@ -19,6 +28,8 @@ class _ExpandableListViewState extends State<ExpandableListView> {
     'Life Style',
     'OverView'
   ];
+
+
   List<String> imageUrls = [
     'https://www.mirakleihc.com/wellness_admin/resource/uploads/srcimg/1MYiNSWnzn23032024025902mirakle-eecp.jpeg',
     'https://www.nightingaledubai.com/wp-content/uploads/2023/05/iv-drip-detox.jpg',
@@ -40,6 +51,13 @@ class _ExpandableListViewState extends State<ExpandableListView> {
     {'name': 'Life Style', 'image': 'assets/images/hospital_image.jpg'},
     {'name': 'Overview', 'image': 'assets/images/banglore_image.jpg'},
   ];
+
+  String stripHtml(String htmlString) {
+    final document = parse(htmlString);
+    return document.body?.text ?? ''; // Extracts plain text from parsed HTML
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -72,20 +90,10 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                 width: MediaQuery.of(context).size.width,
                 decoration: BoxDecoration(
                   color: AppColors.primaryColor.withOpacity(0.1),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/treatment_image.jpg'),
-                    fit: BoxFit.cover,
-                  ),
                 ),
-                child: Stack(
+                child: const Stack(
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.4),
-                        // Semi-transparent overlay
-                      ),
-                    ),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.all(8),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +104,7 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                                 fontFamily: 'FontPoppins',
                                 fontWeight: FontWeight.w700,
                                 fontSize: 15,
-                                color: Colors.white),
+                                color: Colors.black),
                           ),
                           SizedBox(
                             height: 5,
@@ -106,17 +114,10 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                             textAlign: TextAlign.justify,
                             style: TextStyle(
                               fontFamily: 'FontPoppins',
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               fontSize: 12,
-                              color: Colors.white,
+                              color: Colors.black,
                               // Change text color to white
-                              shadows: [
-                                Shadow(
-                                  blurRadius: 4.0,
-                                  color: Colors.black,
-                                  offset: Offset(2.0, 2.0),
-                                ),
-                              ],
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 10,
@@ -243,7 +244,8 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                             );
                           },
                         ),
-                      )
+                      ),
+
                     ],
                   ),
                 ),
@@ -265,120 +267,162 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                           fontSize: 18,
                           color: Colors.black),
                     ),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const ScrollPhysics(),
-                      itemCount: treatmentsArray.length,
-                      scrollDirection: Axis.vertical,
-                      itemBuilder: (context, index) {
-                        return InkWell(
-                          onTap: () {
-                            /*Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                  builder: (context) =>
-                                      const TreatmentDetailsPageScreen()),
-                            );*/
-                            Fluttertoast.showToast(msg: 'click');
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 7),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height: 130,
-                                  width: MediaQuery.of(context).size.width,
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(15),
-                                      border: Border.all(
-                                          color: Colors.grey.withOpacity(0.3))),
-                                  child: Padding(
-                                    padding:  EdgeInsets.all(10),
-                                    child: Row(
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(15),
-                                          child:  Image(
-                                            image: NetworkImage(imageUrls[index]),
-                                            width: 140,
-                                            height: 130,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 15),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+
+
+                    FutureBuilder<TreatmentsResponseData>(
+                      future: BaseApiService().getTreatmentsData(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const ScrollPhysics(),
+                            itemCount:snapshot.data!.data!.length,
+                            scrollDirection: Axis.vertical,
+                            itemBuilder: (context, index) {
+                              return InkWell(
+                                onTap: () {
+                                  String id =
+                                  snapshot.data!.data![index].id.toString();
+                                  if (id == '14') {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(CupertinoPageRoute(
+                                      builder: (context) => ZeroOilPageScreen(
+                                          id: snapshot.data!.data![index].id
+                                              .toString()),
+                                    ));
+                                  } else if (id == '15') {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(CupertinoPageRoute(
+                                      builder: (context) => DetoxScreen(
+                                          id: snapshot.data!.data![index].id
+                                              .toString()),
+                                    ));
+                                  } else if (id == '16') {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(CupertinoPageRoute(
+                                      builder: (context) =>
+                                          TreatmentDetailsPageScreen(
+                                              id: snapshot.data!.data![index].id
+                                                  .toString()),
+                                    ));
+                                  } else if (id == '13') {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(CupertinoPageRoute(
+                                      builder: (context) => LifeStylePageScreen(
+                                          id: snapshot.data!.data![index].id
+                                              .toString()),
+                                    ));
+                                  } else if (id == '17') {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(CupertinoPageRoute(
+                                      builder: (context) =>
+                                          TreatmentsOverviewScreen(
+                                              id: snapshot.data!.data![index].id
+                                                  .toString()),
+                                    ));
+                                  }
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 7),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        height: 130,
+                                        width: MediaQuery.of(context).size.width,
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(15),
+                                            border: Border.all(
+                                                color: Colors.grey.withOpacity(0.3))),
+                                        child: Padding(
+                                          padding:  const EdgeInsets.all(10),
+                                          child: Row(
                                             children: [
-                                              Text(
-                                                treatmentsArray[index],
-                                                style: const TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 16,
-                                                  color: Colors.black,
+                                              ClipRRect(
+                                                borderRadius:
+                                                BorderRadius.circular(15),
+                                                child:  Image(
+                                                  image: NetworkImage(snapshot.data!.data![index].image.toString()),
+                                                  width: 140,
+                                                  height: 130,
+                                                  fit: BoxFit.cover,
                                                 ),
                                               ),
-                                              const SizedBox(height: 5),
-                                              const Flexible(
-                                                child: Text(
-                                                  'This treatment is a highly accepted UD FDA-approved scientific and non-invasive way to treat heart disease.',
-                                                  textAlign: TextAlign.start,
-                                                  style: TextStyle(
-                                                    fontFamily: 'FontPoppins',
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize: 11,
-                                                    letterSpacing: 0.1,
-                                                    color: Colors.black54,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 4,
+                                              const SizedBox(width: 15),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                                  mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(snapshot.data!.data![index].title.toString(),
+                                                      style: const TextStyle(
+                                                        fontFamily: 'FontPoppins',
+                                                        fontWeight: FontWeight.w600,
+                                                        fontSize: 16,
+                                                        color: Colors.black,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    Flexible(
+                                                      child: Text(
+                                                        stripHtml(snapshot.data!.data![index].description.toString()),
+                                                        style: const TextStyle(
+                                                          fontFamily: 'FontPoppins',
+                                                          fontWeight: FontWeight.w500,
+                                                          fontSize: 11,
+                                                          letterSpacing: 0.1,
+                                                          color: Colors.black54,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 4,
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
+                                              const Icon(
+                                                Icons.arrow_forward_ios_rounded,
+                                                size: 15,
+                                                color: Colors.black54,
+                                              )
                                             ],
                                           ),
                                         ),
-                                        const Icon(
-                                          Icons.arrow_forward_ios_rounded,
-                                          size: 15,
-                                          color: Colors.black54,
-                                        )
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
+                              );
+                            },
+                          );
+                        } else if (snapshot.hasError) {
+                          return Text('TreatmentsResponse-->${snapshot.data!.success}');
+                        } else {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
                       },
                     ),
                   ],
                 ),
               ),
+
               Padding(
                 padding: const EdgeInsets.all(10),
                 child: Container(
-                  height: 200,
                   width: MediaQuery.of(context).size.width,
                   decoration: BoxDecoration(
                     color: Colors.blue[50],
                     borderRadius: BorderRadius.circular(8.0),
                   ),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.only(top: 15, left: 12, right: 12),
+                    padding: const EdgeInsets.only(top: 15, left: 12, right: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Row(
                           children: [
@@ -388,10 +432,11 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                                 Text(
                                   'SAAOL Safety Circle',
                                   style: TextStyle(
-                                      fontFamily: 'FontPoppins',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 18,
-                                      color: Colors.black),
+                                    fontFamily: 'FontPoppins',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 18,
+                                    color: Colors.black,
+                                  ),
                                 ),
                                 SizedBox(
                                   height: 6,
@@ -409,11 +454,12 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                                     Text(
                                       'Red (means high risk)',
                                       style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 13,
-                                          color: Colors.black87),
-                                    )
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 Row(
@@ -429,11 +475,12 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                                     Text(
                                       'Red (means high risk)',
                                       style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 13,
-                                          color: Colors.black87),
-                                    )
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 Row(
@@ -449,16 +496,21 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                                     Text(
                                       'Green (lowest risk or reversal)',
                                       style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 13,
-                                          color: Colors.black87),
-                                    )
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
                             ),
-                            Expanded(child: Container()),
+                            // Responsive part: use Flexible for better screen size adjustment
+                            Expanded(
+                              child: Container(),
+                            ),
+                            // The image will shrink based on available space
                             Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8.0),
@@ -472,7 +524,7 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                                 child: Image.asset(
                                   'assets/icons/safety_circle.jpg',
                                   height: 70,
-                                  width: 100,
+                                  width: MediaQuery.of(context).size.width * 0.2, // Percentage of screen width
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -480,13 +532,14 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                           ],
                         ),
                         const SizedBox(height: 25),
+                        // Adjust the button's width dynamically for better responsiveness
                         ElevatedButton(
                           onPressed: () {
-                           /* Navigator.push(
+                            Navigator.push(
                               context,
                               CupertinoPageRoute(
                                   builder: (context) => const SafetyCircleScreen()),
-                            );*/
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
@@ -494,6 +547,7 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
+                            minimumSize: const Size(double.infinity, 45), // Full width with fixed height
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -501,10 +555,11 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                               Text(
                                 'Explore now',
                                 style: TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black),
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                ),
                               ),
                               Icon(
                                 Icons.arrow_forward,
@@ -513,11 +568,13 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                             ],
                           ),
                         ),
+                        const SizedBox(height:15),
                       ],
                     ),
                   ),
                 ),
               ),
+
               /*SizedBox(
                 height:750,
                 child: GridView.builder(

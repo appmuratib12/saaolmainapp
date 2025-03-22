@@ -57,14 +57,17 @@ class _PDFScreenState extends State<PDFScreen> {
     }
   }
 
+
   Future<String> loadPDF() async {
-    final byteData = await rootBundle.load('assets/sample.pdf'); // Load the PDF from assets
+    final byteData = await rootBundle.load('assets/diet_chart.pdf'); // Load the PDF from assets
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/sample.pdf');
+    final file = File('${directory.path}/diet_chart.pdf');
 
     await file.writeAsBytes(byteData.buffer.asUint8List(), flush: true);
     return file.path;
   }
+
+
 
   @override
   Widget build(BuildContext context) {

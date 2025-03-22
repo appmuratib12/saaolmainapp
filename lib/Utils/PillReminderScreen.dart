@@ -1,8 +1,9 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import '../common/app_colors.dart';
 import '../responsemodel/DatabaseHelper.dart';
 import '../responsemodel/Medicine.dart';
-import 'MedicineReminderDetailScreen.dart';
 
 class PillReminderScreen extends StatefulWidget {
   const PillReminderScreen({super.key});
@@ -28,7 +29,133 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
     "assets/icons/syringe.png",
     "assets/icons/syringe.png"
   ];
+  final List<String> frequencyArray = [
+    'Once a Day',
+    'Twice a Day',
+    'Thrice a Day'
+  ];
+  final List<String> scheduleArray = ['1 Week', '1 Month', '1 Year'];
+  String? selectFrequency;
   bool isSelected = true;
+  String? selectSchedule;
+  String? selectMedicine = 'Paracetamol';
+  final List<String> medicineArray = ['Paracetamol', 'Ibuprofen', 'Aspirin'];
+
+  void _showFrequencyDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Select Frequency',
+            style: TextStyle(
+              fontFamily: 'FontPoppins',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.blue,
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: frequencyArray.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(
+                    frequencyArray[index],
+                    style: const TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      selectFrequency = frequencyArray[index];
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showScheduleDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Select Schedule',
+            style: TextStyle(
+              fontFamily: 'FontPoppins',
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.blue,
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: scheduleArray.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(
+                    scheduleArray[index],
+                    style: const TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      selectSchedule = scheduleArray[index];
+                      Fluttertoast.showToast(msg: selectSchedule.toString());
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<String> notificationTimes = [
+    "07:00 am",
+    "08:00 am",
+  ];
+  String? selectedTime;
+
+  void _addNotificationTime() async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (pickedTime != null) {
+      String formattedTime =
+          "${pickedTime.hourOfPeriod.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')} ${pickedTime.period == DayPeriod.am ? 'am' : 'pm'}";
+      setState(() {
+        notificationTimes.add(formattedTime);
+      });
+    }
+  }
+
 
 
   @override
@@ -80,151 +207,16 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Center(
-                child: CircleAvatar(
-                  backgroundColor: Colors.black,
-                  radius: 40, // Adjust size as needed
-                  backgroundImage: NetworkImage(
-                    'https://img.freepik.com/free-psd/expressive-woman-gesturing_23-2150198673.jpg', // Replace with your image URL
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10), // Space between avatar and name
-              const Center(
-                child: Text(
-                  'Joham Neyal',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'FontPoppins',
-                    color: Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Image(
+                  image: AssetImage('assets/icons/medicine_icon.png'),
+                  fit: BoxFit.cover,
+                  width: 150,
+                  height: 150,
                 ),
               ),
               const SizedBox(
                 height: 20,
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  // Step 1 - Completed
-                  const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppColors.primaryDark,
-                          child: Icon(
-                            Icons.check,
-                            color: Colors.white,
-                          ),
-                        ),
-                      SizedBox(height: 5),
-                    ],
-                  ),
-
-                  // Solid line between steps
-                  Container(
-                    width:65,
-                    height: 2, // Height of the line
-                    color: AppColors.primaryColor, // Color of the line
-                  ),
-
-                  // Step 2 - Current step
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: isSelected
-                            ? Colors.blue.withOpacity(0.2)
-                            : AppColors.primaryDark,
-                        child: isSelected
-                            ? const Text(
-                          "2",
-                          style: TextStyle(
-                            color: AppColors.primaryColor,
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                            : const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                    ],
-                  ),
-
-                  // Solid line between steps
-                  Container(
-                    width:65,
-                    height: 2, // Height of the line
-                    color: AppColors.primaryColor, // Color of the line
-                  ),
-
-                  // Step 3 - Incomplete
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: isBeforeSelected
-                            ? Colors.blue.withOpacity(0.2)
-                            : AppColors.primaryDark,
-                        child: isBeforeSelected
-                            ? const Text(
-                          "3",
-                          style: TextStyle(
-                            color: AppColors.primaryColor,
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                            : const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                    ],
-                  ),
-
-                  // Solid line between steps
-                  Container(
-                    width: 65,
-                    height: 2, // Height of the line
-                    color: AppColors.primaryColor, // Color of the line
-                  ),
-
-                  // Step 4 - Incomplete
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.blue.withOpacity(0.2),
-                        child: const Text(
-                          "4",
-                          style: TextStyle(
-                            color: AppColors.primaryColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            fontFamily: 'FontPoppins',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-
               const Text(
                 'Medicine Name',
                 style: TextStyle(
@@ -236,12 +228,50 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
               const SizedBox(
                 height: 15,
               ),
-              SizedBox(
+              DropdownButtonFormField2<String>(
+                value: selectMedicine,
+                decoration: InputDecoration(
+                  hintText: 'Select Medicine',
+                  hintStyle: const TextStyle(
+                    fontFamily: 'FontPoppins',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black54,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12.0, vertical: 16),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                ),
+                style: const TextStyle(
+                  color: Colors.black,
+                  fontSize: 15,
+                  fontFamily: 'FontPoppins',
+                  fontWeight: FontWeight.w600,
+                ),
+                items: medicineArray
+                    .map((medicine) => DropdownMenuItem<String>(
+                          value: medicine,
+                          child: Text(medicine),
+                        ))
+                    .toList(),
+                onChanged: (String? value) {
+                  setState(() {
+                    selectMedicine = value; // Update the selected medicine
+                    Fluttertoast.showToast(msg: selectMedicine.toString());
+                  });
+                },
+              ),
+              /* SizedBox(
                 height: 50,
                 child: TextField(
                   controller: nameController,
                   decoration: InputDecoration(
-                    hintText: "Joham Neyal",
+                    hintText: 'Abacavir',
                     hintStyle: const TextStyle(
                         fontSize: 15,
                         fontFamily: 'FontPoppins',
@@ -259,7 +289,7 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                       fontWeight: FontWeight.w500,
                       color: Colors.black),
                 ),
-              ),
+              ),*/
               const SizedBox(
                 height: 15,
               ),
@@ -274,7 +304,6 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
               const SizedBox(
                 height: 10,
               ),
-
               SizedBox(
                 height: 100,
                 child: ListView.builder(
@@ -282,7 +311,6 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                   scrollDirection: Axis.horizontal,
                   itemBuilder: (context, index) {
                     bool isSelected = selectedIndex == index;
-
                     return InkWell(
                       onTap: () {
                         setState(() {
@@ -307,7 +335,7 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? AppColors
-                                          .primaryDark // Change background color if selected
+                                          .primaryColor // Change background color if selected
                                       : Colors.white,
                                   // Default background color
                                   borderRadius: BorderRadius.circular(8),
@@ -338,7 +366,6 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                     color: Colors.black87),
               ),
               const SizedBox(height: 8),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
@@ -371,9 +398,9 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                                 ? AppColors.primaryDark
                                 : Colors.grey,
                           ),
-                          SizedBox(width: 5),
+                          const SizedBox(width: 5),
                           Text(
-                            'Before',
+                            'Before Meal',
                             style: TextStyle(
                               fontFamily: 'FontPoppins',
                               fontWeight: FontWeight.w500,
@@ -407,8 +434,8 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                         color:
                             isBeforeSelected ? Colors.white : Colors.blue[50],
                       ),
-                      padding:
-                          EdgeInsets.symmetric(vertical: 10, horizontal: 25),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 10, horizontal: 25),
                       child: Row(
                         children: [
                           Icon(
@@ -419,7 +446,7 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            'After',
+                            'After Meal',
                             style: TextStyle(
                               color: isBeforeSelected
                                   ? Colors.grey
@@ -435,24 +462,205 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 20),
-              SizedBox(
-                height: 100, // You can adjust the height as needed
-                child: Row(
-                  children: [
-                    _buildDropdownSection(
-                        "Duration", "1 Month", Icons.calendar_month),
-                    SizedBox(width: 16),
-                    _buildDropdownSection(
-                        "Frequency", "Daily", Icons.access_time),
-                  ],
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Frequency',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'FontPoppins',
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        GestureDetector(
+                          onTap: _showFrequencyDialog,
+                          child: AbsorbPointer(
+                            child: DropdownButtonFormField<String>(
+                              value: selectFrequency,
+                              decoration: InputDecoration(
+                                hintText: 'Select Frequency',
+                                hintStyle: const TextStyle(
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 15.0,
+                                  horizontal: 10.0,
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[200],
+                              ),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 14,
+                                fontFamily: 'FontPoppins',
+                                fontWeight: FontWeight.w600,
+                              ),
+                              items: frequencyArray
+                                  .map((frequency) => DropdownMenuItem<String>(
+                                        value: frequency,
+                                        child: Text(frequency),
+                                      ))
+                                  .toList(),
+                              onChanged: (String? value) {},
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Schedule',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'FontPoppins',
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        GestureDetector(
+                          onTap: _showScheduleDialog,
+                          child: AbsorbPointer(
+                            child: DropdownButtonFormField<String>(
+                              value: selectSchedule,
+                              decoration: InputDecoration(
+                                hintText: 'Select Schedule',
+                                hintStyle: const TextStyle(
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 15.0,
+                                  horizontal: 15.0,
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey[200],
+                              ),
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 14,
+                                fontFamily: 'FontPoppins',
+                                fontWeight: FontWeight.w600,
+                              ),
+                              items: scheduleArray
+                                  .map((schedule) => DropdownMenuItem<String>(
+                                        value: schedule,
+                                        child: Text(schedule),
+                                      ))
+                                  .toList(),
+                              onChanged: (String? value) {},
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-
-
+              const SizedBox(
+                height:15,
+              ),
+              const Text(
+                'Notification',
+                style: TextStyle(
+                    fontFamily: 'FontPoppins',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                    color: Colors.black87),
+              ),
+              const SizedBox(
+                height:15,
+              ),
+              Wrap(
+                spacing: 12.0,
+                runSpacing: 12.0,
+                children: [
+                  for (var time in notificationTimes)
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedTime = time;
+                          Fluttertoast.showToast(msg: selectedTime.toString());
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: selectedTime == time
+                              ? AppColors.primaryDark
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: selectedTime == time
+                                ? AppColors.primaryDark
+                                : Colors.grey.shade300,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Text(
+                          time,
+                          style: TextStyle(
+                            color: selectedTime == time
+                                ? Colors.white
+                                : Colors.black,
+                            fontSize: 15,
+                            fontFamily:'FontPoppins',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  GestureDetector(
+                    onTap: _addNotificationTime,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.lightBlueAccent.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color:AppColors.primaryDark,
+                          width: 1.5,
+                        ),
+                      ),
+                      child:  const Icon(
+                        Icons.add,
+                        color:AppColors.primaryDark,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height:30,),
               SizedBox(
-                height: 50,
+                height: 55,
                 child: Center(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -464,35 +672,16 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                           horizontal: 100, vertical: 12),
                     ),
                     onPressed: () async {
-                      if (selectedIndex != -1) {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          // Prevents closing the dialog by tapping outside
-                          builder: (BuildContext context) {
-                            return const CustomProgressIndicator();
-                          },
-                        );
-                        await Future.delayed(const Duration(seconds: 5));
-
-                        MedicineModel newMedicine1 = MedicineModel(
-                          name: nameController.text.toString(),
-                          // Replace with actual medicine name
-                          type: medicineTypeArray[selectedIndex],
-                          time: isBeforeSelected ? "Before" : "After",
-                          schedule: "1 Month", // Replace with actual schedule
-                        );
-
-                        DatabaseHelper dbHelper = DatabaseHelper();
-                        await dbHelper.insertMedicine(newMedicine1);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const MedicineReminderDetailScreen()),
-                        );
-                        // You can also show a confirmation message or navigate to another screen
-                      }
+                      MedicineModel newMedicine = MedicineModel(
+                        name: selectMedicine.toString(),
+                        type: medicineTypeArray[selectedIndex],
+                        time: isBeforeSelected ? "Before Meal" : "After Meal",
+                        schedule: selectSchedule.toString(),
+                      );
+                      DatabaseHelper dbHelper = DatabaseHelper();
+                      await dbHelper.insertMedicine(newMedicine);
+                      // Return the added medicine to the previous screen
+                      Navigator.pop(context, newMedicine);
                     },
                     child: const Text(
                       "Add Reminder",
@@ -506,6 +695,7 @@ class _PillReminderScreenState extends State<PillReminderScreen> {
                   ),
                 ),
               ),
+
             ],
           ),
         ),
@@ -582,7 +772,6 @@ class CustomProgressIndicator extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-
           ],
         ),
       ),

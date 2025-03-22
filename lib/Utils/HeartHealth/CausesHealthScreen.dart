@@ -14,7 +14,7 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
   int initialLabelIndex = 0;
   List<String> causesTreatmentArray = [
     "Education & Lifestyle Management",
-    "Optimum Allopathic Medical Management",
+    "Optimum Allopathic Medical Manag ement",
     "Natural Bypass or ECP/EECP",
     "Saaol Detox Therapy"
   ];
@@ -187,17 +187,17 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                           )
                         ],
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 15,
                       ),
-                      Text('Causes Treatment',
+                      const Text('Causes Treatment',
                           style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryColor,
                           )),
-                      SizedBox(
+                      const SizedBox(
                         height: 10,
                       ),
                       const Text(
@@ -220,9 +220,11 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
                             return InkWell(
-                              onTap: () {},
+                              onTap: () {
+
+                              },
                               child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 5),
+                                padding: const EdgeInsets.symmetric(horizontal: 5),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -337,6 +339,7 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                                         ),
                                       ),
                                     ),
+
                                   ],
                                 ),
                               ),

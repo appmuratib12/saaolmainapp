@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:saaoldemo/data/model/apiresponsemodel/TermsAndConditionResponse.dart';
 import '../common/app_colors.dart';
-import '../constant/text_strings.dart';
+import '../data/network/BaseApiService.dart';
 
 
 class TermConditionScreen extends StatefulWidget {
@@ -12,13 +13,19 @@ class TermConditionScreen extends StatefulWidget {
 
 
 class _TermConditionScreenState extends State<TermConditionScreen> {
-  String termsTxt =
-      "BY ACCESSING OR USING THIS WEBSITE, YOU AGREE TO BE BOUND BY THESE TERMS AND CONDITIONS AND ACCEPT THEM IN FULL, AS THEY MAY BE MODIFIED BY SAAOL Heart Center FROM TIME-TO-TIME AND POSTED ON THIS WEBSITE.";
+  late Future<TermsAndConditionResponse> _termsFuture;
+  final Map<int, bool> _expandedItems = {}; // Track expanded state
+
+  @override
+  void initState() {
+    super.initState();
+    _termsFuture = BaseApiService().getTermsAndCondition();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Colors.white,
+      backgroundColor:Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -31,246 +38,157 @@ class _TermConditionScreenState extends State<TermConditionScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        physics: const ScrollPhysics(),
-        child: Container(
-          margin: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              buildSectionTitle('DESCRIPTION OF SERVICES'),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87, // Standard color for the text
-                    height: 1.5, // Line height for better readability
-                  ),
-                  children: <TextSpan>[
-                    TextSpan(
-                      text:
-                          'All visitors to our Website should adhere to the following terms and conditions: ',
-                      style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        color: Colors.black54,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        // Bold for emphasis
-                        decoration:
-                            TextDecoration.underline, // Underline for emphasis
-                      ),
-                    ),
-                    TextSpan(
-                      text:
-                          'BY ACCESSING OR USING THIS WEBSITE, YOU AGREE TO BE BOUND BY THESE TERMS AND CONDITIONS AND ACCEPT THEM IN FULL, ',
-                      style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w500, fontSize: 14,
-                        color: Colors.black54, // Red color to draw attention
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign:
-                    TextAlign.justify, // Align text for a professional look
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87, // Standard color for the text
-                    height: 1.5, // Line height for better readability
-                  ),
-                  children: <TextSpan>[
-                    TextSpan(
-                      text: 'Applicability:',
-                      style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        color: Colors.black54,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        // Bold for emphasis
-                        decoration:
-                            TextDecoration.underline, // Underline for emphasis
-                      ),
-                    ),
-                    TextSpan(
-                      text:
-                          'These website terms and condition are applicable to all transactions including online appointment booking, bill payments, advance payment against services and/or any other transactions through this website or through its hyperlink(s) and authorized third party websites.',
-                      style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w500, fontSize: 14,
-                        color: Colors.black54, // Red color to draw attention
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign:
-                    TextAlign.justify, // Align text for a professional look
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              const Text(
-                'Information provided by you:',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'FontPoppins',
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black),
-              ),
+      body: FutureBuilder<TermsAndConditionResponse>(
+        future: _termsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return _buildErrorUI();
+          } else if (!snapshot.hasData || snapshot.data!.data!.isEmpty) {
+            return _buildEmptyUI();
+          }
 
-              buildBulletPoint(informationTxt1),
-              buildBulletPoint(informationTxt2),
-              buildBulletPoint(informationTxt4),
-              buildBulletPoint(informationTxt4),
-              buildBulletPoint(informationTxt5),
-              buildBulletPoint(informationTxt6),
-              buildBulletPoint(informationTxt7),
-              buildBulletPoint(informationTxt8),
-              buildBulletPoint(informationTxt9),
-              buildBulletPoint(informationTxt10),
-              buildBulletPoint(informationTxt11),
-              buildBulletPoint(informationTxt12),
-              buildBulletPoint(informationTxt13),
-              const SizedBox(height:15),
-              RichText(
-                text: const TextSpan(
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black87, // Standard color for the text
-                    height: 1.5, // Line height for better readability
-                  ),
-                  children: <TextSpan>[
-                    TextSpan(
-                      text: 'Hyperlinks and third party websites: ',
-                      style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        color: Colors.black,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        // Bold for emphasis
-                        decoration:
-                        TextDecoration.underline, // Underline for emphasis
-                      ),
-                    ),
-                    TextSpan(
-                      text:hyperlinkThirdPartyTxt,
-                      style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w500, fontSize: 14,
-                        color: Colors.black54, // Red color to draw attention
-                      ),
-                    ),
-                  ],
-                ),
-                textAlign:
-                TextAlign.justify, // Align text for a professional look
-              ),
-              buildSectionTitle('AVAILABILITY'),
-              buildBodyText(availabilityTxtContent),
+          final faqs = snapshot.data!.data!; // List of FAQ data
 
-              buildSectionTitle('INTELLECTUAL PROPERTY RIGHTS'),
-              buildBodyText(intellectualTxt),
-              buildSectionTitle('LIMITATION OF LIABILITY FOR USE OF THE SITE'),
-              buildBodyText(limitationTxt),
-              buildSectionTitle('DATA PROTECTION'),
-              buildBulletPoint(dataProtectionTxt1),
-              buildBulletPoint(dataProtectionTxt2),
-              buildBulletPoint(dataProtectionTxt3),
-              buildBulletPoint(dataProtectionTxt4),
-              buildBulletPoint(dataProtectionTxt5),
-              buildSectionTitle('Gateway Security'),
-              buildBulletPoint(gatewayTxt1),
-              buildBulletPoint(gatewayTxt2),
-              buildBulletPoint(gatewayTxt3),
-              buildBulletPoint(gatewayTxt4),
-              buildBulletPoint(gatewayTxt5),
-              buildSectionTitle('Payment'),
-              Text(paymentTxt,
-                textAlign:TextAlign.justify,style:TextStyle(fontSize:14,
-                  fontFamily:'FontPoppins',fontWeight:FontWeight.w500,color:Colors.black54),),
-              buildSectionTitle('GENERAL TERMS AND CONDITIONS'),
-              buildBulletPoint(generalTermsTxt1),
-              buildBulletPoint(generalTermsTxt2),
-              buildBulletPoint(generalTermsTxt3),
-              buildBulletPoint(generalTermsTxt4),
-              buildBulletPoint(generalTermsTxt5),
-              buildBulletPoint(generalTermsTxt6),
-              buildBulletPoint(generalTermsTxt7),
-              buildSectionTitle('FORWARD LOOKING INFORMATION'),
-              buildBodyText(forwardInformationTxt),
-              buildSectionTitle('PRESS RELEASES'),
-              buildBodyText(pressTxt),
-              buildSectionTitle('VIOLATIONS OF RULES AND REGULATIONS'),
-              buildBodyText(violationTxt),
-              buildSectionTitle('JURISDICTION AND GOVERNING LAW'),
-              buildBodyText(jurisdictionTxt),
-            ],
-          ),
-        ),
+          return ListView.builder(
+            padding: const EdgeInsets.all(15),
+            itemCount: faqs.length,
+            itemBuilder: (context, index) {
+              return _buildFaqItem(faqs[index], index);
+            },
+          );
+        },
       ),
     );
   }
 
-  Widget buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontFamily:'FontPoppins',
-          fontWeight: FontWeight.w600,
-          color: Colors.black,
-        ),
-      ),
-    );
-  }
 
-  Widget buildBodyText(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        textAlign:TextAlign.justify,
-        text,
-        style: const TextStyle(
-          fontSize:14,
-          fontFamily:'FontPoppins',
-          fontWeight: FontWeight.w500,
-          color: Colors.black54,
-        ),
-      ),
-    );
-  }
+  Widget _buildFaqItem(Data faq, int index) {
+    bool isExpanded = _expandedItems[index] ?? false;
 
-  Widget buildBulletPoint(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0,left:5,right:5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Image.asset('assets/icons/checked.png',width:20,height:20,),
-          const SizedBox(width:10),
-          Expanded(
-            child: Text(
-              textAlign:TextAlign.justify,
-              text,
-              style: const TextStyle(
-                  fontSize:14,fontFamily:'FontPoppins',fontWeight:FontWeight.w500,color:Colors.black54),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _expandedItems[index] = !isExpanded;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300), // Smooth transition
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                 const Icon(Icons.assignment, color:Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    faq.title?.toUpperCase() ?? "No title",
+                    style:  const TextStyle(
+                      fontSize: 16,
+                      fontFamily: 'FontPoppins',
+                      fontWeight: FontWeight.w600,
+                      color:AppColors.primaryColor,
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0, // Smooth icon rotation
+                  duration: const Duration(milliseconds: 300),
+                  child: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                ),
+              ],
+            ),
+            AnimatedCrossFade(
+              firstChild: const SizedBox.shrink(), // Empty space when collapsed
+              secondChild: Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset('assets/icons/checked.png', width: 20, height: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        textAlign:TextAlign.justify,
+                        faq.content ?? "No content available",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'FontPoppins',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 300),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// UI when API fails
+  Widget _buildErrorUI() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, color: Colors.red, size: 50),
+            const SizedBox(height: 10),
+            const Text(
+              "Failed to load FAQs. Please try again.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _termsFuture = BaseApiService().getTermsAndCondition();
+                });
+              },
+              child: const Text("Retry"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// UI when no FAQs are available
+  Widget _buildEmptyUI() {
+    return const Center(
+      child: Text(
+        "No Terms & Conditions available.",
+        style: TextStyle(fontSize: 16, color: Colors.black),
       ),
     );
   }

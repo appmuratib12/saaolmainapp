@@ -43,7 +43,7 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                     children: [
                       const Expanded(
                         child: Text(
-                          'Welcome to\nDiet Lifestyle',
+                          'Welcome to\nDiet Plan',
                           textAlign: TextAlign.start,
                           style: TextStyle(
                             fontFamily: 'FontPoppins',
@@ -108,17 +108,17 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                       child: ListView(
                         children: [
                           _buildIngredientItem(
-                            'How to increase weight?',
+                            'How to balance weight?',
                             'Eat smaller meals more often, adding healthy snacks between meals.',
                             'https://diabesmart.in/cdn/shop/articles/how-to-gain-weight-with-diabetes.png?v=1712124083&width=1100',
                           ),
                           _buildIngredientItem(
-                            'How to decrease weight?',
+                            'Diet for heart patients',
                             'To make your dish balanced, include natural sugar from this fruit.',
                             'https://www.eatingwell.com/thmb/088YHsNmHkUQ7iNGP4375MiAXOY=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/article_7866255_foods-you-should-eat-every-week-to-lose-weight_-04-d58e9c481bce4a29b47295baade4072d.jpg',
                           ),
                           _buildIngredientItem(
-                            'Heart diet for all',
+                            'Healthy diet lifestyle',
                             'Vegetables rich in nutrients that contain minerals and antioxidants.',
                             'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYQz4YUF07_QpGFGyYclRYvsBerfQyRBy07Q&s',
                           ),
@@ -153,7 +153,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
         child: Container(
-          height: 90,
           decoration: BoxDecoration(
             color: Colors.grey[100],
             borderRadius: BorderRadius.circular(10),

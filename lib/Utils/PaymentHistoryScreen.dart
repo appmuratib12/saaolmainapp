@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:saaoldemo/constant/ApiConstants.dart';
+import 'package:saaoldemo/responsemodel/AppointmentDatabaseHelper.dart';
 import '../common/app_colors.dart';
+import '../responsemodel/PatientAppointmentModel.dart';
 
 class MyPurchase extends StatefulWidget {
   const MyPurchase({super.key});
@@ -12,11 +16,28 @@ class _HomeState extends State<MyPurchase> {
   String userEmail = '';
   String userPaymentID = '';
   List<String> paymentDetails = ["Payment1", "Payment2"];
+  late Future<List<PatientAppointmentModel>> medicineList;
+
+  _loadCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userPaymentID = (prefs.getString('PaymentID') ?? '');
+      userEmail = (prefs.getString(ApiConstants.USER_EMAIL) ?? '');
+      userEmail = (prefs.getString('GoogleUserEmail') ?? '');
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCounter();
+    medicineList = AppointmentDatabaseHelper().getAppointments();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Colors.white,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -70,311 +91,200 @@ class _HomeState extends State<MyPurchase> {
               ] else ...[
                 SizedBox(
                   height: 600,
-                  child: ListView.builder(
-                    physics: const ScrollPhysics(),
-                    itemCount: paymentDetails.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Card(
-                              semanticContainer: true,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              elevation: 2,
-                              child: Container(
-                                decoration: BoxDecoration(
+                  child: FutureBuilder<List<PatientAppointmentModel>>(
+                    future: medicineList,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text('No Payment Saved!'));
+                      } else {
+                        return ListView.builder(
+                          physics: const ScrollPhysics(),
+                          itemCount: snapshot.data!.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            final appointment = snapshot.data![index];
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 5),
+                              child: Card(
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  color: Colors.white,
                                 ),
-                                height: 220,
-                                width: MediaQuery.of(context).size.width,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                        padding: const EdgeInsets.all(10),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
+                                elevation: 2,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.white,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: const Image(
+                                              image: AssetImage('assets/images/profile.png'),
+                                              height: 60,
+                                              width: 60,
+                                              fit: BoxFit.fill,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 15),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  clipBehavior: Clip.antiAlias,
-                                                  child: const Image(
-                                                    image: AssetImage(
-                                                        'assets/images/profile.png'),
-                                                    height: 60,
-                                                    width: 60,
-                                                    fit: BoxFit.fill,
+                                                Text(
+                                                  appointment.centerLocation.toString(),
+                                                  style: const TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                    color: Colors.black,
                                                   ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
                                                 ),
-                                                SizedBox(
-                                                  width: 15,
-                                                ),
-                                                const Column(
-                                                  children: [
-                                                    Text(
-                                                      'Coronary Artery Disease',
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              'FontPoppins',
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 16,
-                                                          color: Colors.black),
-                                                    ),
-                                                    Text(
-                                                      'Appointment mode: Offline',
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              'FontPoppins',
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              Colors.black87),
-                                                    )
-                                                  ],
+                                                Text(
+                                                  'Appointment mode: ${appointment.mode}',
+                                                  style: const TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black87,
+                                                  ),
+                                                  overflow: TextOverflow.ellipsis,
+                                                  maxLines: 1,
                                                 ),
                                               ],
                                             ),
-                                            Divider(
-                                              height: 10,
-                                              thickness: 0.2,
+                                          ),
+                                        ],
+                                      ),
+                                      const Divider(
+                                        height: 10,
+                                        thickness: 0.2,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'Dated on',
+                                                style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                              Text(
+                                                appointment.date.toString(),
+                                                style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color: AppColors.primaryColor,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                               const Text(
+                                                'Paid Amount',
+                                                style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 15,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                              Text(snapshot.data![index].totalAmount.toString(),
+                                                style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 14,
+                                                  color: AppColors.primaryColor,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const Divider(
+                                        height: 10,
+                                        thickness: 0.2,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                       Row(
+                                        children: [
+                                          const Text(
+                                            'Status:',
+                                            style: TextStyle(
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            snapshot.data![index].paymentID.isNotEmpty ? 'Success' : 'Failed',
+                                            style: TextStyle(
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: snapshot.data![index].paymentID.isNotEmpty
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                       Row(
+                                        children: [
+                                          const Text(
+                                            'Email Id:',
+                                            style: TextStyle(
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text('mohdmuratib0@gmail.com',
+                                            style: const TextStyle(
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
                                               color: AppColors.primaryColor,
                                             ),
-                                            const SizedBox(
-                                              height: 5,
-                                            ),
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                const Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      'Dated on',
-                                                      style: TextStyle(
-                                                          fontFamily:
-                                                              'FontPoppins',
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          fontSize: 14,
-                                                          color: Colors.black),
-                                                    ),
-                                                    Text(
-                                                      '21 Jan 2023',
-                                                      style: TextStyle(
-                                                        fontFamily:
-                                                            'FontPoppins',
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color: AppColors
-                                                            .primaryColor,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Container(
-                                                        margin: const EdgeInsets.only(
-                                                            left: 85),
-                                                        child: const Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .end,
-                                                          children: [
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  'Amount:',
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          15,
-                                                                      color: Colors
-                                                                          .black),
-                                                                ),
-                                                                SizedBox(
-                                                                  width: 5,
-                                                                ),
-                                                                Text(
-                                                                  '₹5000',
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          14,
-                                                                      color: AppColors
-                                                                          .primaryColor),
-                                                                )
-                                                              ],
-                                                            ),
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  'Pending:',
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          15,
-                                                                      color: Colors
-                                                                          .black),
-                                                                ),
-                                                                SizedBox(
-                                                                  width: 5,
-                                                                ),
-                                                                Text(
-                                                                  '₹2000',
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          14,
-                                                                      color: AppColors
-                                                                          .primaryColor),
-                                                                )
-                                                              ],
-                                                            ),
-                                                            Row(
-                                                              children: [
-                                                                Text(
-                                                                  'Paid:',
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          15,
-                                                                      color: Colors
-                                                                          .black),
-                                                                ),
-                                                                SizedBox(
-                                                                  width: 5,
-                                                                ),
-                                                                Text(
-                                                                  '₹3000',
-                                                                  style: TextStyle(
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w600,
-                                                                      fontSize:
-                                                                          14,
-                                                                      color: AppColors
-                                                                          .primaryColor),
-                                                                )
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ))
-                                                  ],
-                                                )
-                                              ],
-                                            ),
-                                            Divider(
-                                              height: 10,
-                                              thickness: 0.2,
-                                              color: AppColors.primaryColor,
-                                            ),
-                                            const Row(
-                                              children: [
-                                                Text(
-                                                  'status:',
-                                                  style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 14,
-                                                      color: Colors.black),
-                                                ),
-                                                SizedBox(
-                                                  width: 5,
-                                                ),
-                                                Text(
-                                                  'success',
-                                                  style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 14,
-                                                      color: AppColors
-                                                          .primaryColor),
-                                                ),
-                                              ],
-                                            ),
-                                            const Row(
-                                              children: [
-                                                Text(
-                                                  'Email Id:',
-                                                  style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 14,
-                                                      color: Colors.black),
-                                                ),
-                                                SizedBox(width: 5),
-                                                Text(
-                                                  'mohdmuratib0@gmail.com',
-                                                  style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 14,
-                                                      color: AppColors
-                                                          .primaryColor),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ))
-                                  ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
+                            );
+                          },
+                        );
+                      }
                     },
                   ),
-                )
+                ),
               ],
             ],
           ),

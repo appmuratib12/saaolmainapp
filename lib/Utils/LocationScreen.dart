@@ -1,14 +1,100 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:saaoldemo/Utils/MyHomePageScreen.dart';
+import 'package:saaoldemo/constant/ApiConstants.dart';
 import '../common/app_colors.dart';
 import 'ManuallyLocationScreen.dart';
 
-
-class ShareLocationScreen extends StatelessWidget {
+class ShareLocationScreen extends StatefulWidget {
   const ShareLocationScreen({super.key});
+
+  @override
+  State<ShareLocationScreen> createState() => _ShareLocationScreenState();
+}
+
+class _ShareLocationScreenState extends State<ShareLocationScreen> {
+
+  late SharedPreferences sharedPreferences;
+
+  Future<void> _requestLocationPermission() async {
+    PermissionStatus permission = await Permission.location.request();
+    if (permission.isGranted) {
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      Fluttertoast.showToast(msg: 'Location: LAT: ${position.latitude}, LNG: ${position.longitude}');
+    } else if (permission.isDenied || permission.isPermanentlyDenied) {
+      Fluttertoast.showToast(msg: 'Location permission denied.');
+    }
+  }
+
+
+  Future<Position> getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      throw Exception('Location services are disabled.');
+    }
+    // Check location permissions
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      // Request permission if denied
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions are denied.');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are permanently denied
+      throw Exception('Location permissions are permanently denied.');
+    }
+    // Get the current location
+    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+  }
+
+  void fetchLocation() async {
+    try {
+      Position position = await getCurrentLocation();
+      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark placemark = placemarks.first;
+        String? locationName = placemark.locality; // City or locality name
+        String? subLocality = placemark.subLocality; // More specific location
+        String? pincode = placemark.postalCode; // Pincode
+        sharedPreferences = await SharedPreferences.getInstance();
+        if (pincode != null) {
+          await sharedPreferences.setString(ApiConstants.PINCODE, pincode);
+          await sharedPreferences.setString('locationName', locationName.toString());
+          await sharedPreferences.setString('subLocality', subLocality.toString());
+          await sharedPreferences.setString('lat',position.latitude.toString());
+          await sharedPreferences.setString('long',position.longitude.toString());
+          print('Pincode stored in SharedPreferences: $pincode');
+          print('Location Name: $locationName');
+          print('Sub Locality: $subLocality');
+          print('Pincode: $pincode');
+          Navigator.push(context,
+            CupertinoPageRoute(
+                builder: (context) => const HomePage(initialIndex:0)),
+          );
+
+        }
+      } else {
+        print('No placemarks found.');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -69,12 +155,13 @@ class ShareLocationScreen extends StatelessWidget {
                     width: MediaQuery.of(context).size.width,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        _showCustomPermissionDialog(context);
+                        //_requestLocationPermission();
+                        fetchLocation();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryColor,
                         padding:
-                            const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -107,11 +194,12 @@ class ShareLocationScreen extends StatelessWidget {
                               builder: (context) => const SearchBarScreen()),
                         );
                         Fluttertoast.showToast(msg: 'Click');
+
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         padding:
-                            const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                        const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
                             side: const BorderSide(
@@ -140,41 +228,5 @@ class ShareLocationScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  void _showCustomPermissionDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Location Permission'),
-          content: Text(
-              'We need your location permission to provide better services. Please enable it in settings.'),
-          actions: [
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _requestLocationPermission();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _requestLocationPermission() async {
-    PermissionStatus permission = await Permission.location.request();
-    if (permission.isGranted) {
-      // Fetch location
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      Fluttertoast.showToast(
-          msg:
-              'Location: LAT: ${position.latitude}, LNG: ${position.longitude}');
-    } else if (permission.isDenied || permission.isPermanentlyDenied) {
-      Fluttertoast.showToast(msg: 'Location permission denied.');
-    }
   }
 }

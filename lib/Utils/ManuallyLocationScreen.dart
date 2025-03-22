@@ -2,11 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../common/app_colors.dart';
+import '../data/model/apiresponsemodel/StatesResponseData.dart';
+import '../data/network/BaseApiService.dart';
 import 'LocationService.dart';
-import 'MyHomePageScreen.dart';
+import 'NearByCenterScreen.dart';
 
 
 class SearchBarScreen extends StatefulWidget {
@@ -18,52 +19,76 @@ class SearchBarScreen extends StatefulWidget {
 
 class _SearchBarScreenState extends State<SearchBarScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> cities = [
-    'Gurgaon',
-    'New Delhi',
-    'Bangalore',
-    'Hyderabad',
-    'Mumbai',
-    'Pune',
-    'Kolkata'
-  ];
-  List<String> filteredCities = [];
+  List<Data> allCities = []; // Holds all cities fetched from the API
+  List<Data> filteredCities = []; // Holds filtered cities
 
-  Map<String, IconData> cityIcons = {
-    'Gurgaon': Icons.location_city,
-    'New Delhi': Icons.account_balance,
-    'Bangalore': Icons.business,
-    'Hyderabad': Icons.home,
-    'Mumbai': Icons.apartment,
-    'Pune': Icons.local_hospital,
-    'Kolkata': Icons.school,
-  };
+
 
   @override
   void initState() {
     super.initState();
-    filteredCities = cities;
-    _searchController.addListener(() {
-      filterCities();
-    });
+    //_getCurrentLocation();
+    _searchController
+        .addListener(_filterCities); // Listen for changes in the search bar
+    _fetchCities(); // Fetch the cities from API
   }
 
-  void filterCities() {
-    List<String> results = [];
-    if (_searchController.text.isEmpty) {
-      results = cities;
-    } else {
-      results = cities
-          .where((city) =>
-              city.toLowerCase().contains(_searchController.text.toLowerCase()))
-          .toList();
-    }
-    setState(() {
-      filteredCities = results;
-    });
-  }
-
+  String currentLocation = 'Unknown location';
   final LocationService _locationService = LocationService();
+
+  void _getCurrentLocation() async {
+    try {
+      Position position = await _locationService.getCurrentLocation();
+      String cityAndPincode =
+          await _locationService.getCityAndPincode(position);
+      setState(() {
+        currentLocation = cityAndPincode;
+      });
+    } catch (e) {
+      setState(() {
+        currentLocation = 'Failed to get location';
+      });
+      Fluttertoast.showToast(msg: 'Failed to get location: ${e.toString()}');
+    }
+  }
+
+  // Fetch cities from API
+  Future<void> _fetchCities() async {
+    try {
+      final statesResponse = await BaseApiService().getStatesData();
+      setState(() {
+        allCities = statesResponse.data!;
+        filteredCities = allCities; // Initially, show all cities
+      });
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Failed to fetch cities: ${e.toString()}');
+    }
+  }
+
+
+  // Filter cities based on search input
+  void _filterCities() {
+    String query = _searchController.text.toLowerCase();
+
+    setState(() {
+      filteredCities = allCities
+          .where((city) =>
+              city.state!.toLowerCase().contains(query) ||
+              city.pincode!.toLowerCase().contains(query))
+          .toList();
+    });
+  }
+  late String cityName;
+  late String pinCode;
+
+  _incrementCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      prefs.setString('cityName',cityName.toString(), );
+      prefs.setString('pinCode',pinCode.toString());
+
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +135,7 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
                 ),
                 child: Row(
                   children: [
-                     Icon(Icons.location_on,
+                    const Icon(Icons.location_on,
                         size: 20, color: AppColors.primaryColor),
                     const SizedBox(width: 8),
                     Expanded(
@@ -140,7 +165,7 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
                       onPressed: () {
                         _searchController.clear();
                       },
-                      padding: EdgeInsets.all(0),
+                      padding: const EdgeInsets.all(0),
                       // Remove additional padding
                     ),
                   ],
@@ -158,17 +183,53 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
                   thickness: 0.2,
                   color: Colors.grey,
                 ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 15, top: 15),
+                  child: Text(
+                    'Your current location: $currentLocation',
+                    style: const TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Divider(
+                  height: 10,
+                  thickness: 0.2,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 10),
+                const Divider(
+                  height: 10,
+                  thickness: 0.2,
+                  color: Colors.grey,
+                ),
                 GestureDetector(
                   onTap: () async {
                     try {
-                      Position position =
-                          await _locationService.getCurrentLocation();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Location: ${position.latitude}, ${position.longitude}'),
+                      Position position = await _locationService.getCurrentLocation();
+                      String cityAndPincode = await _locationService.getCityAndPincode(position);
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      await prefs.setString('saved_location', cityAndPincode);
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) =>
+                              const NearByCenterScreen(), // Your target screen
                         ),
                       );
+
+                      Fluttertoast.showToast(msg: 'Location: $cityAndPincode');
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -176,7 +237,6 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
                         ),
                       );
                     }
-                    Fluttertoast.showToast(msg: 'Click');
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(left: 15, top: 15),
@@ -200,7 +260,7 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
                         ),
                         const SizedBox(width: 20),
                         const Text(
-                          'Use your current location',
+                          'Use my current location',
                           style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 16,
@@ -221,73 +281,87 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
               ],
             ),
           ),
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.only(left: 15, top: 15),
-              child: Text(
-                'Cities',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontFamily: 'FontPoppins',
-                  fontWeight: FontWeight.w600,
-                ),
+              padding: const EdgeInsets.only(left: 15, top: 15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Cities',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontFamily: 'FontPoppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 400,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      physics: const ScrollPhysics(),
+                      itemCount: filteredCities.length,
+                      scrollDirection: Axis.vertical,
+                      itemBuilder: (context, index1) {
+                        String stateName =
+                            filteredCities[index1].state.toString();
+                        String capitalizedStateName =
+                            stateName[0].toUpperCase() +
+                                stateName.substring(1).toLowerCase();
+
+                        return InkWell(
+                          onTap: () {
+                             cityName = filteredCities[index1].state.toString();
+                             pinCode = filteredCities[index1].pincode.toString();
+                             _incrementCounter();
+                             Navigator.pop(context);
+                            /* Navigator.push(
+                               context,
+                               CupertinoPageRoute(
+                                   builder: (context) => const HomePage(initialIndex: 0)),
+                             );*/
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.location_city,
+                                        color: AppColors.primaryDark),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        capitalizedStateName,
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 10),
+                                      child: Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Colors.grey,
+                                        size: 18,
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                String city = filteredCities[index];
-                return ListTile(
-                  leading: Icon(
-                    cityIcons[city] ?? Icons.location_city,
-                    color: AppColors.primaryColor,
-                  ),
-                  title: Text(
-                    city,
-                    style: const TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.grey,
-                    size: 18,
-                  ),
-                  onTap: () {
-                    /* Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                          builder: (context) => const HomePage(initialIndex: 0)),
-                    );*/
-
-                    String city = filteredCities[index];
-                    // You should map the city to its coordinates. Assuming you have this data.
-                    Map<String, LatLng> cityCoordinates = {
-                      'Gurgaon': LatLng(28.4595, 77.0266),
-                      'New Delhi': LatLng(28.6139, 77.2090),
-                      'Bangalore': LatLng(12.9716, 77.5946),
-                      'Hyderabad': LatLng(17.3850, 78.4867),
-                      'Mumbai': LatLng(19.0760, 72.8777),
-                      'Pune': LatLng(18.5204, 73.8567),
-                      'Kolkata': LatLng(22.5726, 88.3639),
-                    };
-
-                    Navigator.push(
-                      context,
-                      CupertinoPageRoute(
-                        builder: (context) => HomePage(initialIndex: 0),
-                      ),
-                    );
-                    Fluttertoast.showToast(
-                      msg: 'Clicked on $city',
-                    );
-                  },
-                );
-              },
-              childCount: filteredCities.length,
             ),
           ),
         ],

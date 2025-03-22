@@ -5,6 +5,7 @@ class MedicineModel {
   final String time;
   final String schedule;
 
+
   MedicineModel({
     this.id,
     required this.name,

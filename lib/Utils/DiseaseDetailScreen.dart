@@ -1,12 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:saaoldemo/data/model/apiresponsemodel/DiseaseResponseData.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
 import 'AppointmentsScreen.dart';
 
 class DiseaseDetailScreen extends StatefulWidget {
-  const DiseaseDetailScreen({super.key});
+  final Data data;
+  const DiseaseDetailScreen({super.key, required this.data});
 
   @override
   State<DiseaseDetailScreen> createState() => _DiseaseDetailScreenState();
@@ -25,19 +27,23 @@ class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+    double padding = screenWidth * 0.05;
+
     return Scaffold(
         appBar: AppBar(
           backgroundColor: AppColors.primaryColor,
-          title: const Text(
-            'Angina',
+          title: Text(
+            widget.data.title.toString(),
             style: TextStyle(
                 fontFamily: 'FontPoppins',
-                fontSize: 18,
+                fontSize: screenWidth * 0.05,
                 fontWeight: FontWeight.w600,
                 color: Colors.white),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
             onPressed: () => Navigator.of(context).pop(),
           ),
           centerTitle: true,
@@ -46,21 +52,21 @@ class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
           children: [
             SingleChildScrollView(
               child: Container(
-                margin: const EdgeInsets.all(15),
+                margin: EdgeInsets.all(padding),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const Text(
-                      'What Conditions Can EECP Therapy Treat?',
+                    Text(
+                      'What is coronary artery disease?',
                       style: TextStyle(
-                          fontSize: 17,
+                          fontSize: screenWidth * 0.045,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w600,
                           color: AppColors.primaryColor),
                     ),
-                    const SizedBox(
-                      height: 15,
+                    SizedBox(
+                      height: screenHeight * 0.02,
                     ),
                     Card(
                       shape: RoundedRectangleBorder(
@@ -74,179 +80,176 @@ class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(10),
+                          padding: EdgeInsets.all(padding),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
-                                child: const Image(
-                                  image: AssetImage(
-                                      'assets/images/angina_image.png'),
+                                child: Image(
+                                  image: NetworkImage(widget.data.image.toString()),
                                   fit: BoxFit.cover,
                                   width: double.infinity,
-                                  height: 150,
+                                  height: screenHeight * 0.2,
                                 ),
                               ),
-                              const SizedBox(
-                                height: 10,
+                              SizedBox(
+                                height: screenHeight * 0.01,
                               ),
-                              const Text(
-                                'Angina',
+                              Text(
+                                widget.data.title.toString(),
                                 style: TextStyle(
-                                    fontSize: 16,
+                                    fontSize: screenWidth * 0.045,
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w600,
                                     color: Colors.black),
                               ),
-                              const SizedBox(height: 10),
+                              SizedBox(height: screenHeight * 0.01),
                               Text(
-                                textAlign: TextAlign.justify,
-                                anginaTxt,
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87),
+                                widget.data.description.toString(),
+                                textAlign: TextAlign.start, // Changed from justify to start
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.035, // Responsive font size
+                                  fontFamily: 'FontPoppins',
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Why Choose SAAOL for EECP Treatment in Aligarh?',
+                    SizedBox(height: screenHeight * 0.01),
+                    Text(
+                      'What are the symptoms of coronary artery disease?',
                       style: TextStyle(
-                          fontSize: 16,
+                          fontSize: screenWidth * 0.045,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w600,
                           color: AppColors.primaryColor),
                     ),
-                    const SizedBox(
-                      height: 10,
+                    SizedBox(
+                      height: screenHeight * 0.01,
                     ),
-                    const Text(
-                      textAlign: TextAlign.justify,
-                      "Choosing SAAOL Heart Center for EECP Treatment in Aligarh means opting for excellence, compassion, and tangible results. Here's why our heart center stands out from the rest:",
+                    Text(
+                      chooseSaaolTxt, // The text to display
+                      textAlign: TextAlign.justify, // Align to start (left)
                       style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87),
-                    ),
-                    const SizedBox(
-                      height: 10,
+                        fontSize: screenWidth * 0.035, // Responsive font size
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                        letterSpacing:0.2,
+                        height: 1.5, // Line height for better readability
+                      ),
                     ),
                     SizedBox(
-                      height: 160,
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: treatmentArray.length,
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (context, index) {
-                          return InkWell(
-                            onTap: () {},
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 5),
-                              child: Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                elevation: 2,
-                                child: Container(
-                                  height: 150,
-                                  width: 350,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
+                      height: screenHeight * 0.01,
+                    ),
+                    SizedBox(
+                      height: screenHeight * 0.2,
+                      child: SizedBox(
+                        height: 160,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: treatmentArray.length,
+                          scrollDirection: Axis.horizontal,
+                          itemBuilder: (context, index) {
+                            return InkWell(
+                              onTap: () {},
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 5),
+                                child: Card(
+                                  shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: const Image(
-                                            image: AssetImage(
-                                              'assets/icons/leader.png',
+                                  elevation: 2,
+                                  child: Container(
+                                    height: 150,
+                                    width: 320,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: const Image(
+                                              image: AssetImage(
+                                                'assets/icons/leader.png',
+                                              ),
+                                              fit: BoxFit.cover,
+                                              width: 55,
+                                              height: 55,
                                             ),
-                                            fit: BoxFit.cover,
-                                            width: 55,
-                                            height: 55,
                                           ),
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                treatmentArray[index],
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontFamily: 'FontPoppins',
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.black,
-                                                ),
-                                                maxLines: 1,
-                                                // Optional: Limit the title to 1 line
-                                                overflow: TextOverflow
-                                                    .ellipsis, // Add ellipsis for overflow
-                                              ),
-                                              const SizedBox(height: 5),
-                                              const Flexible(
-                                                child: Text(
-                                                  'Our team comprises seasoned professionals dedicated to your heart health. With years of experience and expertise, we deliver top-notch care and innovative treatments.',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  treatmentArray[index],
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
                                                     fontFamily: 'FontPoppins',
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.black87,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.black,
                                                   ),
-                                                  maxLines: 6,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  softWrap:
-                                                      true, // Allow text to wrap
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
-                                              ),
-                                            ],
+                                                const SizedBox(height: 5),
+                                                const Flexible(
+                                                  child: Text(
+                                                    textAlign: TextAlign.start,
+                                                    'Our team comprises seasoned professionals dedicated to your heart health. With years of experience and expertise, we deliver top-notch care and innovative treatments.',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontFamily: 'FontPoppins',
+                                                      fontWeight: FontWeight.w500,
+                                                      color: Colors.black87,
+                                                    ),
+                                                    maxLines: 5, // Adjust maxLines to prevent overflow
+                                                    overflow: TextOverflow.ellipsis, // Ensure long text doesn't overflow
+                                                    softWrap: true, // Allow text to wrap
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 10,
+                    SizedBox(
+                      height: screenHeight * 0.02,
                     ),
-                    const Text(
-                      ecpTxt,
+                    Text(
+                      anginaTxt,
                       style: TextStyle(
-                          fontSize: 14,
+                          fontSize: screenWidth * 0.035,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w500,
                           color: Colors.black87),
                     ),
-                    const SizedBox(
-                      height: 50,
+                    SizedBox(
+                      height: screenHeight * 0.05,
                     ),
                     SizedBox(
                       height: 45,
@@ -257,7 +260,7 @@ class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
                             context,
                             CupertinoPageRoute(
                                 builder: (context) =>
-                                    const MyAppointmentsScreen()),
+                                const MyAppointmentsScreen()),
                           );
                           Fluttertoast.showToast(msg: 'Book');
                         },
@@ -267,11 +270,11 @@ class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Book Appointment',
                           style: TextStyle(
                               fontFamily: 'FontPoppins',
-                              fontSize: 15,
+                              fontSize: screenWidth * 0.04,
                               fontWeight: FontWeight.w600,
                               color: Colors.white),
                         ),
@@ -282,8 +285,8 @@ class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
               ),
             ),
             Positioned(
-              bottom: 100,
-              right: 20,
+              bottom: screenHeight * 0.1,
+              right: screenWidth * 0.05,
               child: Container(
                 height: 50,
                 width: 50,

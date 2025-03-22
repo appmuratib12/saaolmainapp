@@ -16,10 +16,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   bool checkedValue = true;
   bool _isCodeSent = false;
   String _otpCode = '';
+  String? _errorText;
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
         body: Stack(
       children: [
@@ -31,7 +31,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                 colors: [AppColors.primaryColor, AppColors.primaryColor]),
           ),
           child: Padding(
-            padding: EdgeInsets.only(top: 50.0, left: 22),
+            padding: const EdgeInsets.only(top: 50.0, left: 22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -191,6 +191,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         onCodeChanged: (code) {
                           setState(() {
                             _otpCode = code ?? '';
+                            _errorText = null;
                           });
                         },
                         currentCode: _otpCode,
@@ -209,6 +210,19 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                           ),
                         ),
                       ),
+                      if (_errorText !=
+                          null) // Display error message if it exists
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            _errorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                              fontFamily: 'FontPoppins',
+                            ),
+                          ),
+                        ),
                       const SizedBox(
                         height: 30,
                       ),
@@ -217,7 +231,14 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         width: MediaQuery.of(context).size.width,
                         child: ElevatedButton(
                           onPressed: () {
-                            Fluttertoast.showToast(msg: 'Verify');
+                            setState(() {
+                              if (_otpCode.length == 6) {
+                                Fluttertoast.showToast(msg: 'OTP Verified');
+                                _errorText = null; // Clear any error
+                              } else {
+                                _errorText = 'Please enter a 6-digit OTP'; // Set error message
+                              }
+                            });
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryColor,
@@ -230,10 +251,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                           child: const Text(
                             'Verify OTP',
                             style: TextStyle(
-                                fontSize: 18,
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
+                              fontSize: 18,
+                              fontFamily: 'FontPoppins',
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),

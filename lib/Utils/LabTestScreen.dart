@@ -1,7 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:saaoldemo/Utils/UploadPrescriptionScreen.dart';
+import 'package:saaoldemo/data/model/apiresponsemodel/CRMLabTestResponse.dart';
+import 'package:saaoldemo/data/network/BaseApiService.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../common/app_colors.dart';
+
 
 
 class LabTestScreen extends StatefulWidget {
@@ -14,21 +19,22 @@ class LabTestScreen extends StatefulWidget {
 class _LabTestScreenState extends State<LabTestScreen> {
   List<String> labTestArray = [
     "KFT with Uric Acid",
-    "KFT with Uric Acid",
-    "KFT with Uric Acid",
-    "KFT with Uric Acid",
-    "KFT with Uric Acid",
+    "LFT",
+    "Serum Electrolyte",
+    "Troponin -T",
+    "Troponin -I",
+    "Cardiac marker(CPK)",
+    "Cardiac marker(CKMB)",
+    "Cardiac marker(HOMOCYSTEINE)",
+    "CRP",
   ];
 
   int cartCount = 0;
   double cartTotal = 0;
-
-  // Dummy prices for each item
-  List<double> prices = [299, 299, 299, 299, 299];
-
-  // Track which items are in the cart
   List<bool> inCart = [false, false, false, false, false];
   List<int> addedItems = [];
+  late double price;
+
 
   // To simulate making a phone call
   _makingPhoneCall() async {
@@ -40,12 +46,24 @@ class _LabTestScreenState extends State<LabTestScreen> {
     }
   }
 
-  void addToCart(int index) {
+
+  void sendWhatsAppMessage(String message) async {
+    String phoneNumber = "9068544483"; // Add the recipient's phone number (without '+').
+    var whatsappUrl = "https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}";
+    if (await canLaunch(whatsappUrl)) {
+      await launch(whatsappUrl);
+    } else {
+      throw 'Could not launch WhatsApp';
+    }
+  }
+
+
+  void addToCart(int index, double price) {
     setState(() {
       if (!addedItems.contains(index)) {
         addedItems.add(index);
         cartCount += 1;
-        cartTotal += prices[index];
+        cartTotal += price;
       }
     });
     Fluttertoast.showToast(msg: "Item added to cart");
@@ -60,11 +78,11 @@ class _LabTestScreenState extends State<LabTestScreen> {
     Fluttertoast.showToast(msg: "Item added to cart");
   }*/
 
-  void removeFromCart(int index) {
+  void removeFromCart(int index, double price) {
     setState(() {
       addedItems.remove(index);
       cartCount -= 1;
-      cartTotal -= prices[index];
+      cartTotal -= price;
     });
     Fluttertoast.showToast(msg: "Item removed from cart");
   }
@@ -78,6 +96,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
     Fluttertoast.showToast(msg: "Item removed from cart");
   }*/
 
+  
   void showCart() {
     showModalBottomSheet(
       context: context,
@@ -156,7 +175,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
                             ),
                             onPressed: () {
                               setState(() {
-                                removeFromCart(itemIndex);
+                                removeFromCart(itemIndex, price);
                               });
                             },
                           ),
@@ -183,6 +202,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -195,7 +215,7 @@ class _LabTestScreenState extends State<LabTestScreen> {
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -256,290 +276,475 @@ class _LabTestScreenState extends State<LabTestScreen> {
                         color: Colors.black),
                   ),
                   const SizedBox(
-                    height: 15,
+                    height:10,
                   ),
                   Container(
                     height: 60,
-                    width: MediaQuery.of(context).size.width,
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Image(
-                            image:
-                                AssetImage('assets/images/female_dcotor.png'),
+                          Image(
+                            image: AssetImage('assets/images/female_dcotor.png'),
                             width: 40,
                             height: 40,
                             fit: BoxFit.cover,
                           ),
-                          const SizedBox(
-                            width: 10,
-                          ),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Not sure which test to book?',
-                                style: TextStyle(
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Not sure which test to book?',
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black87),
-                              ),
-                              Text(
-                                'Free Online Consult with Doctors',
-                                style: TextStyle(
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                Text(
+                                  'Free Online Consult with Doctors',
+                                  style: TextStyle(
                                     fontSize: 15,
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryColor),
-                              )
-                            ],
+                                    color: AppColors.primaryColor,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
                           ),
-                          Expanded(child: Container()),
-                          const Icon(
+                          SizedBox(width: 8),
+                          Icon(
                             Icons.arrow_circle_right,
                             color: AppColors.primaryDark,
                             size: 20,
-                          )
+                          ),
                         ],
                       ),
                     ),
                   ),
+
                   const SizedBox(
-                    height: 15,
+                    height:10,
                   ),
-                  SizedBox(
-                    height: 800,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: labTestArray.length,
-                      scrollDirection: Axis.vertical,
-                      itemBuilder: (context, index) {
-                        bool isInCart = addedItems.contains(index);
-                        return InkWell(
-                          onTap: () {
-                            Fluttertoast.showToast(msg: 'Click');
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5),
-                            child: Container(
-                              padding: const EdgeInsets.all(15),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.grey.withOpacity(0.4),
-                                  width: 0.4,
+
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(thickness: 1, color: Colors.grey.shade300),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              "OR YOU CAN ORDER VIA",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'FontPoppins',
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(thickness: 1, color: Colors.grey.shade300),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            // WhatsApp Button
+                            OutlinedButton.icon(
+                              icon: const Icon(
+                                Icons.call,
+                                color: AppColors.primaryDark,
+                                size: 20,
+                              ),
+                              label: const Text(
+                                "WhatsApp",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              height: 200,
-                              width: double.infinity,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                              onPressed: () {
+                                sendWhatsAppMessage("Hello, I would like to place an order.");
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                            ),
+
+                            // Prescription Button
+                            OutlinedButton.icon(
+                              icon: const Icon(
+                                Icons.camera_alt,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                              label: const Text(
+                                "Prescription",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  CupertinoPageRoute(
+                                      builder: (context) =>
+                                      const UploadPrescriptionScreen()),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                            ),
+
+                            // Call Button
+                            OutlinedButton.icon(
+                              icon: const Icon(
+                                Icons.phone,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                              label: const Text(
+                                "Call",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              onPressed: () {},
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  FutureBuilder<CRMLabTestResponse>(
+                    future: BaseApiService().getLabTestRecord(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        snapshot.data!.data!.sort((a, b) => a.testName.toString().compareTo(b.testName.toString()));
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: snapshot.data!.data!.length,
+                          scrollDirection: Axis.vertical,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            bool isInCart = addedItems.contains(index);
+                            double price;
+
+                            try {
+                              price = double.parse(snapshot.data!.data![index].totalPrice.toString());
+                            } catch (e) {
+                              price = 0.0;
+                            }
+
+                            return InkWell(
+                              onTap: () {},
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 5),
+                                child: Container(
+                                  padding: const EdgeInsets.all(15),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.grey.withOpacity(0.4),
+                                      width: 0.4,
+                                    ),
+                                  ),
+                                  height: 210,
+                                  width: double.infinity,
+                                  child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.asset(
-                                          'assets/images/lab_test.jpg',
-                                          height: 60,
-                                          width: 60,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              labTestArray[index],
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontFamily: 'FontPoppins',
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.black87,
-                                              ),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Image.asset('assets/images/lab_test.jpg'
+                                                  .toString(),
+                                              height: 60,
+                                              width: 60,
+                                              fit: BoxFit.cover,
                                             ),
-                                            const SizedBox(height: 5),
-                                            RichText(
-                                              text: const TextSpan(
-                                                children: [
-                                                  TextSpan(
-                                                    text: '₹299 ',
-                                                    style: TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 20,
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  snapshot
+                                                      .data!.data![index].testName
+                                                      .toString(),
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontFamily: 'FontPoppins',
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black87,
                                                   ),
-                                                  TextSpan(
-                                                    text: '₹399 ',
-                                                    style: TextStyle(
-                                                      color: Colors.grey,
-                                                      fontSize: 15,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      fontFamily: 'FontPoppins',
-                                                      decoration: TextDecoration
-                                                          .lineThrough,
-                                                    ),
-                                                  ),
-                                                  TextSpan(
-                                                    text: '25% OFF',
-                                                    style: TextStyle(
-                                                      color: Colors.red,
-                                                      fontSize: 15,
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(height: 5),
-                                            Align(
-                                              alignment: Alignment.centerRight,
-                                              child: SizedBox(
-                                                height: 37,
-                                                child: isInCart
-                                                    ? ElevatedButton.icon(
-                                                        onPressed: () {
-                                                          removeFromCart(index);
-                                                        },
-                                                        style: ElevatedButton
-                                                            .styleFrom(
-                                                                backgroundColor:
-                                                                    Colors
-                                                                        .white,
-                                                                shape:
-                                                                    RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              8),
-                                                                ),
-                                                                side: const BorderSide(
-                                                                    color: AppColors
-                                                                        .primaryColor,
-                                                                    width:
-                                                                        0.4)),
-                                                        icon: const Icon(
-                                                          Icons.close,
-                                                          color: AppColors
-                                                              .primaryDark,
-                                                          size: 20,
-                                                        ),
-                                                        label: const Text(
-                                                          'Remove',
-                                                          style: TextStyle(
-                                                            fontSize: 15,
-                                                            fontFamily:
-                                                                'FontPoppins',
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color: AppColors
-                                                                .primaryColor,
-                                                          ),
-                                                        ),
-                                                      )
-                                                    : ElevatedButton(
-                                                        onPressed: () {
-                                                          addToCart(index);
-                                                        },
-                                                        style: ElevatedButton
-                                                            .styleFrom(
-                                                          backgroundColor:
-                                                              AppColors
-                                                                  .primaryDark,
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                        ),
-                                                        child: const Text(
-                                                          'Add',
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            fontFamily:
-                                                                'FontPoppins',
-                                                            fontWeight:
-                                                                FontWeight.w600,
-                                                            color: Colors.white,
-                                                          ),
+                                                ),
+                                                const SizedBox(height: 5),
+                                                RichText(
+                                                  text: TextSpan(
+                                                    children: [
+                                                      TextSpan(
+                                                        text:
+                                                            '₹${price.toStringAsFixed(2)}',
+                                                        style: const TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 20,
+                                                          fontFamily:
+                                                              'FontPoppins',
+                                                          fontWeight:
+                                                              FontWeight.w600,
                                                         ),
                                                       ),
+                                                      const TextSpan(
+                                                        text: '₹399 ',
+                                                        style: TextStyle(
+                                                          color: Colors.grey,
+                                                          fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                          fontFamily:
+                                                              'FontPoppins',
+                                                          decoration:
+                                                              TextDecoration
+                                                                  .lineThrough,
+                                                        ),
+                                                      ),
+                                                      const TextSpan(
+                                                        text: '25% OFF',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
+                                                          fontSize: 15,
+                                                          fontFamily:
+                                                              'FontPoppins',
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 5),
+                                                Align(
+                                                  alignment:
+                                                      Alignment.centerRight,
+                                                  child: SizedBox(
+                                                    height: 37,
+                                                    child: isInCart
+                                                        ? ElevatedButton.icon(
+                                                            onPressed: () {
+                                                              removeFromCart(
+                                                                  index, price);
+                                                            },
+                                                            style:
+                                                                ElevatedButton
+                                                                    .styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.white,
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
+                                                              ),
+                                                              side:
+                                                                  const BorderSide(
+                                                                color: AppColors
+                                                                    .primaryColor,
+                                                                width: 0.4,
+                                                              ),
+                                                            ),
+                                                            icon: const Icon(
+                                                              Icons.close,
+                                                              color: AppColors
+                                                                  .primaryDark,
+                                                              size: 20,
+                                                            ),
+                                                            label: const Text(
+                                                              'Remove',
+                                                              style: TextStyle(
+                                                                fontSize: 15,
+                                                                fontFamily:
+                                                                    'FontPoppins',
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: AppColors
+                                                                    .primaryColor,
+                                                              ),
+                                                            ),
+                                                          )
+                                                        : ElevatedButton(
+                                                            onPressed: () {
+                                                              addToCart(
+                                                                  index, price);
+                                                            },
+                                                            style:
+                                                                ElevatedButton
+                                                                    .styleFrom(
+                                                              backgroundColor:
+                                                                  AppColors
+                                                                      .primaryDark,
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            8),
+                                                              ),
+                                                            ),
+                                                            child: const Text(
+                                                              'Add',
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                                fontFamily:
+                                                                    'FontPoppins',
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600,
+                                                                color: Colors
+                                                                    .white,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const Divider(
+                                        height: 30,
+                                        thickness: 1,
+                                      ),
+                                      const Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceAround,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(Icons.fastfood,
+                                                  color: Colors.grey),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                'Fasting required',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(
-                                    height: 30,
-                                    thickness: 1,
-                                  ),
-                                  const Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceAround,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(Icons.fastfood,
-                                              color: Colors.grey),
-                                          SizedBox(width: 5),
-                                          Text(
-                                            'Fasting required',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontFamily: 'FontPoppins',
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black87,
-                                            ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.list_alt,
-                                              color: Colors.grey),
-                                          SizedBox(width: 5),
-                                          Text(
-                                            'Reports in 15 Hrs',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontFamily: 'FontPoppins',
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black87,
-                                            ),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.list_alt,
+                                                  color: Colors.grey),
+                                              SizedBox(width: 5),
+                                              Text(
+                                                "Report in 24 hours",
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      } else if (snapshot.hasError) {
+                        return Text('Error: ${snapshot.error}');
+                      } else {
+                        return Center(
+                          child: Container(
+                            width: 60, // Set custom width
+                            height:60, // Set custom height
+                            decoration: BoxDecoration(
+                              color:AppColors.primaryColor.withOpacity(0.1), // Background color for the progress indicator
+                              borderRadius: BorderRadius.circular(30), // Rounded corners
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryColor, // Custom color
+                                strokeWidth:6, // Set custom stroke width
                               ),
                             ),
                           ),
                         );
-                      },
-                    ),
+                      }
+                    },
+                  ),
+                  const SizedBox(
+                    height: 50,
                   ),
                 ],
               ),

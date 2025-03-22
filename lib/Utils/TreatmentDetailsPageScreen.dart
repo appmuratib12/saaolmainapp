@@ -1,13 +1,18 @@
-import 'package:expandable/expandable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:saaoldemo/Utils/AppointmentsScreen.dart';
+import 'package:saaoldemo/data/network/BaseApiService.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
-import 'AppointmentBookScreen.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import '../data/model/apiresponsemodel/TreatmentsDetailResponseData.dart';
+
 
 class TreatmentDetailsPageScreen extends StatefulWidget {
-  const TreatmentDetailsPageScreen({super.key});
+  final String id;
+  const TreatmentDetailsPageScreen({super.key,required this.id});
 
   @override
   State<TreatmentDetailsPageScreen> createState() =>
@@ -16,7 +21,6 @@ class TreatmentDetailsPageScreen extends StatefulWidget {
 
 class _TreatmentDetailsPageScreenState
     extends State<TreatmentDetailsPageScreen> {
-  //CarouselController carouselController = CarouselController();
   List treatmentImages = [
     "https://d3b6u46udi9ohd.cloudfront.net/wp-content/uploads/2022/09/29102307/shutterstock_2108038193.jpg",
     "https://www.mirakleihc.com/wellness_admin/resource/uploads/srcimg/1MYiNSWnzn23032024025902mirakle-eecp.jpeg",
@@ -63,11 +67,63 @@ class _TreatmentDetailsPageScreenState
     'Pureeing and Blending:',
     ''
   ];
+  CarouselController carouselController = CarouselController();
+
+
+  _makingPhoneCall() async {
+    var url = Uri.parse("tel:8447776000");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+
+  String extractDescription(String description) {
+    List<String> paragraphs = description.split('\r\n');
+    if (paragraphs.isNotEmpty) {
+      return paragraphs.first.trim();
+    }
+    return description;
+  }
+
+  List<Map<String, String>> extractAdvantageDetails(String advantage) {
+    List<Map<String, String>> advantageList = [];
+    List<String> sections =
+    advantage.split('\r\n\r\n'); // Split sections by double line breaks
+
+    for (String section in sections) {
+      List<String> titleAndDescription =
+      section.split(':'); // Split title and description by ':'
+      if (titleAndDescription.length == 2) {
+        String title = titleAndDescription[0].trim();
+        String description = titleAndDescription[1].trim();
+        advantageList.add({'title': title, 'description': description});
+      }
+    }
+    return advantageList;
+  }
+  List<Map<String, String>> extractDisadvantageDetails(String advantage) {
+    List<Map<String, String>> advantageList = [];
+    List<String> sections =
+    advantage.split('\r\n\r\n'); // Split sections by double line breaks
+
+    for (String section in sections) {
+      List<String> titleAndDescription =
+      section.split(':'); // Split title and description by ':'
+      if (titleAndDescription.length == 2) {
+        String title = titleAndDescription[0].trim();
+        String description = titleAndDescription[1].trim();
+        advantageList.add({'title': title, 'description': description});
+      }
+    }
+    return advantageList;
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    bool isExpanded = false;
-    final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
@@ -80,7 +136,7 @@ class _TreatmentDetailsPageScreenState
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -88,6 +144,7 @@ class _TreatmentDetailsPageScreenState
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+
           SizedBox(
             height: 260, // Adjust this height value as needed
             width: MediaQuery.of(context).size.width,
@@ -98,9 +155,8 @@ class _TreatmentDetailsPageScreenState
                 Stack(
                   alignment: Alignment.center,
                   children: [
-                   /* ClipRRect(
+                    ClipRRect(
                       child: CarouselSlider(
-                        carouselController: carouselController,
                         items: treatmentImages.map((imagePath) {
                           return SizedBox(
                             width: MediaQuery.of(context).size.width,
@@ -137,7 +193,7 @@ class _TreatmentDetailsPageScreenState
                           autoPlay: true,
                         ),
                       ),
-                    ),*/
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Row(
@@ -185,6 +241,7 @@ class _TreatmentDetailsPageScreenState
               ],
             ),
           ),
+
           Padding(
             padding: const EdgeInsets.only(top: 210.0),
             child: Container(
@@ -197,656 +254,310 @@ class _TreatmentDetailsPageScreenState
               ),
               height: double.infinity,
               width: double.infinity,
-              child: SingleChildScrollView(
-                physics: const ScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 10,
-                    ),
-                     const Padding(
-                      padding: EdgeInsets.all(15),
+              child:  FutureBuilder<TreatmentsDetailResponseData>(
+                future:BaseApiService().getTreatmentDetailsData(widget.id),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(
+                        child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return const Center(
+                      child: Text("Error loading data"),
+                    );
+                  } else if (snapshot.hasData) {
+                    String fullDescription = snapshot.data!.data!.description ?? '';
+                    String advantage = snapshot.data!.data!.advantage ?? '';
+                    String disadvantage = snapshot.data!.data!.disadvantge ?? '';
+                    List<Map<String, String>> advantageList = extractAdvantageDetails(advantage);
+                    List<Map<String, String>> disadvantageList = extractDisadvantageDetails(disadvantage);
+                    List<String> sections = fullDescription.split('\r\n');
+                    List<String> headings = [];
+                    List<String> contents = [];
+
+                    for (int i = 0; i < sections.length; i++) {
+                      if (i % 2 == 0) {
+                        headings.add(sections[i]);
+                      } else {
+                        contents.add(sections[i]);
+                      }
+                    }
+
+                    return SingleChildScrollView(
+                      physics: const ScrollPhysics(),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Text(
-                            'Revolutionizing Heart Health: EECP Treatment at SAAOL Heart Center',
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                color: AppColors.primaryColor),
-                          ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            aboutEECPTxt,
-                            textAlign: TextAlign.justify,
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 15,
-                                color: Colors.black54),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 8,
-                          )
-                        ],
-                      ),
-                    ),
-                    Divider(
-                      height: 15,
-                      thickness: 5,
-                      color: Colors.lightBlue[50],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Key advantages of EECP treatment',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                color: Colors.black),
-                          ),
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          Column(
-                            children: [
-                              _buildTimelineTile(
-                                icon: Icons.check_circle,
-                                title: 'Effective Cardiac Care',
-                                subTitle: advantageTxt1,
-                                isCompleted: true,
-                              ),
-                              _buildTimelineTile(
-                                icon: Icons.check_circle,
-                                title: 'Gentle Approach ',
-                                subTitle: advantageTxt2,
-                                isCompleted: true,
-                              ),
-                              _buildTimelineTile(
-                                icon: Icons.check_circle,
-                                title:
-                                    'Addressing Cardiac Blockages Naturally ',
-                                subTitle: advantageTxt3,
-                                isCompleted: true,
-                              ),
-                              _buildTimelineTile(
-                                icon: Icons.check_circle,
-                                title: 'Increased Vitality',
-                                subTitle: advantageTxt4,
-                                isCompleted: true,
-                              ),
-                              _buildTimelineTile(
-                                icon: Icons.check_circle,
-                                title: 'Refined Blood Circulation',
-                                subTitle: advantageTxt5,
-                                isCompleted: true,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    Divider(
-                      height: 15,
-                      thickness: 5,
-                      color: Colors.lightBlue[50],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Revolutionizing Heart Health: EECP Treatment at SAAOL Heart Center',
-                            textAlign: TextAlign.start,
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 18,
-                                color: AppColors.primaryColor),
-                          ),
                           const SizedBox(
                             height: 10,
                           ),
-                          const Text(
-                            therapyTxt,
-                            textAlign: TextAlign.justify,
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 15,
-                                color: Colors.black54),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 8,
-                          ),
-                          SizedBox(
-                            height: 470,
-                            child: ListView.builder(
-                              itemCount: items.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(15),
-                                        border: Border.all(
-                                            color: Colors.grey.withOpacity(0.3),
-                                            width: 0.3)),
-                                    child: ExpansionTile(
-                                      title: Text(
-                                        items[index]['title']!,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontFamily: 'FontPoppins',
-                                          fontSize: 16,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      children: <Widget>[
-                                        Padding(
-                                          padding: const EdgeInsets.all(16.0),
-                                          child: Text(
-                                            items[index]['description']!,
-                                            style: const TextStyle(
-                                                fontFamily: 'FontPoppins',
-                                                fontWeight: FontWeight.w500,
-                                                fontSize: 14,
-                                                color: Colors.black87),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Divider(
-                      height: 15,
-                      thickness: 5,
-                      color: Colors.lightBlue[50],
-                    ),
-                    Container(
-                      width: MediaQuery.of(context).size.width,
-                      color: Colors.blue[50],
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const Padding(
-                              padding: EdgeInsets.all(15),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Preparing for EECP Therapy: A Journey Towards Heart Wellness',
-                                    textAlign: TextAlign.start,
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 18,
-                                        color: AppColors.primaryColor),
-                                  ),
-                                  SizedBox(
-                                    height: 10,
-                                  ),
-                                  Text(
-                                    preparingEECPTxt,
-                                    textAlign: TextAlign.justify,
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 15,
-                                        color: Colors.black54),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 8,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            _buildSectionTitle(
-                                'Before EECP therapy: The Foundation for Best Heart Blockage Treatment'),
-                            _buildParagraph(preparingEECPTxt1),
-                            _buildParagraph(preparingEECPTxt2),
-                            _buildSectionTitle(
-                                'During EECP Therapy: The Heart’s Renewal'),
-                            _buildParagraph(preparingEECPTxt3),
-                            _buildParagraph(preparingEECPTxt4),
-                            _buildSectionTitle(
-                                'After EECP Therapy: Nurturing Heart Health Beyond the Sessions'),
-                            _buildParagraph(preparingEECPTxt5),
-                            _buildParagraph(preparingEECPTxt6),
-                          ]),
-                    ),
-                    Divider(
-                      height: 15,
-                      thickness: 5,
-                      color: Colors.lightBlue[50],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  'Mastering the Art of Zero-Oil Cooking: Creative Techniques and Recipes',
-                                  style: TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: AppColors.primaryColor,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              SizedBox(
-                                height: 10,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          ExpandableNotifier(
-                            child: ScrollOnExpand(
-                              child: Card(
-                                elevation: 4.0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(15.0),
-                                        topRight: Radius.circular(15.0),
-                                      ),
-                                      child: Image.asset(
-                                        'assets/icons/Steaming.jpg',
-                                        height: 140.0,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    ExpandablePanel(
-                                      theme: const ExpandableThemeData(
-                                        tapBodyToExpand: true,
-                                        tapBodyToCollapse: true,
-                                        hasIcon: true,
-                                      ),
-                                      header: const Padding(
-                                        padding: EdgeInsets.all(15.0),
-                                        child: Text(
-                                          'Steaming',
-                                          style: TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            color: AppColors.primaryColor,
-                                          ),
-                                        ),
-                                      ),
-                                      collapsed: Container(),
-                                      expanded: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 15.0, vertical: 5.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                      top: 5.0),
-                                                  height: 7,
-                                                  width: 7,
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        AppColors.primaryColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                const Flexible(
-                                                  child: Text(
-                                                    'Steaming is a fantastic way to preserve the natural flavors and nutrients in your food.',
-                                                    textAlign: TextAlign.start,
-                                                    style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontSize: 13,
-                                                      letterSpacing: 0.1,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Colors.black54,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 7),
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                      top: 5.0),
-                                                  height: 7,
-                                                  width: 7,
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        AppColors.primaryColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                const Flexible(
-                                                  child: Text(
-                                                    'Steaming is a fantastic way to preserve the natural flavors and nutrients in your food.',
-                                                    textAlign: TextAlign.start,
-                                                    style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontSize: 13,
-                                                      letterSpacing: 0.1,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Colors.black54,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 7),
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  margin: const EdgeInsets.only(
-                                                      top: 5.0),
-                                                  height: 7,
-                                                  width: 7,
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        AppColors.primaryColor,
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            30),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 10),
-                                                const Flexible(
-                                                  child: Text(
-                                                    'Steaming is a fantastic way to preserve the natural flavors and nutrients in your food.',
-                                                    textAlign: TextAlign.start,
-                                                    style: TextStyle(
-                                                      fontFamily: 'FontPoppins',
-                                                      fontSize: 13,
-                                                      letterSpacing: 0.1,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color: Colors.black54,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Divider(
-                      height: 15,
-                      thickness: 5,
-                      color: Colors.lightBlue[50],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Container(
-                        height: 340,
-                        width: MediaQuery.of(context).size.width,
-                        padding: const EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          color: AppColors.primaryColor,
-                        ),
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    'What are some healthy food recipes without Oil',
-                                    style: TextStyle(
-                                      fontFamily: 'FontPoppins',
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 10,
-                                ),
-                              ],
-                            ),
-                            SizedBox(
-                              height: 10,
-                            ),
-                            Text(
-                              healthyFoodTxt,
-                              textAlign: TextAlign.justify,
-                              style: TextStyle(
-                                  fontFamily: 'FontPoppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 14,
-                                  color: Colors.white),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(15),
-                      child: ExpandableNotifier(
-                        child: ScrollOnExpand(
-                          child: Card(
-                            elevation: 4.0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15.0),
-                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(15),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(15.0),
-                                    topRight: Radius.circular(15.0),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/icons/kurkuri.png',
-                                    height: 140.0,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                ExpandablePanel(
-                                  theme: const ExpandableThemeData(
-                                    tapBodyToExpand: true,
-                                    tapBodyToCollapse: true,
-                                    hasIcon: true,
-                                  ),
-                                  header: const Padding(
-                                    padding: EdgeInsets.all(15.0),
-                                    child: Text(
-                                      'Zero Oil Kurkuri Bhindi',
-                                      style: TextStyle(
+                              children: List.generate(headings.length, (index) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      headings[index],
+                                      style: const TextStyle(
                                         fontFamily: 'FontPoppins',
+                                        fontSize: 18,
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 16,
                                         color: AppColors.primaryColor,
                                       ),
                                     ),
-                                  ),
-                                  collapsed: Container(),
-                                  expanded: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 15.0, vertical: 5.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              margin: const EdgeInsets.only(
-                                                  top: 5.0),
-                                              height: 7,
-                                              width: 7,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primaryColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            const Flexible(
-                                              child: Text(
-                                                'Steaming is a fantastic way to preserve the natural flavors and nutrients in your food.',
-                                                textAlign: TextAlign.start,
-                                                style: TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontSize: 13,
-                                                  letterSpacing: 0.1,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 7),
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              margin: const EdgeInsets.only(
-                                                  top: 5.0),
-                                              height: 7,
-                                              width: 7,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primaryColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            const Flexible(
-                                              child: Text(
-                                                'Steaming is a fantastic way to preserve the natural flavors and nutrients in your food.',
-                                                textAlign: TextAlign.start,
-                                                style: TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontSize: 13,
-                                                  letterSpacing: 0.1,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 7),
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              margin: const EdgeInsets.only(
-                                                  top: 5.0),
-                                              height: 7,
-                                              width: 7,
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primaryColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            const Flexible(
-                                              child: Text(
-                                                'Steaming is a fantastic way to preserve the natural flavors and nutrients in your food.',
-                                                textAlign: TextAlign.start,
-                                                style: TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontSize: 13,
-                                                  letterSpacing: 0.1,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      contents.length > index ? contents[index] : '',
+                                      textAlign: TextAlign.justify,
+                                      style: const TextStyle(
+                                        fontFamily: 'FontPoppins',
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black54,
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 20), // Space between sections
+                                  ],
+                                );
+                              }),
+                            ),
+                          ),
+                          Divider(
+                            height: 15,
+                            thickness: 5,
+                            color: Colors.lightBlue[50],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Key advantages of EECP treatment',
+                                  style: TextStyle(
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                      color: Colors.black),
+                                ),
+                                const SizedBox(
+                                  height: 15,
+                                ),
+                                Column(
+                                  children: advantageList.map((advantage) {
+                                    return _buildTimelineTile(
+                                      icon: Icons.check_circle,
+                                      title: advantage['title'] ?? '',
+                                      subTitle:
+                                      advantage['description'] ?? '',
+                                      isCompleted: true,
+                                    );
+                                  }).toList(),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                          Divider(
+                            height: 15,
+                            thickness: 5,
+                            color: Colors.lightBlue[50],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'EECP Therapy: For Whom Does It Suit? Eligibility for EECP',
+                                  style: TextStyle(
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                      color: Colors.black),
+                                ),
+                                const SizedBox(
+                                  height: 15,
+                                ),
+                                Column(
+                                  children:
+                                  disadvantageList.map((advantage) {
+                                    return _buildTimelineTile(
+                                      icon: Icons.check_circle,
+                                      title: advantage['title'] ?? '',
+                                      subTitle:
+                                      advantage['description'] ?? '',
+                                      isCompleted: true,
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(
+                            height: 15,
+                            thickness: 5,
+                            color: Colors.lightBlue[50],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(15),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Revolutionizing Heart Health: EECP Treatment at SAAOL Heart Center',
+                                  textAlign: TextAlign.start,
+                                  style: TextStyle(
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 18,
+                                      color: AppColors.primaryColor),
+                                ),
+                                const SizedBox(
+                                  height: 10,
+                                ),
+                                const Text(
+                                  therapyTxt,
+                                  textAlign: TextAlign.justify,
+                                  style: TextStyle(
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
+                                      color: Colors.black54),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 8,
+                                ),
+                                ListView.builder(
+                                  itemCount: items.length,
+                                  physics:const NeverScrollableScrollPhysics(),
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                                  shrinkWrap: true,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      padding:
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(15),
+                                            border: Border.all(
+                                                color: Colors.grey.withOpacity(0.3),
+                                                width: 0.3)),
+                                        child: ExpansionTile(
+                                          title: Text(
+                                            items[index]['title']!,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontFamily: 'FontPoppins',
+                                              fontSize: 16,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                          children: <Widget>[
+                                            Padding(
+                                              padding: const EdgeInsets.all(16.0),
+                                              child: Text(
+                                                items[index]['description']!,
+                                                style: const TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontWeight: FontWeight.w500,
+                                                    fontSize: 14,
+                                                    color: Colors.black87),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(
+                            height: 15,
+                            thickness: 5,
+                            color: Colors.lightBlue[50],
+                          ),
+                          Container(
+                            width: MediaQuery.of(context).size.width,
+                            color: Colors.white,
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.all(15),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Preparing for EECP Therapy: A Journey Towards Heart Wellness',
+                                          textAlign: TextAlign.start,
+                                          style: TextStyle(
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 18,
+                                              color: AppColors.primaryColor),
+                                        ),
+                                        SizedBox(
+                                          height: 10,
+                                        ),
+                                        Text(
+                                          preparingEECPTxt,
+                                          textAlign: TextAlign.justify,
+                                          style: TextStyle(
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 15,
+                                              color: Colors.black54),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 8,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  _buildSectionTitle(
+                                      'Before EECP therapy: The Foundation for Best Heart Blockage Treatment'),
+                                  _buildParagraph(preparingEECPTxt1),
+                                  _buildParagraph(preparingEECPTxt2),
+                                  _buildSectionTitle(
+                                      'During EECP Therapy: The Heart’s Renewal'),
+                                  _buildParagraph(preparingEECPTxt3),
+                                  _buildParagraph(preparingEECPTxt4),
+                                  _buildSectionTitle(
+                                      'After EECP Therapy: Nurturing Heart Health Beyond the Sessions'),
+                                  _buildParagraph(preparingEECPTxt5),
+                                  _buildParagraph(preparingEECPTxt6),
+                                ]),
+                          ),
+                          Divider(
+                            height: 15,
+                            thickness: 5,
+                            color: Colors.lightBlue[50],
+                          ),
+                          const SizedBox(height:60,)
+                        ],
                       ),
-                    )
-                  ],
-                ),
+                    );
+                  }
+                  return const Center(child: Text("No data found"));
+                },
               ),
+
+
+
+
             ),
           ),
+
+
           Positioned(
             bottom: 0,
             left: 0,
@@ -873,7 +584,7 @@ class _TreatmentDetailsPageScreenState
                             context,
                             CupertinoPageRoute(
                                 builder: (context) =>
-                                    const AppointmentBookScreen()),
+                                    const MyAppointmentsScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -915,6 +626,7 @@ class _TreatmentDetailsPageScreenState
                   color: Colors.white,
                 ),
                 onPressed: () {
+                  _makingPhoneCall();
                   Fluttertoast.showToast(msg: 'Call');
                 },
               ),

@@ -1,221 +1,254 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../common/app_colors.dart';
+import '../data/model/NotificationData.dart';
+import '../responsemodel/NotificationDatabase.dart';
 
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('Background message received: ${message.notification?.title}');
+  if (message.notification != null) {
+    final notification = NotificationData(
+      title: message.notification?.title,
+      body: message.notification?.body,
+      imageUrl: message.notification?.android?.imageUrl,
+    );
+    await NotificationDatabase.instance.insertNotification(notification);
+  }
+}
+
+Future<void> initializeNotifications(BuildContext context) async {
+  const AndroidInitializationSettings androidSettings =
+  AndroidInitializationSettings('@mipmap/ic_launcher'); // App icon
+
+  const InitializationSettings initializationSettings =
+  InitializationSettings(android: androidSettings);
+
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) async {
+      if (response.payload != null) {
+        // Decode payload to extract notification data
+        final payloadParts = response.payload?.split('|');
+        if (payloadParts != null && payloadParts.length == 3) {
+          final notification = NotificationData(
+            title: payloadParts[0],
+            body: payloadParts[1],
+            imageUrl: payloadParts[2],
+          );
+          await NotificationDatabase.instance.insertNotification(notification);
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const NotificationScreen(),
+            ),
+          );
+        }
+      }
+    },
+  );
+}
+
+Future<void> showNotification({
+  String? title,
+  String? body,
+  String? imageUrl,
+}) async {
+  const AndroidNotificationDetails androidNotificationDetails =
+  AndroidNotificationDetails(
+    'channel_id', // Unique channel ID
+    'Channel Name', // Channel name for Android settings
+    channelDescription: 'This is a test channel', // Optional description
+    importance: Importance.max,
+    priority: Priority.high,
+  );
+
+  const NotificationDetails notificationDetails =
+  NotificationDetails(android: androidNotificationDetails);
+
+  final payload =
+      '${title ?? 'No Title'}|${body ?? 'No Body'}|${imageUrl ?? ''}';
+
+  await flutterLocalNotificationsPlugin.show(
+    0, // Notification ID
+    title ?? 'No Title', // Notification title
+    body ?? 'No Body', // Notification body
+    notificationDetails,
+    payload: payload, // Additional data
+  );
+}
+
+Future<void> setupFCM(BuildContext context) async {
+  await FirebaseMessaging.instance.requestPermission();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+    print('Foreground message received: ${message.notification?.title}');
+    if (message.notification != null) {
+      final notification = NotificationData(
+        title: message.notification?.title,
+        body: message.notification?.body,
+        imageUrl: message.notification?.android?.imageUrl,
+      );
+      await NotificationDatabase.instance.insertNotification(notification);
+      showNotification(
+        title: message.notification?.title,
+        body: message.notification?.body,
+        imageUrl: message.notification?.android?.imageUrl,
+      );
+    }
+  });
+  String? token = await FirebaseMessaging.instance.getToken();
+  print('FCM Token: $token');
+}
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  State<NotificationScreen> createState() => NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
-  List<String> notificationArray = ["Appointment Update","New Service Available","Reschedule Appointment"];
-  List<String> notificationArray2 = ["New Feature Available","Appointment Alarm","Appointment Confirmed"];
+class NotificationScreenState extends State<NotificationScreen> {
+  late Future<List<NotificationData>> _notifications;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifications = NotificationDatabase.instance.fetchNotifications();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Ensure setup is only called once
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setupFCM(context);
+      initializeNotifications(context);
+    });
+
     return Scaffold(
-      backgroundColor:Colors.white,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
-          'Notifications',
+          "Notification",
           style: TextStyle(
-              fontFamily: 'FontPoppins',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              letterSpacing:0.2,
-              color: Colors.white),
+            fontFamily: 'FontPoppins',
+            fontSize: 18,
+            letterSpacing: 0.2,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
       ),
-      body:  SingleChildScrollView(
-        physics: ScrollPhysics(),
-        child: Padding(
-          padding: EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Text('Today,August 20,2024',
-                style:TextStyle(fontSize:16,fontFamily:'FontPoppins',
-                  fontWeight:FontWeight.w600,color:Colors.black87),),
-              const SizedBox(height:20,),
-              SizedBox(
-                height:300,
-                child: ListView.builder(
-                  itemCount: notificationArray2.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding:
-                      const EdgeInsets.symmetric(vertical:5),
-                      child:Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            height:80,
-                            width: double.infinity,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height:55,
-                                  width: 55,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.primaryColor.withOpacity(0.1),
-                                  ),
-                                  child: const Icon(
-                                    Icons.notification_add,
-                                    color: AppColors.primaryColor,
-                                    size:25,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        notificationArray2[index],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4), // Added space between the texts
-                                      const Text(
-                                        'Your appointment will start after 15 minutes. Stay with the app and take care of it.',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  'Just now',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
+      body: FutureBuilder<List<NotificationData>>(
+        future: _notifications,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+                child: Text(
+                  'No notifications yet',
+                  style: TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 17,
+                      color: AppColors.primaryColor),
+                ));
+          } else {
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                final notification = snapshot.data![index];
+                return Card(
+                  color: Colors.white,
+                  margin:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Rounded corners
+                    side: BorderSide(
+                      // Adds a border
+                      color: Colors.grey.shade400, // Border color
+                      width: 1.0, // Border width
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (notification.imageUrl != null)
+                          Container(
+                            height: 50,
+                            width: 50,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.grey.shade200,
                             ),
-                          ),
-                          Divider(
-                            height:10,
-                            thickness:0.2,
-                            color:AppColors.primaryColor,
-                          )
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Text('Yesterday,August 18,2024',
-                style:TextStyle(fontSize:16,
-                  fontFamily:'FontPoppins',fontWeight:FontWeight.w600,color:Colors.black),),
-              const SizedBox(height:20,),
-              SizedBox(
-                height: 500,
-                child: ListView.builder(
-                  itemCount: notificationArray2.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding:
-                      const EdgeInsets.symmetric(vertical:5),
-                      child:Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            height:80,
-                            width: double.infinity,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height:55,
-                                  width: 55,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: AppColors.primaryColor.withOpacity(0.1),
-                                  ),
-                                  child: const Icon(
-                                    Icons.notification_add,
-                                    color: AppColors.primaryColor,
-                                    size:25,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        notificationArray2[index],
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4), // Added space between the texts
-                                      const Text(
-                                        'Your appointment will start after 15 minutes. Stay with the app and take care of it.',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  'Just now',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
+                            clipBehavior: Clip.hardEdge,
+                            child: Image.network(
+                              notification.imageUrl!,
+                              fit: BoxFit.cover,
                             ),
-                          ),
-                          Divider(
-                            height:10,
-                            thickness:0.2,
-                            color:AppColors.primaryColor,
                           )
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
+                        else
+                          const Icon(
+                            Icons.notifications,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                notification.title ?? 'No Title',
+                                style: const TextStyle(
+                                  fontFamily: 'FontPoppins',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: Colors.black,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                notification.body ?? 'No Body',
+                                style: const TextStyle(
+                                  fontFamily: 'FontPoppins',
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 13,
+                                  color: Colors.black54,
+                                ),
+                                softWrap: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+        },
       ),
     );
   }

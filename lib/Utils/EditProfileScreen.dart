@@ -1,9 +1,15 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_circular_progress_bar/simple_circular_progress_bar.dart';
+import 'package:saaoldemo/constant/ApiConstants.dart';
+import 'package:saaoldemo/constant/ValidationCons.dart';
 import '../common/app_colors.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
+
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -19,6 +25,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<String> countriesArray = ["India", "Bangladesh", "Nepal"];
   final List<String> genderOptions = ['Male', 'Female', 'Other'];
   List<String> titleArrays = ["Mrs.", "Mr.", "Ms", "Dr."];
+  late SharedPreferences sharedPreferences;
+  String getName = '';
+  String getEmail = '';
+  String getPhone = '';
+  String getPassword = '';
+  String getLastName = '';
+  bool _obscureText = true;
+  bool value = false;
+  bool checkedValue = true;
+  String saveUserID = '';
+  String getDob = '';
+
+
+  TextEditingController nameController = TextEditingController();
+  TextEditingController lastNameController = TextEditingController();
+  TextEditingController fatherController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController genderController = TextEditingController();
+  AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
+
+
+  String? selectedValue1;
+  DateTime selectedDate1 = DateTime.now();
+
 
   @override
   void dispose() {
@@ -32,6 +64,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       initialDate: DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2101),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary:AppColors.primaryColor, // Header background color
+              onPrimary: Colors.white, // Header text color
+              onSurface: Colors.black, // Body text color
+            ),
+            dialogBackgroundColor: Colors.lightBlue.shade50, // Background color of the calendar
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -39,6 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       });
     }
   }
+
 
   String? selectedGender;
   String? selectTitle;
@@ -90,6 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+
   void _showTitlePickerDialog() {
     showDialog(
       context: context,
@@ -137,8 +184,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+
   File? _image;
   final ImagePicker _picker = ImagePicker();
+
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);
@@ -149,6 +198,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+
   void _showImagePickerOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -157,16 +207,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           child: Wrap(
             children: <Widget>[
               ListTile(
-                leading: Icon(Icons.photo_library),
-                title: const Text('Photo Library'),
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Photo Library',style:TextStyle(fontWeight:FontWeight.w500,
+                    fontFamily:'FontPoppins',fontSize:16,color:Colors.black)),
                 onTap: () {
                   _pickImage(ImageSource.gallery);
                   Navigator.of(context).pop();
                 },
               ),
               ListTile(
-                leading: Icon(Icons.photo_camera),
-                title: Text('Camera'),
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera',style:TextStyle(fontWeight:FontWeight.w500,
+                    fontFamily:'FontPoppins',fontSize:16,color:Colors.black),),
                 onTap: () {
                   _pickImage(ImageSource.camera);
                   Navigator.of(context).pop();
@@ -178,6 +230,175 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       },
     );
   }
+
+
+  String getPatientID = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+
+  void _updateSharedPreferences(String key, String value) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(key, value);
+  }
+
+  void _saveUpdatedData() {
+    String updatePatientName = nameController.text.trim();
+    String updatePatientLastName = lastNameController.text.trim();
+    String updatePatientEmail = emailController.text.trim();
+    String updatePatientPhone = phoneController.text.trim();
+    String updatePatientPassword = passwordController.text.trim();
+    String updatePatientDob = _dateController.text.trim();
+    String updatePatientGender = selectedGender.toString();
+
+    if (updatePatientName.isNotEmpty && updatePatientEmail.isNotEmpty &&
+        updatePatientPhone.isNotEmpty && updatePatientLastName.isNotEmpty &&
+        updatePatientPassword.isNotEmpty && updatePatientDob.isNotEmpty &&
+        updatePatientGender.isNotEmpty) {
+
+      _updateSharedPreferences('PatientFirstName', updatePatientName);
+      _updateSharedPreferences('PatientLastName', updatePatientLastName);
+      _updateSharedPreferences('PatientEmailName', updatePatientEmail);
+      _updateSharedPreferences('PatientPhoneName', updatePatientPhone);
+      _updateSharedPreferences('PatientPassword',  updatePatientPassword);
+      _updateSharedPreferences('PatientDob',  updatePatientDob);
+      _updateSharedPreferences('PatientGender',  updatePatientGender);
+      print("Updated First Name: $updatePatientName");
+    } else {
+      print("fields is empty, nothing to update.");
+    }
+  }
+
+  void _loadUserData() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    setState(() {
+      getPatientID = sharedPreferences.getString('pmId') ?? '';
+
+      if (getPatientID.isNotEmpty) {
+        _loadPatientData();
+      } else {
+        _loadDefaultUserData();
+      }
+    });
+  }
+
+  void _loadPatientData() {
+    getName = sharedPreferences.getString('PatientFirstName') ?? '';
+    getLastName = sharedPreferences.getString('PatientLastName') ?? '';
+    getPhone = sharedPreferences.getString('PatientContact') ?? '';
+    getEmail = sharedPreferences.getString('patientEmail') ?? '';
+    selectedGender = sharedPreferences.getString('PatientGender') ?? '';
+    getDob = sharedPreferences.getString('PatientDob') ?? '';
+    selectTitle = sharedPreferences.getString('PatientSalutation') ?? '';
+    nameController.text = getName;
+    emailController.text = getEmail;
+    phoneController.text = getPhone;
+    lastNameController.text = getLastName;
+    genderController.text = selectedGender ?? '';
+    _dateController.text = getDob;
+
+    print('LastName:--> $getLastName');
+  }
+
+  void _loadDefaultUserData() {
+    getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+    getPhone = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
+    getEmail = sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
+    getPassword = sharedPreferences.getString(ApiConstants.USER_PASSWORD) ?? '';
+    saveUserID = sharedPreferences.getString(ApiConstants.USER_ID) ?? '';
+
+    nameController.text = getName;
+    emailController.text = getEmail;
+    phoneController.text = getPhone;
+    passwordController.text = getPassword;
+
+    print('userEmail --> $getEmail');
+    print('LogOut Message --> $getName');
+    print('getTokenStudent --> $getPhone');
+  }
+
+
+  Future<void> uploadImage(String id) async {
+    String name = nameController.text.trim();
+    String mobileNumber = phoneController.text.trim();
+    String email = emailController.text.trim();
+    String password = passwordController.text.trim();
+    String lastName = lastNameController.text.trim();
+
+
+
+    if (_image == null) {
+      print('No image selected');
+      return;
+    }
+
+    _showLoadingDialog();
+    var stream = http.ByteStream(_image!.openRead());
+    var length = await _image!.length();
+    var uri = Uri.parse(
+        'https://saaol.org/saaolnewapp/api/update-profile/$id');
+
+
+    var request = http.MultipartRequest('POST', uri);
+    request.fields['name'] = name;
+    request.fields['password'] = password;
+    request.fields['email'] = email;
+    request.fields['mobile'] = mobileNumber;
+    request.fields['last_name'] = lastName;
+
+    var multipartFile = http.MultipartFile('image', stream, length,
+        filename: path.basename(_image!.path));
+    request.files.add(multipartFile);
+
+    try {
+      var response = await request.send();
+      Navigator.of(context, rootNavigator: true).pop();
+
+      if (response.statusCode == 200) {
+        var responseData = await response.stream.toBytes();
+        var responseString = String.fromCharCodes(responseData);
+        print('Response data: $responseString');
+        print('Image uploaded');
+      } else {
+        print('Failed to upload image. Status code: ${response.statusCode}');
+        setState(() {
+          // showSpinner = false;
+        });
+      }
+    } catch (e) {
+      print('Error uploading image: $e');
+    }
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          width: 70.0,
+          height: 70.0,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(12.0),
+            child: CupertinoActivityIndicator(
+              color: Colors.white,
+              radius: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +414,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon:  const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -401,6 +622,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                               Form(
                                 key: _formKey,
+                                autovalidateMode: autovalidateMode,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.start,
@@ -457,7 +679,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                       child: Text(gender),
                                                     ))
                                                 .toList(),
-                                            onChanged: (String? value) {},
+                                            onChanged: (String? value) {
+
+                                            },
                                           ),
                                         ),
                                       ),
@@ -476,81 +700,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    SizedBox(
-                                      height: 48,
-                                      child: TextFormField(
-                                        decoration: InputDecoration(
-                                          hintText: 'First Name',
-                                          hintStyle: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black54),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 15.0,
-                                                  horizontal: 20.0),
-                                          filled: true,
-                                          fillColor: Colors.lightBlue[50],
-                                        ),
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 15,
+                                    TextFormField(
+                                      controller:nameController,
+                                      keyboardType:TextInputType.name,
+                                      decoration: InputDecoration(
+                                        hintText: 'First Name',
+                                        hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black54),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                          BorderRadius.circular(30.0),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 15.0,
+                                            horizontal: 20.0),
+                                        filled: true,
+                                        fillColor: Colors.lightBlue[50],
                                       ),
-                                    ),
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    const Text(
-                                      'Middle Name*',
-                                      style: TextStyle(
+                                      validator: ValidationCons().validateName,
+                                      style: const TextStyle(
+                                          color: Colors.black,
                                           fontSize: 15,
                                           fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black54),
+                                          fontWeight: FontWeight.w600),
                                     ),
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    SizedBox(
-                                      height: 48,
-                                      child: TextFormField(
-                                        decoration: InputDecoration(
-                                          hintText: 'Middle Name',
-                                          hintStyle: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black54),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 15.0,
-                                                  horizontal: 20.0),
-                                          filled: true,
-                                          fillColor: Colors.lightBlue[50],
-                                        ),
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 15,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
+
                                     const Text(
                                       'Last Name*',
                                       style: TextStyle(
@@ -559,39 +741,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
-                                    SizedBox(
-                                      height: 48,
-                                      child: TextFormField(
-                                        decoration: InputDecoration(
-                                          hintText: 'Middle Name',
-                                          hintStyle: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black54),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 15.0,
-                                                  horizontal: 20.0),
-                                          filled: true,
-                                          fillColor: Colors.lightBlue[50],
-                                        ),
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 15,
+                                    TextFormField(
+                                      controller:lastNameController,
+                                      keyboardType:TextInputType.name,
+                                      decoration: InputDecoration(
+                                        hintText: 'Last Name',
+                                        hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black54),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                          BorderRadius.circular(30.0),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 15.0,
+                                            horizontal: 20.0),
+                                        filled: true,
+                                        fillColor: Colors.lightBlue[50],
                                       ),
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w600),
+                                      validator: ValidationCons().validateName,
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
                                     const Text(
@@ -602,39 +784,39 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
-                                    SizedBox(
-                                      height: 48,
-                                      child: TextFormField(
-                                        decoration: InputDecoration(
-                                          hintText: 'Middle Name',
-                                          hintStyle: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black54),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 15.0,
-                                                  horizontal: 20.0),
-                                          filled: true,
-                                          fillColor: Colors.lightBlue[50],
-                                        ),
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 15,
+                                    TextFormField(
+                                      controller:phoneController,
+                                      keyboardType:TextInputType.phone,
+                                      decoration: InputDecoration(
+                                        hintText: 'Mobile Number',
+                                        hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black54),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                          BorderRadius.circular(30.0),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 15.0,
+                                            horizontal: 20.0),
+                                        filled: true,
+                                        fillColor: Colors.lightBlue[50],
                                       ),
+                                      validator: ValidationCons().validateMobile,
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w600),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
                                     const Text(
@@ -645,39 +827,93 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
-                                    SizedBox(
-                                      height: 48,
-                                      child: TextFormField(
-                                        decoration: InputDecoration(
-                                          hintText: 'Email ID',
-                                          hintStyle: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black54),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                                  vertical: 15.0,
-                                                  horizontal: 20.0),
-                                          filled: true,
-                                          fillColor: Colors.lightBlue[50],
-                                        ),
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 15,
+                                    TextFormField(
+                                      controller:emailController,
+                                      keyboardType:TextInputType.emailAddress,
+                                      decoration: InputDecoration(
+                                        hintText: 'Email ID',
+                                        hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black54),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                          BorderRadius.circular(30.0),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 15.0,
+                                            horizontal: 20.0),
+                                        filled: true,
+                                        fillColor: Colors.lightBlue[50],
                                       ),
+                                      validator: ValidationCons().validateEmail,
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w600),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(height:10,),
+                                    const Text(
+                                      'Password*',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black54),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    TextFormField(
+                                      controller:passwordController,
+                                      obscureText: _obscureText,
+                                      decoration: InputDecoration(
+                                        hintText:'Password',
+                                        hintStyle: const TextStyle(
+                                            fontFamily: 'FontPoppins',
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black54),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                          BorderRadius.circular(30.0),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscureText
+                                                ? Icons.visibility_off
+                                                : Icons.visibility,
+                                            color: AppColors.primaryDark,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _obscureText = !_obscureText;
+                                            });
+                                          },
+                                        ),
+                                        contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            vertical: 15.0,
+                                            horizontal: 20.0),
+                                        filled: true,
+                                        fillColor: Colors.lightBlue[50],
+                                      ),
+                                      validator: ValidationCons().validatePassword,
+                                      style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 15,
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(
                                       height: 10,
                                     ),
                                     const Text(
@@ -696,7 +932,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       child: DropdownButtonFormField<String>(
                                         value: selectedGender,
                                         decoration: InputDecoration(
-                                          hintText: 'Middle Name',
+                                          hintText: 'Select Gender',
                                           hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
                                             fontSize: 14,
@@ -735,7 +971,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         },
                                       ),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
                                     const Text(
@@ -774,7 +1010,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                           filled: true,
                                           fillColor: Colors.lightBlue[50],
                                           suffixIcon: IconButton(
-                                            icon: Icon(
+                                            icon: const Icon(
                                               Icons.calendar_month,
                                               color: AppColors.primaryColor,
                                             ),
@@ -790,7 +1026,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                       ),
                                     ),
-                                    SizedBox(
+                                    const SizedBox(
                                       height: 10,
                                     ),
                                     const Text(
@@ -850,6 +1086,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                       ),
                                     ),
+
+
                                   ],
                                 ),
                               ),
@@ -857,7 +1095,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           )),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 70,
                   ),
                 ],
@@ -886,7 +1124,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       width: 250,
                       child: ElevatedButton(
                         onPressed: () {
-                          Fluttertoast.showToast(msg: 'Click');
+                          if (_formKey.currentState!.validate()) {
+                            _formKey.currentState!.save();
+                            uploadImage(saveUserID.toString());
+                            _saveUpdatedData();
+
+
+                          } else {
+                            setState(() {
+                              autovalidateMode = AutovalidateMode.always;
+                            });
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,

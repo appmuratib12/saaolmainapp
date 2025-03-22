@@ -1,6 +1,7 @@
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:saaoldemo/constant/text_strings.dart';
 import '../common/app_colors.dart';
 import '../common/widgets/AppAssets.dart';
 import 'SignInScreen.dart';
@@ -12,10 +13,12 @@ class OnBoardingScreen extends StatefulWidget {
   State<OnBoardingScreen> createState() => _OnBoardingScreenState();
 }
 
+
+
 class _OnBoardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController1 = PageController(initialPage: 0);
-  final PageController _pageController2 = PageController(initialPage: 0);
   int _currentIndex = 0;
+
 
   @override
   Widget build(BuildContext context) {
@@ -38,20 +41,21 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
           Expanded(
             flex: 5,
             child: PageView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: onBoardinglist.length,
-                physics: const BouncingScrollPhysics(),
-                controller: _pageController1 ?? _pageController2,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return OnBoardingCard(
-                    onBoardingModel: onBoardinglist[index],
-                  );
-                }),
+              scrollDirection: Axis.horizontal,
+              itemCount: onBoardinglist.length,
+              physics: const BouncingScrollPhysics(),
+              controller: _pageController1,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                return OnBoardingCard(
+                  onBoardingModel: onBoardinglist[index],
+                );
+              },
+            ),
           ),
           const SizedBox(height: 10),
           Center(
@@ -70,25 +74,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             ),
           ),
           const SizedBox(height: 37),
-          Expanded(
-            flex: 2,
-            child: PageView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: onBoardinglist.length,
-                physics: const BouncingScrollPhysics(),
-                controller: _pageController2 ?? _pageController1,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  return OnboardingTextCard(
-                    onBoardingModel: onBoardinglist[index],
-                  );
-                }),
-          ),
-          const SizedBox(height: 30),
           Padding(
             padding: const EdgeInsets.only(left: 25, right: 23, bottom: 36),
             child: PrimaryButton(
@@ -102,10 +87,6 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
                   );
                 } else {
                   _pageController1.nextPage(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.fastOutSlowIn,
-                  );
-                  _pageController2.nextPage(
                     duration: const Duration(milliseconds: 500),
                     curve: Curves.fastOutSlowIn,
                   );
@@ -128,6 +109,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
   }
 }
 
+
 class PrimaryButton extends StatefulWidget {
   final VoidCallback onTap;
   final String text;
@@ -140,16 +122,16 @@ class PrimaryButton extends StatefulWidget {
 
   const PrimaryButton(
       {super.key,
-      required this.onTap,
-      required this.text,
-      this.width,
-      this.height,
-      this.elevation = 5,
-      this.borderRadius,
-      this.fontSize,
-      required this.textColor,
-      required this.bgColor,
-      this.iconData});
+        required this.onTap,
+        required this.text,
+        this.width,
+        this.height,
+        this.elevation = 5,
+        this.borderRadius,
+        this.fontSize,
+        required this.textColor,
+        required this.bgColor,
+        this.iconData});
 
   @override
   State<PrimaryButton> createState() => _PrimaryButtonState();
@@ -167,8 +149,8 @@ class _PrimaryButtonState extends State<PrimaryButton>
       vsync: this,
       duration: _animationDuration,
     )..addListener(() {
-        setState(() {});
-      });
+      setState(() {});
+    });
     super.initState();
   }
 
@@ -211,13 +193,13 @@ class _PrimaryButtonState extends State<PrimaryButton>
             child: Text(
               widget.text,
               style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white)
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white)
                   .copyWith(
-                      color: widget.textColor,
-                      fontWeight: FontWeight.w500,
-                      fontSize: widget.fontSize),
+                  color: widget.textColor,
+                  fontWeight: FontWeight.w500,
+                  fontSize: widget.fontSize),
             ),
           ),
         ),
@@ -241,28 +223,18 @@ class OnBoardingCard extends StatefulWidget {
 class _OnBoardingCardState extends State<OnBoardingCard> {
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      widget.onBoardingModel.image,
-      height: 300,
-      width: double.maxFinite,
-      fit: BoxFit.cover,
-    );
-  }
-}
-
-class OnboardingTextCard extends StatelessWidget {
-  final OnBoarding onBoardingModel;
-
-  const OnboardingTextCard({required this.onBoardingModel, super.key});
-
-  @override
-  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 23),
       child: Column(
         children: [
+          Image.asset(
+            widget.onBoardingModel.image,
+            width: double.maxFinite,
+            fit: BoxFit.cover,
+          ),
+          const SizedBox(height:10,),
           Text(
-            onBoardingModel.title,
+            widget.onBoardingModel.title,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
@@ -277,18 +249,15 @@ class OnboardingTextCard extends StatelessWidget {
           const SizedBox(
             height: 16,
           ),
-          Text(
-            onBoardingModel.description,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white)
-                .copyWith(
-              color: Colors.black54,
-              fontSize: 14,
-              fontFamily: 'FontPoppins',
-              fontWeight: FontWeight.w500,
+          Flexible(
+            child: Text(widget.onBoardingModel.description,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                fontFamily: 'FontPoppins',
+                fontWeight: FontWeight.w500,
+                color: Colors.black54,
+              ),
             ),
           ),
         ],
@@ -311,19 +280,19 @@ class OnBoarding {
 
 List<OnBoarding> onBoardinglist = [
   OnBoarding(
-    title: 'Book an appointment with Dr. Bimal Chhajer',
+    title: onBoardingTitle1,
     image: AppAssets.kOnboarding1,
     description:
-        'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry.',
+    onBoardingDescription1,
   ),
   OnBoarding(
-      title: 'Taking care of your medicine by fast pill reminder',
+      title: onBoardingTitle2,
       image: AppAssets.kOnboarding2,
-      description:
-          'Lorem Ipsum is simply dummy text of the.'),
+      description: onBoardingDescription2),
   OnBoarding(
-      title: "Your Heart Health Tracker",
+      title: onBoardingTitle3,
       image: AppAssets.kOnboarding3,
       description:
-          'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry.'),
+      onBoardingDescription3),
 ];
+

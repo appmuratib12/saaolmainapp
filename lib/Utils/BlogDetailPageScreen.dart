@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
+import '../data/model/apiresponsemodel/BlogsResponseData.dart';
 
 
 class BlogDetailPageScreen extends StatefulWidget {
-  const BlogDetailPageScreen({super.key});
+  final Blogs blogs;
+
+  const BlogDetailPageScreen({super.key, required this.blogs});
 
   @override
   State<BlogDetailPageScreen> createState() => _BlogDetailPageScreenState();
@@ -15,20 +17,40 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Colors.white,
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Image at the top
           SizedBox(
             width: MediaQuery.of(context).size.width,
-            child: Image.asset(
-              'assets/images/blog_image_latest.jpg',
+            child: Image.network(
+              widget.blogs.image.toString(),
               width: double.infinity,
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10, // Adjust for status bar
+            left: 15,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context); // Go back to the previous screen
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5), // Semi-transparent background
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(right: 15, top: 190),
+            padding: const EdgeInsets.only(right: 15, top: 190),
             child: Align(
               alignment: Alignment.topRight,
               child: Row(
@@ -37,7 +59,7 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                   Container(
                     height: 30,
                     width: 30,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                         color: Colors.white, shape: BoxShape.circle),
                     child: const Center(
                       child: Icon(Icons.share,
@@ -52,7 +74,7 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                     width: 30,
                     decoration: const BoxDecoration(
                         color: Colors.white, shape: BoxShape.circle),
-                    child: Center(
+                    child: const Center(
                       child: Image(
                         image: AssetImage('assets/icons/save_icon.png'),
                         width: 20,
@@ -65,7 +87,6 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
               ),
             ),
           ),
-          // Blog content
           Padding(
             padding: const EdgeInsets.only(top: 250.0),
             child: Container(
@@ -84,9 +105,9 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Blog Title
-                      const Text(
-                        'Essential Heart Tests for Early Detection: Safeguard Your Heart Health Now',
-                        style: TextStyle(
+                      Text(
+                        widget.blogs.title.toString(),
+                        style: const TextStyle(
                           fontFamily: 'FontPoppins',
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -121,10 +142,9 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                       const SizedBox(height: 15),
 
                       // Second paragraph
-                      const Text(
-                        blogTxt2,
+                       Text(widget.blogs.description.toString(),
                         textAlign: TextAlign.justify,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'FontPoppins',
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -171,7 +191,7 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                       const SizedBox(height: 15),
                       // List of Tests
                       ..._buildHeartTests(),
-                      SizedBox(
+                      const SizedBox(
                         height: 15,
                       ),
                       const Text(

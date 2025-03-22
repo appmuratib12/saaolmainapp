@@ -1,12 +1,20 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sms_autofill/sms_autofill.dart';
+import 'package:saaoldemo/Utils/LocationScreen.dart';
+import 'package:saaoldemo/constant/ApiConstants.dart';
 import '../common/app_colors.dart';
 import '../constant/GoogleSignInService.dart';
+import '../data/network/ApiService.dart';
 import 'ForgetPasswordScreen.dart';
-import 'OtpScreen.dart';
+import 'OTPVerifyScreen.dart';
 import 'RegScreen.dart';
 
 
@@ -20,21 +28,192 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   bool value = false;
   bool checkedValue = true;
+  String mobileNumber = '';
+  String storeKey = '';
+  String googleID = '';
+
 
   TextEditingController userMobileController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
   final GoogleSignInService _googleSignInService = GoogleSignInService();
+  final ApiService _apiService = ApiService();
 
-  String? validateMobile(String? value) {
-    if (value!.isEmpty) {
-      return 'Phone number cannot be empty';
+
+  Future<void> _sendOTP() async {
+    final phoneNumber = userMobileController.text;
+    //SharedPreferences prefs = await SharedPreferences.getInstance();
+    //String? registeredPhone = prefs.getString('registered_phone');
+    //print('registeredPhone:$registeredPhone');
+
+   /* if (registeredPhone != null && phoneNumber != registeredPhone) {
+      _showSnackBar('The phone number does not match the registered number.', Colors.red);
+      return;
+    }*/
+    if (phoneNumber.isNotEmpty) {
+        _showLoadingDialog();
+
+      try {
+
+        final otpResponse = await _apiService.sendOTP(phoneNumber, storeKey);
+        Navigator.pop(context);
+        if (otpResponse != null && otpResponse.status == "success") {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('login_method', 'otp'); // Save login method
+          await prefs.setString(ApiConstants.SINGIN_MOBILENUMBER,userMobileController.text); // Save login method
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => OTPPage(phoneNumber: phoneNumber)),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('OTP sent successfully.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          print('OTP SUCCESS:${otpResponse.status}');
+
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to send OTP. Try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } on SocketException {
+        Navigator.pop(context); // Dismiss the loading dialog
+        Fluttertoast.showToast(
+          msg: "No internet connection. Please check your network.",
+        );
+      } on TimeoutException {
+        Navigator.pop(context); // Dismiss the loading dialog
+        Fluttertoast.showToast(
+          msg: "Request timed out. Please try again.",
+        );
+      } catch (error) {
+        Navigator.pop(context);
+        Fluttertoast.showToast(msg: "An error occurred. Please try again.");
+      }
+      } else {
+      _showSnackBar('Please enter valid details.', Colors.red);
     }
-    if (value.length != 10) {
-      return 'Mobile Number must be of 10 digit';
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+              fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16.0),
+      ),
+    );
+  }
+
+  void _showLoadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          width: 70.0,
+          height: 70.0,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(12.0),
+            child: CupertinoActivityIndicator(
+              color: Colors.white,
+              radius: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /* Future<void> _sendOTP() async {
+    final phoneNumber = userMobileController.text;
+    final otpResponse = await _apiService.sendOTP(phoneNumber);
+    if (otpResponse != null && otpResponse.status == "success") {
+      Navigator.push(
+          context,
+          CupertinoPageRoute(
+              builder: (context) => OtpScreen(phoneNumber: phoneNumber)));
+      Fluttertoast.showToast(msg: "OTP sent successfully!");
     } else {
-      return null;
+      Fluttertoast.showToast(msg: "Failed to send OTP. Try again.");
     }
+  }*/
+  @override
+  void initState() {
+    super.initState();
+    _printAppSignature();
+    _loadCounter();
+  }
+
+  Future<void> _printAppSignature() async {
+    String? appSignature = await SmsAutoFill().getAppSignature;
+    storeKey = appSignature.toString();
+    print('AppKey: $storeKey');
+    print("App Signature: $appSignature");
+  }
+
+  _loadCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      mobileNumber = (prefs.getString(ApiConstants.USER_MOBILE_NUMBER) ?? '');
+      googleID = (prefs.getString('GoogleUserID') ?? '');
+    });
+  }
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+  GoogleSignInAccount? _user;
+
+  Future<void> _handleSignIn() async {
+    try {
+      final account = await _googleSignIn.signIn();
+      setState(() {
+        _user = account;
+      });
+      if (_user != null) {
+        _incrementCounter();
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(ApiConstants.IS_LOGIN, true); // Save login state
+        await prefs.setString('login_method', 'google'); // Save login method
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>const ShareLocationScreen(),
+          ),
+        );
+        print('GoogleID:${_user!.id.toString()}');
+
+      }
+    } catch (error) {
+      print('Sign-In Error: $error');
+    }
+  }
+
+  Future<void> _incrementCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('GoogleUserName',_user!.displayName.toString());
+    await prefs.setString('GoogleUserEmail',_user!.email.toString());
+    await prefs.setString('GoogleUserID',_user!.id.toString());
+    await prefs.setString('GoogleUserProfile',_user!.photoUrl.toString());
   }
 
 
@@ -94,6 +273,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
+
                     const Text(
                       'Phone Number',
                       style: TextStyle(
@@ -108,39 +288,54 @@ class _SignInScreenState extends State<SignInScreen> {
                     Form(
                       key: _formKey,
                       autovalidateMode: autovalidateMode,
-                      child: IntlPhoneField(
-                        flagsButtonPadding: const EdgeInsets.all(8),
-                        dropdownIconPosition: IconPosition.trailing,
-                        decoration: InputDecoration(
-                          hintText: 'Phone Number',
-                          hintStyle: const TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black54),
-                          filled: true,
-                          fillColor: Colors.lightBlue[50],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30.0),
-                            borderSide: BorderSide.none,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          IntlPhoneField(
+                            controller: userMobileController,
+                            keyboardType: TextInputType.phone,
+                            flagsButtonPadding: const EdgeInsets.all(8),
+                            dropdownIconPosition: IconPosition.trailing,
+                            decoration: InputDecoration(
+                              hintText: 'Phone Number',
+                              hintStyle: const TextStyle(
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87),
+                              filled: true,
+                              fillColor: Colors.lightBlue[50],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(30.0),
+                                borderSide: BorderSide.none,
+                              ),
+
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 15.0, horizontal: 20.0),
+                            ),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'FontPoppins',
+                                fontSize: 16,
+                                color: Colors.black),
+                            validator: (phone) {
+                              if (phone == null ||
+                                  phone.completeNumber.isEmpty) {
+                                return 'Phone number is required';
+                              }
+                              if (!RegExp(r'^\+?[1-9]\d{1,14}$')
+                                  .hasMatch(phone.completeNumber)) {
+                                return 'Invalid phone number format';
+                              }
+                              return null; // Return null if the phone number is valid
+                            },
+                            initialCountryCode: 'IN',
+                            onChanged: (phone) {
+                              print(phone.completeNumber);
+                            },
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              vertical: 15.0, horizontal: 20.0),
-                        ),
-                        validator: (phone) {
-                          if (phone == null || phone.completeNumber.isEmpty) {
-                            return 'Phone number is required';
-                          }
-                          if (!RegExp(r'^\+?[1-9]\d{1,14}$')
-                              .hasMatch(phone.completeNumber)) {
-                            return 'Invalid phone number format';
-                          }
-                          return null; // Return null if the phone number is valid
-                        },
-                        initialCountryCode: 'IN',
-                        onChanged: (phone) {
-                          print(phone.completeNumber);
-                        },
+                        ],
                       ),
                     ),
                     CupertinoButton(
@@ -164,27 +359,31 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                       ),
                     ),
+
                     const Text(
-                      'You will receive an SMS to verify your identity,but will never spam.',
+                      'you will receive an SMS to verify your identity, but we will never spam you.',
                       style: TextStyle(
                           fontFamily: 'FontPoppins',
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black54),
+                          color: Colors.black87),
                     ),
                     const SizedBox(
                       height: 30,
                     ),
+
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       height: 55,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                                builder: (context) => const OtpPhoneWidget()),
-                          );
+                          if (_formKey.currentState!.validate()) {
+                            _sendOTP();
+                          } else {
+                            setState(() {
+                              autovalidateMode = AutovalidateMode.always;
+                            });
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
@@ -204,6 +403,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                       ),
                     ),
+
                     const SizedBox(
                       height: 10,
                     ),
@@ -225,9 +425,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                     context,
                                     CupertinoPageRoute(
                                         builder: (context) =>
-                                            const RegScreen()),
+                                             const RegScreen(isFromOTP: false)),
                                   );
-                                  Fluttertoast.showToast(msg: 'Hi');
+                                  Fluttertoast.showToast(msg:'Hi');
                                 },
                               style: const TextStyle(
                                   fontSize: 16,
@@ -240,6 +440,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         textAlign: TextAlign.center,
                       ),
                     ),
+
                     const SizedBox(height: 20),
                     const Row(
                       children: [
@@ -252,8 +453,8 @@ class _SignInScreenState extends State<SignInScreen> {
                         Text(
                           'Or Sign In with',
                           style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
                             color: AppColors.primaryColor,
                           ),
                         ),
@@ -269,7 +470,8 @@ class _SignInScreenState extends State<SignInScreen> {
                       children: [
                         GestureDetector(
                           onTap: () async {
-                            final googleUser =
+                            _handleSignIn();
+                            /*final googleUser =
                                 await _googleSignInService.signInWithGoogle();
                             if (googleUser != null) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -285,8 +487,7 @@ class _SignInScreenState extends State<SignInScreen> {
                                       Text('Failed to sign in with Google'),
                                 ),
                               );
-                            }
-                            Fluttertoast.showToast(msg: 'Click');
+                            }*/
                           },
                           child: Container(
                             height: 50,
@@ -309,7 +510,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                           ),
                         ),
-                        Container(
+                       /* Container(
                           height: 50,
                           width: 60,
                           decoration: BoxDecoration(
@@ -348,154 +549,22 @@ class _SignInScreenState extends State<SignInScreen> {
                               fit: BoxFit.contain,
                             ),
                           ),
-                        ),
+                        ),*/
                       ],
                     ),
                     const SizedBox(
                       height: 10,
                     ),
-                    /*Row(mainAxisAlignment:MainAxisAlignment.spaceAround,
-                      children: [
-                        CustomSocialButton(
-                          onTap: () {
-                            Fluttertoast.showToast(msg: 'Click');
-                          },
-                          icon: AppAssets.kGoogle,
-                        ),
-                        CustomSocialButton(
-                          onTap: () {},
-                          icon: AppAssets.kGoogle,
-                        ),
-                        CustomSocialButton(
-                          onTap: () {},
-                          icon: AppAssets.kFacebook,
-                        ),
-                      ],
-                    ),*/
                     const SizedBox(height: 20),
-                    const AgreeTermsTextCard(),
+
                   ],
                 ),
               ),
             ),
           ),
         ),
+
       ],
     ));
-  }
-}
-
-class CustomSocialButton extends StatefulWidget {
-  final String icon;
-  final VoidCallback onTap;
-
-  const CustomSocialButton({
-    required this.icon,
-    required this.onTap,
-    super.key,
-  });
-
-  @override
-  State<CustomSocialButton> createState() => _CustomSocialButtonState();
-}
-
-class _CustomSocialButtonState extends State<CustomSocialButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  final Duration _animationDuration = const Duration(milliseconds: 300);
-  final Tween<double> _tween = Tween<double>(begin: 1.0, end: 0.95);
-
-  @override
-  void initState() {
-    _controller = AnimationController(
-      vsync: this,
-      duration: _animationDuration,
-    )..addListener(() {
-        setState(() {});
-      });
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        _controller.forward().then((_) {
-          _controller.reverse();
-        });
-        widget.onTap();
-      },
-      child: ScaleTransition(
-        scale: _tween.animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: Curves.easeOut,
-            reverseCurve: Curves.easeIn,
-          ),
-        ),
-        child: Container(
-          height: 48,
-          width: 72,
-          padding: const EdgeInsets.all(1),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-            color: const Color(0xFFF6F6F6),
-            image: DecorationImage(image: AssetImage(widget.icon)),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class AgreeTermsTextCard extends StatelessWidget {
-  const AgreeTermsTextCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: RichText(
-        text: TextSpan(
-          text: 'By signing up you agree to our ',
-          style: const TextStyle(
-              fontSize: 14,
-              fontFamily: 'FontPoppins',
-              fontWeight: FontWeight.w400,
-              color: Colors.black87),
-          children: [
-            TextSpan(
-                text: 'Terms',
-                recognizer: TapGestureRecognizer()..onTap = () {},
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'FontPoppins',
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.primaryColor)),
-            const TextSpan(
-                text: ' and ',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black87)),
-            TextSpan(
-                text: 'Conditions of Use',
-                recognizer: TapGestureRecognizer()..onTap = () {},
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontFamily: 'FontPoppins',
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.primaryColor)),
-          ],
-        ),
-        textAlign: TextAlign.center,
-      ),
-    );
   }
 }
