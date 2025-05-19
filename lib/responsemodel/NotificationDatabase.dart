@@ -37,7 +37,11 @@ class NotificationDatabase {
 
   Future<void> insertNotification(NotificationData notification) async {
     final db = await instance.database;
-    await db.insert('notifications', notification.toMap());
+    await db.insert(
+      'notifications',
+      notification.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<NotificationData>> fetchNotifications() async {

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
 import '../data/model/apiresponsemodel/BlogsResponseData.dart';
-
 
 class BlogDetailPageScreen extends StatefulWidget {
   final Blogs blogs;
@@ -29,61 +27,29 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
             ),
           ),
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10, // Adjust for status bar
-            left: 15,
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
             child: GestureDetector(
               onTap: () {
-                Navigator.pop(context); // Go back to the previous screen
+                Navigator.pop(context);
               },
               child: Container(
-                padding: const EdgeInsets.all(8),
+                height: 40,
+                width: 40,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5), // Semi-transparent background
+                  color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 24,
+                child: const Center(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 5), // manual nudge for visual balance
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.white,
+                      size:22,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 15, top: 190),
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    height: 30,
-                    width: 30,
-                    decoration: const BoxDecoration(
-                        color: Colors.white, shape: BoxShape.circle),
-                    child: const Center(
-                      child: Icon(Icons.share,
-                          color: AppColors.primaryDark, size: 20),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 10,
-                  ),
-                  Container(
-                    height: 30,
-                    width: 30,
-                    decoration: const BoxDecoration(
-                        color: Colors.white, shape: BoxShape.circle),
-                    child: const Center(
-                      child: Image(
-                        image: AssetImage('assets/icons/save_icon.png'),
-                        width: 20,
-                        height: 20,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),
@@ -109,100 +75,46 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                         widget.blogs.title.toString(),
                         style: const TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontSize: 16,
+                          fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // First paragraph
                       const Text(
                         blogTxt1,
                         textAlign: TextAlign.justify,
                         style: TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontSize: 14,
+                          fontSize: 12,
+                          letterSpacing:0.2,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black54,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 20),
-
-                      // Section Title
                       const Text(
                         'Understanding Heart Blockages and Coronary Artery Disease',
                         style: TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontSize: 16,
+                          fontSize: 15,
                           color: Colors.black,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 15),
-
-                      // Second paragraph
-                       Text(widget.blogs.description.toString(),
+                      Text(
+                        widget.blogs.description.toString().trim(),
                         textAlign: TextAlign.justify,
                         style: const TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontSize: 14,
+                          fontSize: 12,
+                          letterSpacing:0.2,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black54,
+                          color: Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 15),
-
-                      // Another Section Title
-                      const Text(
-                        'The Importance of Early Detection',
-                        style: TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Third paragraph
-                      const Text(
-                        blogTxt3,
-                        textAlign: TextAlign.justify,
-                        style: TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      // Non-Invasive Heart Tests Section
-                      const Text(
-                        'Key Non-Invasive Heart Tests',
-                        style: TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      // List of Tests
-                      ..._buildHeartTests(),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                      const Text(
-                        'Advanced Diagnostic Tests',
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black),
-                      ),
-                      ..._diagnosticsTest()
                     ],
                   ),
                 ),
@@ -212,103 +124,5 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
         ],
       ),
     );
-  }
-
-  List<Widget> _buildHeartTests() {
-    List<String> tests = [
-      '1. Electrocardiogram Test (ECG)',
-      '2. Exercise Stress Test (TMT)',
-      '3. Holter Monitoring Test',
-      '4. Treadmill Test (TMT)',
-    ];
-    List<String> descriptions = [
-      blogTxt4,
-      blogTxt5, // Example: Add corresponding text strings for each test
-      blogTxt6,
-      blogTxt7,
-    ];
-
-    List<Widget> widgets = [];
-    for (int i = 0; i < tests.length; i++) {
-      widgets.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              tests[i],
-              style: const TextStyle(
-                fontFamily: 'FontPoppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              descriptions[i],
-              textAlign: TextAlign.justify,
-              style: const TextStyle(
-                fontFamily: 'FontPoppins',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      );
-    }
-    return widgets;
-  }
-
-  List<Widget> _diagnosticsTest() {
-    List<String> tests = [
-      '1. Biochemistry Tests (Lipid Profile and Sugar)',
-      '2. Angiography Test',
-      '3. CT Angiography Test',
-      '4. Treadmill Test (TMT)',
-      '5. Thallium Scan/PET Scan Test',
-    ];
-    List<String> descriptions = [
-      blogTxt4,
-      blogTxt5, // Example: Add corresponding text strings for each test
-      blogTxt6,
-      blogTxt7,
-      blogTxt8,
-    ];
-
-    List<Widget> widgets = [];
-    for (int i = 0; i < tests.length; i++) {
-      widgets.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              tests[i],
-              style: const TextStyle(
-                fontFamily: 'FontPoppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              descriptions[i],
-              textAlign: TextAlign.justify,
-              style: const TextStyle(
-                fontFamily: 'FontPoppins',
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      );
-    }
-    return widgets;
   }
 }

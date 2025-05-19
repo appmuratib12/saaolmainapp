@@ -1,36 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:saaolapp/Utils/NearCenterScreen.dart';
+import 'package:saaolapp/data/model/apiresponsemodel/ReviewRatingResponse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/Utils/ManuallyLocationScreen.dart';
-import 'package:saaoldemo/Utils/NavBarScreens/DetoxScreen.dart';
-import 'package:saaoldemo/Utils/NavBarScreens/LifeStylePageScreen.dart';
-import 'package:saaoldemo/Utils/NavBarScreens/TreatmentsOverviewScreen.dart';
-import 'package:saaoldemo/Utils/NavBarScreens/ZeroOilPageScreen.dart';
-import 'package:saaoldemo/constant/ValidationCons.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/DiseaseResponseData.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/TreatmentsResponseData.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/WellnessCenterResponse.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../DialogHelper.dart';
 import '../Utils/AppointmentBookScreen.dart';
 import '../Utils/AppointmentsScreen.dart';
 import '../Utils/BlogDetailPageScreen.dart';
-import '../Utils/DietPlanScreen.dart';
 import '../Utils/DiseaseDetailScreen.dart';
 import '../Utils/EditProfileScreen.dart';
-import '../Utils/HeartRateScreen.dart';
-import '../Utils/LabTestScreen.dart';
-import '../Utils/MaintainVitalScreen.dart';
-import '../Utils/NearByCenterScreen.dart';
 import '../Utils/NotificationScreen.dart';
 import '../Utils/OurBlogsScreen.dart';
-import '../Utils/SearchBarScreem.dart';
 import '../Utils/StatesData.dart';
-import '../Utils/StepCounterScreen.dart';
 import '../Utils/TreatmentDetailsPageScreen.dart';
 import '../Utils/UploadPrescriptionScreen.dart';
 import '../Utils/WellnessCenterScreen.dart';
@@ -38,8 +23,20 @@ import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
 import '../constant/text_strings.dart';
 import '../data/model/apiresponsemodel/BlogsResponseData.dart';
+import '../data/model/apiresponsemodel/DiseaseResponseData.dart';
+import '../data/model/apiresponsemodel/TreatmentsResponseData.dart';
+import '../data/model/apiresponsemodel/WellnessCenterResponse.dart';
+import '../data/model/apiresponsemodel/YoutubeResponse.dart';
 import '../data/network/ApiService.dart';
 import '../data/network/BaseApiService.dart';
+import 'AddAddressScreen.dart';
+import 'NavBarScreens/DetoxScreen.dart';
+import 'NavBarScreens/LifeStylePageScreen.dart';
+import 'NavBarScreens/TreatmentsOverviewScreen.dart';
+import 'NavBarScreens/ZeroOilPageScreen.dart';
+import 'NearByCenterScreen.dart';
+import 'VideoPlayerScreen.dart';
+
 
 class HomPageScreen1 extends StatefulWidget {
   const HomPageScreen1({super.key});
@@ -53,46 +50,19 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
   final PageController pageController = PageController();
   int selectedIndex1 = -1;
   int selectedIndex = 0;
-  int _currentPage = 0;
   int currentPage = 0;
   Timer? _timer;
   Timer? timer1;
-  List<String> images = [
-    'assets/icons/webinar_banner.png',
-    'assets/icons/Zero_oil.png',
-    'assets/icons/Ortho.png',
-  ];
-  List<String> slider2Images = [
-    'assets/images/heartImage.png',
-    'assets/images/heartImage.png',
-    'assets/images/medicine_image.jpg',
-    'assets/images/surgeon_Image.jpg',
-  ];
   List<String> treatmentsArray = [
     'SAAOL Natural Bypass',
     'SAAOL Detox',
     'Life Style',
     'Zero oil cooking',
   ];
-  List<String> vitalsArray = [
-    'Heart Rate (Pulse)',
-    'Blood Pressure',
-    'Cholesterol Levels',
-    'Respiratory Rate',
-  ];
-
-  final List<String> vitalImagesArray = [
-    'assets/images/heart_rate_latest1.jpg',
-    'assets/images/blood_pressure_latest.jpg',
-    'assets/images/Cholesterol_level_latest.jpg',
-    'assets/images/Respiratory_Rate_image.jpg',
-  ];
-
-  List<String> toolsArray = ['Steps Counter', 'Heart Rate', 'Know Your Food'];
+  List<String> toolsArray = ['Steps Counter','Heart Rate',];
   final List<String> toolImages = [
     'assets/icons/step_counter_tool.png',
     'assets/icons/heart_rate_latest.png',
-    'assets/icons/know_your_food2.png'
   ];
 
 
@@ -116,11 +86,20 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
   String? getMobileNumber;
   String? getEmailID;
   String?getUserID ;
+  String? getSubLocality;
+  String displayedLocation = '';
+  String getLatitude = '';
+  String getLongitude = '';
+  String getCityName = '';
+  String savedLocation = '';
+
 
   @override
   void initState() {
     super.initState();
+    _loadSavedAddresses();
     _loadSavedAppointment();
+   // _getStoredLocation();
   }
 
   @override
@@ -131,6 +110,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
     pageController.dispose();
     super.dispose();
   }
+
 
   Future<void> _loadSavedAppointment() async {
     final prefs = await SharedPreferences.getInstance();
@@ -143,223 +123,36 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
       getMobileNumber = prefs.getString(ApiConstants.USER_MOBILE) ?? '';
       getEmailID = prefs.getString(ApiConstants.USER_EMAIL) ?? '';
       getUserID = prefs.getString(ApiConstants.USER_ID) ?? '';
-      getTcmID = prefs.getString('tcmID') ?? '';
-
+      getTcmID = prefs.getString(ApiConstants.TCM_ID) ?? '';
+      getLatitude = prefs.getString('lat') ?? '';
+      getLongitude = prefs.getString('long') ?? '';
+      getSubLocality = (prefs.getString('subLocality') ?? '');
+      getCity =  prefs.getString('locationName') ?? '';
+      getPinCode =prefs.getString(ApiConstants.PINCODE) ?? '';
+      savedLocation =prefs.getString('selected_location') ?? '';
+      print('GetPincode:$getPinCode$getCity');
 
       if (getPatientID.isNotEmpty) {
         userName = (prefs.getString('PatientFirstName') ?? '');
-        getCity = prefs.getString('cityName') ?? prefs.getString('locationName') ?? 'Select City';
-        getPinCode = prefs.getString('pinCode') ?? prefs.getString(ApiConstants.PINCODE) ?? '';
         saveDate = prefs.getString('appointmentDate') ?? '';
         saveTime = prefs.getString('appointmentTime') ?? '';
-        print('saveDate: $saveDate');
-        print('saveTime: $saveTime');
-
 
       } else {
         userName = (prefs.getString(ApiConstants.USER_NAME) ?? '');
         saveDate = prefs.getString('appointmentDate') ?? '';
         saveTime = prefs.getString('appointmentTime') ?? '';
-        /*getCity = prefs.getString('cityName') ?? '';
-         getPinCode = prefs.getString('pinCode') ?? '';
-        locationName = prefs.getString('locationName') ?? '';
-        locationPinCode = prefs.getString(ApiConstants.PINCODE) ?? '';*/
-        getCity = prefs.getString('cityName') ?? prefs.getString('locationName') ?? 'Select City';
-        getPinCode = prefs.getString('pinCode') ?? prefs.getString(ApiConstants.PINCODE) ?? '';
-        print('PINCODE:$getPinCode');
-        print('saveDate: $saveDate');
-        print('saveTime: $saveTime');
         print('isAppointmentAvailable: $isAppointmentAvailable');
+
       }
     });
-  }
-
-
-  _makingPhoneCall() async {
-    var url = Uri.parse("tel:8447776000");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
   }
 
   String message = "Welcome to the SAAol...";
   String mobileNumber ='';
 
-
-  launchWhatsappWithMobileNumber() async {
-    final url = "whatsapp://send?phone=$mobileNumber&text=$message";
-    if (await canLaunchUrl(Uri.parse(Uri.encodeFull(url)))) {
-      await launchUrl(Uri.parse(Uri.encodeFull(url)));
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-
-
-  List<String> packagesImages = [
-    'https://media.istockphoto.com/id/1453121684/photo/modern-hotel-room-with-double-bed-night-tables-and-day-sofa-bed.webp?b=1&s=170667a&w=0&k=20&c=0MGlloRKwQjR_xeIt0s0IklHyt2bQHDNoFvKml3BQPc=',
-    'https://images.ctfassets.net/hrltx12pl8hq/28ECAQiPJZ78hxatLTa7Ts/2f695d869736ae3b0de3e56ceaca3958/free-nature-images.jpg?fit=fill&w=1200&h=630'
-  ];
-
-
-
-  final List<Map<String, String>> videosArray = [
-    {
-      'videoId': 'VILLXKBM2WQ',
-      'category': 'By Dr. Bimal Chhajer | Saaol',
-      'likes': '10k Likes',
-      'title': 'Treat Heart Disease without Surgery - EECP Treatment'
-    },
-    {
-      'videoId': 'de0Z5OXgIGE',
-      'category': 'By Dr. Bimal Chhajer | Saaol',
-      'likes': '28k Likes',
-      'title': 'Foods to Reduce Heart Blockages'
-    },
-  ];
-
-  final TextEditingController _searchController = TextEditingController(); // Search Controller for input
-
-
-  Future<void> handleUrlOpening(String tcmID, String getPatientID, String patientUniqueID) async {
-    String encodedTcmID = base64Encode(utf8.encode(tcmID));
-    String encodedGetPatientID = base64Encode(utf8.encode(getPatientID));
-    String encodedPatientUniqueID = base64Encode(utf8.encode(patientUniqueID));
-    String url = 'https://crm.saaol.com/haps_score.php?pdf_id=$encodedTcmID&p_id=$encodedGetPatientID&pu_id=$encodedPatientUniqueID&app_id=5DCAD06B90925BE3D750837F392A8FC6';
-
-    if (await canLaunchUrl(Uri.parse(url))) {
-    await launchUrl(
-    Uri.parse(url),
-    mode: LaunchMode.externalApplication,  // Opens in the default browser
-    );
-    } else {
-    throw 'Could not launch $url';
-    }
-  }
-
-  Future<void> handleSafetyCircle(String tcmID, String getPatientID, String patientUniqueID) async {
-    String encodedTcmID = base64Encode(utf8.encode(tcmID));
-    print('encodedTCMID:$encodedTcmID');
-    String encodedGetPatientID = base64Encode(utf8.encode(getPatientID));
-    String encodedPatientUniqueID = base64Encode(utf8.encode(patientUniqueID));
-    String url = 'https://crm.saaol.com/safety_circle_page.php?pdf_id=$encodedTcmID&p_id=$encodedGetPatientID&pu_id=$encodedPatientUniqueID&app_id=5DCAD06B90925BE3D750837F392A8FC6';
-
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,  // Opens in the default browser
-      );
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-
-  void _showAgentDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          backgroundColor: AppColors.primaryColor,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/images/call_center.png',
-                      fit: BoxFit.cover,
-                      width: 45,
-                      height: 45,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    "Need help?",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white,
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _launchURLApp();
-                },
-                icon: const Icon(
-                  Icons.call,
-                  color: Colors.black,
-                ),
-                label: const Text(
-                  "WhatsApp",
-                  style: TextStyle(
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Colors.black),
-                ),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    )),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () {
-                  _makingPhoneCall();
-                },
-                icon: const Icon(
-                  Icons.call,
-                  color: Colors.black87,
-                ),
-                label: const Text(
-                  "Call",
-                  style: TextStyle(
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Colors.black),
-                ),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    )),
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.center,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  final TextEditingController _searchController = TextEditingController();
   String selectedCategory = 'Heart';
-  final ApiService _apiService = ApiService(); // Create an instance of ApiService
+  final ApiService _apiService = ApiService();
   void _sendRequest() async {
     bool success = await _apiService.sendCallRequest(
       userId:int.tryParse(getUserID!) ?? 0,
@@ -372,167 +165,17 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
       ),
     );
   }
-  void callDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          backgroundColor:Colors.white,
-          content:Padding(
-            padding: const EdgeInsets.all(3),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('You will receive a call back from Health Advisor.Do you want to proceed?',
-                    style:TextStyle(fontFamily:'FontPoppins',
-                        fontWeight:FontWeight.w500,
-                        fontSize:12,color:AppColors.primaryColor)),
-                const SizedBox(height:15,),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    SizedBox(
-                      height:35,
-                      width:90,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:Colors.blue[50],
-                          shape: const RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.all(Radius.circular(6))),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        child: const Text(
-                          'No',
-                          style: TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color:AppColors.primaryDark),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width:20,),
-                    SizedBox(
-                      height:35,
-                      width:90,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          shape: const RoundedRectangleBorder(
-                              borderRadius:
-                              BorderRadius.all(Radius.circular(6))),
-                        ),
-                        onPressed: () {
-                          requestDialog(context);
-                          _sendRequest();
-                        },
-                        child: const Text(
-                          'Yes',
-                          style: TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  List<String> savedAddresses = [];
+  void _loadSavedAddresses() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      savedAddresses = prefs.getStringList('saved_addresses') ?? [];
+    });
   }
-  void requestDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 25, vertical: 30),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Thank you for submitting request',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Our Health Advisors will contact you INSTANTLY!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Positioned(
-                bottom: -35, // Places the icon outside the dialog
-                child: CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.phone_in_talk,
-                    color: AppColors.primaryDark,
-                    size: 30,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 5, // Adjust the position of the close icon
-                right: 5,
-                child: GestureDetector(
-                  onTap: () {
-                    // Dismiss both the request dialog and the call dialog
-                    Navigator.of(context).pop(); // Dismiss requestDialog
-                    Navigator.of(context).pop(); // Dismiss callDialog
-                  },
-                  child: const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.grey,
-                    child: Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  String _capitalizeFirstLetter(String input) {
+    if (input.isEmpty) return input;
+    return input[0].toUpperCase() + input.substring(1);
   }
-
 
 
   @override
@@ -581,7 +224,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize:15,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -591,7 +234,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -601,7 +244,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontFamily: 'FontPoppins',
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -609,37 +252,179 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
 
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    CupertinoPageRoute(
-                                        builder: (context) =>
-                                            const SearchBarScreen()),
-                                  ).then((_) {
-                                    _loadSavedAppointment();
-                                  });
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor:Colors.grey[200],
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                    ),
+                                    builder: (context) {
+                                      return Padding(
+                                        padding: EdgeInsets.only(
+                                          bottom: MediaQuery.of(context).viewInsets.bottom,
+                                        ),
+                                        child: Container(
+                                          height:400,
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                          decoration:  BoxDecoration(
+                                            color: Colors.grey[200],
+                                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                width: 40,
+                                                height: 4,
+                                                margin: const EdgeInsets.only(bottom: 16),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[400],
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              const Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  'Select Saaol Center location',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontFamily:'FontPoppins',
+                                                    color:Colors.black,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              Container(
+                                                padding: const EdgeInsets.all(5),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius: BorderRadius.circular(10),
+                                                  border: Border.all(color: Colors.white, width: 1),
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    ListTile(
+                                                      leading:  const Icon(Icons.my_location, color:AppColors.primaryColor),
+                                                      title: const Text(
+                                                        'Use current location',
+                                                        style: TextStyle(fontWeight: FontWeight.w500,fontSize:14,fontFamily:'FontPoppins',color:Colors.black),
+                                                      ),
+                                                      subtitle: Text('$getSubLocality,$getCity,$getPinCode',
+                                                        style:const TextStyle(fontWeight:FontWeight.w500,fontSize:13,fontFamily:'FontPoppins',color:Colors.black54),
+                                                      ),
+                                                      onTap: () async {
+                                                        final prefs = await SharedPreferences.getInstance();
+                                                        final currentLocation = '$getCity,$getPinCode,';
+                                                        await prefs.setString('selected_location', currentLocation);
+                                                        if (context.mounted) {
+                                                          setState(() {
+                                                            savedLocation = currentLocation;
+                                                          });
+                                                          Navigator.pop(context);
+                                                        }
+                                                      },
+                                                    ),
+                                                    const SizedBox(height: 5),
+                                                    const Divider(),
+                                                    ListTile(
+                                                      leading:  const Icon(Icons.add, color:AppColors.primaryColor),
+                                                      title:  const Text(
+                                                        'Add new address',
+                                                        style: TextStyle(color: AppColors.primaryColor,
+                                                            fontWeight:FontWeight.w600,fontSize:15,fontFamily:'FontPoppins'),  // Highlighting with green color
+                                                      ),
+                                                      trailing:  const Icon(Icons.arrow_forward_ios, color:AppColors.primaryColor,size:20,),
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) => AddAddressScreen(
+                                                                latitude: double.tryParse(getLatitude) ?? 0.0,
+                                                                longitude: double.tryParse(getLongitude) ?? 0.0,
+                                                                currentLocationName:'$getCity,$getSubLocality'
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const Divider(),
+                                              const Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  'Your Saved Address',
+                                                  style: TextStyle(fontWeight: FontWeight.w600,fontSize:15,fontFamily:'FontPoppins',color:Colors.black),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                              Expanded(
+                                                child: ListView(
+                                                  children: savedAddresses.map((address) {
+                                                    final subLocality = address.split(',').first.trim();
+                                                    return ListTile(
+                                                      leading: const Icon(Icons.location_on_outlined),
+                                                      title: Text(
+                                                        address,
+                                                        style: const TextStyle(
+                                                          fontWeight: FontWeight.w500,
+                                                          fontSize: 14,
+                                                          fontFamily: 'FontPoppins',
+                                                          color: Colors.black,
+                                                        ),
+                                                      ),
+                                                      onTap: () async {
+                                                        final prefs = await SharedPreferences.getInstance();
+                                                        await prefs.setString('selected_location', subLocality);
+                                                        prefs.remove('locationName');
+                                                        prefs.remove(ApiConstants.PINCODE);
+                                                        if (context.mounted) {
+                                                          Navigator.pop(context);
+                                                        }
+                                                      },
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
                                 },
-                                child: Row(
+                                child:Row(
                                   children: [
-                                    Text(
-                                      '$getCity,$getPinCode',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'FontPoppins',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
+                                    Expanded(
+                                      child: Text(
+                                        (savedLocation.isNotEmpty)
+                                            ? savedLocation
+                                              : (getCity.isNotEmpty && getPinCode.isNotEmpty)
+                                            ? '$getCity, $getPinCode'
+                                            : 'Select Location',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'FontPoppins',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     const SizedBox(width: 3),
                                     const Icon(
-                                      Icons.keyboard_arrow_right_rounded,
+                                      Icons.arrow_drop_down,
                                       size: 18,
-                                      color: Colors
-                                          .white, // Changed color to match the text
+                                      color: Colors.white,
                                     ),
-
                                   ],
                                 ),
                               ),
+
+
                             ],
                           ),
                         ),
@@ -660,13 +445,13 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                 color: Colors.white,
                               ),
                               onPressed: () {
-                               /* Navigator.push(
+                                Navigator.push(
                                   context,
                                   CupertinoPageRoute(
                                     builder: (context) =>
                                         const NotificationScreen(),
                                   ),
-                                );*/
+                                );
                               },
                             ),
                           ),
@@ -694,15 +479,9 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                         const EditProfileScreen(),
                                   ),
                                 );
-                                /* Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                            builder: (context) => const MyProfileScreen()),
-                        );*/
                               },
                             ),
                           ),
-
                         ],
                       ),
                     ],
@@ -713,8 +492,8 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      FadeRoute(
-                        page: SearchScreen(
+                      FadeRoute1(
+                        page: NearCenterScreen(
                           searchController:
                               _searchController, // Pass the searchController to the SearchScreen
                         ),
@@ -748,7 +527,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                               style: TextStyle(
                                 fontFamily: 'FontPoppins',
                                 fontWeight: FontWeight.w500,
-                                fontSize: 15,
+                                fontSize: 14,
                                 color: Colors.black38,
                               ),
                             ),
@@ -768,7 +547,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
           SingleChildScrollView(
             physics: const ScrollPhysics(),
             child: Container(
-              margin: const EdgeInsets.only(top: 20),
+              margin: const EdgeInsets.only(top: 16),
               padding: const EdgeInsets.only(left: 15, right: 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,8 +564,9 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
-                                  builder: (context) => const MyAppointmentsScreen()),
+                                  builder: (context) => const MyAppointmentsScreen(initialIndex: 0)),
                             );
+
                           },
                         ),
                         buildClickableServiceCard(
@@ -796,18 +576,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
-                                  builder: (context) => const MyAppointmentsScreen()),
-                            );
-                          },
-                        ),
-                        buildClickableServiceCard(
-                          'assets/images/lab_test.jpg',
-                          'Test Lab Booking',
-                              () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const LabTestScreen()),
+                                  builder: (context) => const MyAppointmentsScreen(initialIndex: 1)),
                             );
                           },
                         ),
@@ -854,17 +623,16 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         'Our Treatments',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.black),
                       ),
                       Expanded(child: Container()),
-                      const Text(
-                        'View All',
+                      const Text(viwe_all,
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontSize:13,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.primaryColor),
                       )
                     ],
@@ -880,10 +648,76 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'),
-                          );
+                          final errorMessage = snapshot.error.toString();
+                          if (errorMessage.contains('No internet connection')) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.wifi_off_rounded,
+                                      size:30,
+                                      color: Colors.redAccent,
+                                    ),
+                                    SizedBox(height:8),
+                                    Text(
+                                      'No Internet Connection',
+                                      style: TextStyle(
+                                        fontSize:14,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Please check your network settings and try again.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize:12,
+                                        fontFamily: 'FontPoppins',
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Center(child: Text('Error: $errorMessage'));
+                          }
                         } else if (!snapshot.hasData || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
-                          return const Center(child: Text('No Data available.'));
+                          return const  Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'No Treatments Data are available.',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Please check back later. New data will be available soon!',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: 'FontPoppins',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         } else {
                           return ListView.builder(
                             shrinkWrap: true,
@@ -955,7 +789,6 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                               alignment: Alignment.bottomCenter,
                                               child: Container(
                                                 height: 50,
-                                                // Adjust the height as needed
                                                 decoration: BoxDecoration(
                                                   gradient: LinearGradient(
                                                     begin: Alignment.topCenter,
@@ -984,7 +817,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                                     color: Colors.white,
                                                     fontWeight: FontWeight.w600,
                                                     fontFamily: 'FontPoppins',
-                                                    fontSize: 13,
+                                                    fontSize:10,
                                                   ),
                                                   textAlign: TextAlign.center,
                                                   overflow: TextOverflow.ellipsis,
@@ -1015,7 +848,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     'Diseases We treat',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
-                        fontSize: 18,
+                        fontSize:16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black),
                   ),
@@ -1029,10 +862,10 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                           clipBehavior: Clip.hardEdge,
                           padding: const EdgeInsets.all(16.0),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing:8,
-                            mainAxisSpacing:10,
-                            childAspectRatio: 0.6,
+                            crossAxisCount:3,
+                            crossAxisSpacing:6,
+                            mainAxisSpacing:12,
+                            childAspectRatio:1,
                           ),
                           itemCount: snapshot.data!.data!.length,
                           itemBuilder: (context, index) {
@@ -1041,8 +874,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                 Navigator.of(context, rootNavigator: true)
                                     .push(
                                   CupertinoPageRoute(
-                                    builder: (context) => DiseaseDetailScreen(
-                                      data: snapshot.data!.data![index],
+                                    builder: (context) => DiseaseDetailScreen(data: snapshot.data!.data![index],
                                     ),
                                   ),
                                 );
@@ -1072,14 +904,14 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     child: Text(
                                       snapshot.data!.data![index].title.toString(),
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize:9,
                                         fontWeight: FontWeight.w500,
                                         fontFamily: 'FontPoppins',
                                         color: Colors.black87,
                                       ),
                                       textAlign: TextAlign.center,
                                       overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
+                                      maxLines:2,
                                     ),
                                   ),
                                 ],
@@ -1088,39 +920,60 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                           },
                         );
                       } else if (snapshot.hasError) {
-                        return Padding(padding: const EdgeInsets.all(15),
-                          child:Center(child:Text('${snapshot.error}',
-                            style:const TextStyle(fontWeight:FontWeight.w500,
-                                fontSize:15,fontFamily:'FontPoppins',color:Colors.red),)),);
+                        final errorMessage = snapshot.error.toString();
+                        if (errorMessage.contains('No internet connection')) {
+                          return  const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.wifi_off_rounded,
+                                    size:30,
+                                    color: Colors.redAccent,
+                                  ),
+                                  SizedBox(height:8),
+                                  Text(
+                                    'No Internet Connection',
+                                    style: TextStyle(
+                                      fontSize:14,
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Please check your network settings and try again.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize:12,
+                                      fontFamily: 'FontPoppins',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          return Center(child: Text('Error: $errorMessage'));
+                        }
                       }
                       return const Center(child: CircularProgressIndicator());
                     },
                   ),
-                  const SizedBox(
-                    height: 20,
-                  ),
 
                   Visibility(
-                    visible: getTcmID.isNotEmpty && getPatientID.isNotEmpty && patientUniqueID.isNotEmpty,
+                    visible:getPatientID.isNotEmpty && patientUniqueID.isNotEmpty,
                     child: GestureDetector(
                       onTap: () {
-                        /* Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PDFScreen(
-                            url:
-                            'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StatesData(patientID: getPatientID),
                           ),
-                        ),
-                      );*/
-                        if (getTcmID.isNotEmpty && getPatientID.isNotEmpty && patientUniqueID.isNotEmpty) {
-                          handleUrlOpening(getTcmID, getPatientID, patientUniqueID);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text('Something is wrong!'),
-                            backgroundColor: Colors.red,
-                          ));
-                        }
+                        );
                       },
                       child: Container(
                         width: double.infinity,
@@ -1142,17 +995,16 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     'Haps Report',
                                     style: TextStyle(
                                       fontFamily: 'FontPoppins',
-                                      fontSize: 16,
+                                      fontSize:15,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black,
                                     ),
                                   ),
                                   SizedBox(height: 4),
-                                  Text(
-                                    'Check your haps report and you can download it',
+                                  Text(check_haps_txt,
                                     style: TextStyle(
                                       fontFamily: 'FontPoppins',
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       fontWeight: FontWeight.w500,
                                       color: AppColors.primaryColor,
                                     ),
@@ -1174,13 +1026,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     ),
                   ),
 
-
-                  const SizedBox(
-                    height: 15,
-                  ),
-
-
-                  Container(
+                  /*Container(
                     height: 65,
                     width: MediaQuery.of(context).size.width,
                     decoration: BoxDecoration(
@@ -1204,22 +1050,22 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               Text(
-                                'Consult with prescription!',
+                                'Consult with prescription',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w500,
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 14,
+                                    fontSize:13,
                                     color: Colors.black),
                               ),
                               SizedBox(
                                 height: 5,
                               ),
                               Text(
-                                'Upload a prescription for tests!',
+                                'Upload a prescription for tests',
                                 style: TextStyle(
                                     fontWeight: FontWeight.w500,
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 12,
+                                    fontSize:11,
                                     color: Colors.black54),
                               ),
                             ],
@@ -1241,6 +1087,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       builder: (context) =>
                                           const UploadPrescriptionScreen()),
                                 );
+
                               },
                               child:  const Row(
                                 children: [
@@ -1262,13 +1109,9 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         ],
                       ),
                     ),
-                  ),
+                  ),*/
 
-
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
+                /*  Row(
                     children: [
                       const Text(
                         'Upcoming Appointment',
@@ -1285,11 +1128,10 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             context,
                             CupertinoPageRoute(
                                 builder: (context) =>
-                                    const AppointmentBookScreen()),
+                                    const PatientAppointmentScreen()),
                           );
                         },
-                        child: const Text(
-                          'View All',
+                        child: const Text(viwe_all,
                           style: TextStyle(
                               fontFamily: 'FontPoppins',
                               fontSize: 14,
@@ -1299,371 +1141,22 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                       ),
                     ],
                   ),
-
                   const SizedBox(
                     height: 15,
                   ),
-                    saveDate.isNotEmpty && saveTime.isNotEmpty
-                      ? Container(
-                          height: 160,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blue.withOpacity(0.2),
-                                offset: const Offset(0, 30),
-                                blurRadius: 1,
-                                spreadRadius: -10,
-                              ),
-                              BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
-                                offset: const Offset(0, 20),
-                                blurRadius: 1,
-                                spreadRadius: -10,
-                              ),
-                            ],
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color.fromARGB(250, 30, 149, 195),
-                                const Color.fromARGB(200, 30, 149, 195)
-                                    .withOpacity(0.7),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(15),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      height: 50,
-                                      width: 50,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                          image: AssetImage(
-                                              'assets/images/bima_sir.png'),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 15),
-                                    const Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Dr. Bimal Chhajer',
-                                          style: TextStyle(
-                                            fontSize: 17,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Cardiology',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Expanded(child: Container()),
-                                    const Row(
-                                      children: [
-                                        Image(
-                                          image: AssetImage(
-                                              'assets/icons/star.png'),
-                                          width: 15,
-                                          height: 15,
-                                          fit: BoxFit.cover,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          '4.5',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 20),
-                                Container(
-                                  height: 40,
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(5),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.calendar_month_outlined,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          saveDate, // Display saved date
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 15),
-                                        const Icon(
-                                          Icons.access_time,
-                                          color: Colors.white,
-                                          size: 18,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          saveTime, // Display saved time
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: Center(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 30,
-                                  color: AppColors.primaryDark,
-                                ),
-                                const SizedBox(height: 10),
-                                const Text(
-                                  'No Appointment Scheduled',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      CupertinoPageRoute(
-                                          builder: (context) =>
-                                              const MyAppointmentsScreen()),
-                                    );
-                                  },
-                                  icon: const Icon(
-                                    Icons.calendar_today,
-                                    size: 18,
-                                    color: Colors.white,
-                                  ),
-                                  // Icon for the button
-                                  label: const Text(
-                                    'Book Appointment',
-                                    style: TextStyle(
-                                      fontSize: 14.0,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                      fontFamily: 'FontPoppins',
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16.0,
-                                      vertical: 12.0,
-                                    ),
-                                    backgroundColor: AppColors.primaryColor,
-                                    // Customize button color
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                          8.0), // Rounded corners
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(
+                  const AppointmentWidget(),
+                  const SizedBox(
                          height: 30,
-                  ),
-
-
-                  /* ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: const Image(
-                      image: AssetImage('assets/icons/Treatments.png'),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                    ),
                   ),*/
 
-                  /*Container(
-                    height: 190,
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12, top: 12),
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Dr. Bimal Chhajer',
-                                  style: TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const Text(
-                                  'Cardiology',
-                                  style: TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 13,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                const Text(
-                                  'MBBS, MD, Founder | SAAOL',
-                                  style: TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 15,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                const Flexible(
-                                  child: Text(
-                                    'Dr. Bimal Chhajer MBBS, MD is a well-known personality in the world of medical science in India and abroad.',
-                                    style: TextStyle(
-                                      fontFamily: 'FontPoppins',
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  height: 32,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        side: BorderSide(
-                                            color: Colors.grey.withOpacity(0.2),
-                                            width: 0.2),
-                                        borderRadius: const BorderRadius.all(
-                                          Radius.circular(30),
-                                        ),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      Fluttertoast.showToast(msg: 'click');
-                                    },
-                                    child: const Text(
-                                      'Digital Consult',
-                                      style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                          const Align(
-                            alignment: Alignment.bottomRight,
-                            child: Image(
-                              image: AssetImage('assets/images/bima_sir.png'),
-                              fit: BoxFit.cover,
-                              height: 150,
-                              width: 120,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),*/
-
-                  /* GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                            builder: (context) => const MyAppointmentsScreen()),
-                      );
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: const Image(
-                        image: AssetImage('assets/images/bannner_image1.png'),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
-                    ),
-                  ),*/
-
-
-                  Divider(
+                /*  Divider(
                     height: 25,
                     thickness: 5,
                     color: Colors.lightBlue[50],
-                  ),
+                  ),*/
                   const SizedBox(
                     height: 15,
                   ),
-
-
 
                   Container(
                     decoration: BoxDecoration(
@@ -1682,11 +1175,10 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Call or Chat with a Health Expert',
+                                    Text(call_chat_txt,
                                       style: TextStyle(
                                         fontFamily: 'FontPoppins',
-                                        fontSize: 14,
+                                        fontSize:12,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black,
                                       ),
@@ -1694,11 +1186,10 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     SizedBox(
                                       height: 5,
                                     ),
-                                    Text(
-                                      'Need Help? Talk to our health experts!',
+                                    Text(need_help_txt,
                                       style: TextStyle(
                                         fontFamily: 'FontPoppins',
-                                        fontSize: 13,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.black87,
                                       ),
@@ -1732,14 +1223,15 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       'Call Now',
                                       style: TextStyle(
                                           fontFamily: 'FontPoppins',
-                                          fontSize: 13,
+                                          fontSize:12,
                                           fontWeight: FontWeight.w500,
                                           color: Colors.white),
                                     ),
                                     onPressed: () {
-                                      //_makingPhoneCall();
-                                      ValidationCons().callDialog(context);
-                                      Fluttertoast.showToast(msg: 'Hi');
+                                      DialogHelper.showCallDialog(context, () {
+                                        DialogHelper.showRequestDialog(context);
+                                        _sendRequest();
+                                      });
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryColor,
@@ -1765,14 +1257,12 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       'Chat with us',
                                       style: TextStyle(
                                           fontFamily: 'FontPoppins',
-                                          fontSize: 13,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                           color: Colors.white),
                                     ),
                                     onPressed: () {
-                                      launchWhatsappWithMobileNumber();
-                                      // ValidationCons().sendMessage();
-                                      Fluttertoast.showToast(msg: 'Call');
+                                      DialogHelper.sendWhatsAppMessage('Hi,What can we help you?');
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryColor,
@@ -1794,94 +1284,17 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     height: 15,
                   ),
 
-                  Visibility(
-                    visible: getTcmID.isNotEmpty && getPatientID.isNotEmpty && patientUniqueID.isNotEmpty,
-                    child: GestureDetector(
-                      onTap: () {
-                        /* Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PDFScreen(
-                            url:
-                            'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-                          ),
-                        ),
-                      );*/
-                        if (getTcmID.isNotEmpty && getPatientID.isNotEmpty && patientUniqueID.isNotEmpty) {
-                          handleUrlOpening(getTcmID, getPatientID, patientUniqueID);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text('Something is wrong!'),
-                            backgroundColor: Colors.red,
-                          ));
-                        }
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12.0),
-                        decoration: BoxDecoration(
-                          color: Colors.lightBlue[50],
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Haps Report',
-                                    style: TextStyle(
-                                      fontFamily: 'FontPoppins',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Check your haps report and you can download it',
-                                    style: TextStyle(
-                                      fontFamily: 'FontPoppins',
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.primaryColor,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 10),
-                            Icon(
-                              Icons.arrow_forward_ios_outlined,
-                              color: AppColors.primaryColor,
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
 
                   Visibility(
-                    visible: getTcmID.isNotEmpty && getPatientID.isNotEmpty && patientUniqueID.isNotEmpty,
+                    visible:getPatientID.isNotEmpty && patientUniqueID.isNotEmpty,
                     child:GestureDetector(
                       onTap: () {
-                        if(getTcmID.isNotEmpty && getPatientID.isNotEmpty && patientUniqueID.isNotEmpty){
-                          handleSafetyCircle(getTcmID,getPatientID,patientUniqueID);
-                          Fluttertoast.showToast(msg:getTcmID);
-
-                        }else{
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                            content: Text('Something is wrong!'),
-                            backgroundColor: Colors.red,
-                          ));
-                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StatesData(patientID: getPatientID),
+                          ),
+                        );
                       },
                       child: Container(
                         width: double.infinity,
@@ -1905,7 +1318,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                         'Saaol Safety Circle',
                                         style: TextStyle(
                                           fontFamily: 'FontPoppins',
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.black,
                                         ),
@@ -1915,7 +1328,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                         'Check your safety circle',
                                         style: TextStyle(
                                           fontFamily: 'FontPoppins',
-                                          fontSize: 12,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.w500,
                                           color: AppColors.primaryColor,
                                         ),
@@ -1949,23 +1362,20 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
 
 
                   const SizedBox(
-                    height: 15,
-                  ),
-
-                  const SizedBox(
-                    height: 10,
+                    height:10,
                   ),
                   const Text(
                     'Diet Plan',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
-                        fontSize: 18,
+                        fontSize:16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black),
                   ),
                   const SizedBox(
                     height: 10,
                   ),
+
                   Container(
                     height: 160,
                     width: MediaQuery.of(context).size.width,
@@ -1974,9 +1384,11 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.grey, width: 0.1),
                       image: const DecorationImage(
-                          image: NetworkImage(
-                              'https://www.helpguide.org/wp-content/uploads/2023/02/Mediterranean-Diet-1200x800.jpeg'),
-                          fit: BoxFit.cover),
+                        image: NetworkImage(
+                          'https://www.helpguide.org/wp-content/uploads/2023/02/Mediterranean-Diet-1200x800.jpeg',
+                        ),
+                        fit: BoxFit.cover,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.2),
@@ -1986,69 +1398,71 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.4), // dark overlay for readability
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
-                          Column(
-                            children: [
-                              const Text(
-                                'Get your digestion on\ntrack by eliminating\ndairy',
-                                style: TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white),
-                              ),
-                              const SizedBox(
-                                height: 15,
-                              ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryDark,
-                                  textStyle: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 25,
-                                      fontStyle: FontStyle.normal),
-                                  shape: const RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.all(
-                                          Radius.circular(30))),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    CupertinoPageRoute(
-                                        builder: (context) =>
-                                            const DietPlanScreen()),
-                                  );
-                                },
-                                child: const Text(
-                                  'View my plan',
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Get your digestion on track\nby eliminating dairy',
                                   style: TextStyle(
-                                      fontFamily: 'FontPoppins',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white),
+                                    fontFamily: 'FontPoppins',
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            width: 20,
+                                const SizedBox(height: 12),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryDark,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      CupertinoPageRoute(
+                                        builder: (context) => StatesData(patientID: getPatientID),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'View my plan',
+                                    style: TextStyle(
+                                      fontFamily: 'FontPoppins',
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ),
+
                   const SizedBox(
                     height: 15,
                   ),
-                  const Text(
+                /*  const Text(
                     'Health Tools For You',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
                         fontWeight: FontWeight.w600,
-                        fontSize: 18,
+                        fontSize:16,
                         color: Colors.black),
                   ),
                   const SizedBox(
@@ -2078,8 +1492,6 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     const HeartRateScreen()),
                               );
                             }
-                            Fluttertoast.showToast(
-                                msg: 'Clicked on ${toolsArray[index]}');
                           },
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -2107,7 +1519,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     style: const TextStyle(
                                       fontFamily: 'FontPoppins',
                                       fontWeight: FontWeight.w500,
-                                      fontSize: 12,
+                                      fontSize:11,
                                       color: Colors.black87,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -2120,314 +1532,138 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         );
                       },
                     ),
-                  ),
+                  ),*/
                   const SizedBox(
                     height: 10,
-                  ),
-                  Container(
-                    height: 60,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.hardRed,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          height: 40,
-                          width: 40,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                              border:
-                                  Border.all(color: Colors.red, width: 0.5)),
-                          child: const Image(
-                            image: AssetImage('assets/images/chest_Pain.png'),
-                            fit: BoxFit.fill,
-                          ),
-                        ),
-                        const SizedBox(
-                          width: 10,
-                        ),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Worried About Heart Health?',
-                              style: TextStyle(
-                                  fontFamily: 'FontPoppins',
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  color: Colors.white),
-                            ),
-                            Text(
-                              'Consult a Cardiologist Today!',
-                              style: TextStyle(
-                                  fontFamily: 'FontPoppins',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 11,
-                                  color: Colors.white),
-                            ),
-                          ],
-                        ),
-                        Expanded(child: Container()),
-                        const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 15,
-                          color: Colors.white,
-                        )
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    height: 30,
-                    thickness: 5,
-                    color: Colors.lightBlue[50],
-                  ),
-
-
-                  Row(
-                    children: [
-                      const Text(
-                        'Recommended test for you',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'FontPoppins',
-                            fontSize: 18,
-                            color: Colors.black),
-                      ),
-                      Expanded(child: Container()),
-                      const Text(
-                        'View All',
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryColor),
-                      )
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 15,
                   ),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
                         context,
                         CupertinoPageRoute(
-                            builder: (context) => const LabTestScreen()),
+                            builder: (context) =>
+                            const MyAppointmentsScreen()),
                       );
                     },
-                    child: Image.asset(
-                      'assets/images/lab_test_banner.png',
-                      width: double.infinity,
-                      height: 210,
-                      fit: BoxFit.fill,
+                    child:Container(
+                      height: 60,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.hardRed,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                                border:
+                                Border.all(color: Colors.red, width: 0.5)),
+                            child: const Image(
+                              image: AssetImage('assets/images/chest_Pain.png'),
+                              fit: BoxFit.fill,
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Worried About Heart Health?',
+                                style: TextStyle(
+                                    fontFamily: 'FontPoppins',
+                                    fontWeight: FontWeight.w700,
+                                    fontSize:13,
+                                    color: Colors.white),
+                              ),
+                              Text(
+                                'Consult a Cardiologist Today!',
+                                style: TextStyle(
+                                    fontFamily: 'FontPoppins',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize:10,
+                                    color: Colors.white),
+                              ),
+                            ],
+                          ),
+                          Expanded(child: Container()),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 15,
+                            color: Colors.white,
+                          )
+                        ],
+                      ),
                     ),
                   ),
 
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  Row(
+                  (getPatientID.isNotEmpty && patientUniqueID.isNotEmpty)
+                      ? Column(
                     children: [
-                      const Text(
-                        'Maintain your vitals',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'FontPoppins',
-                            fontSize: 18,
-                            color: Colors.black),
+                      Divider(
+                        height: 30,
+                        thickness: 5,
+                        color: Colors.lightBlue[50],
                       ),
-                      Expanded(child: Container()),
-                      const Text(
-                        'View All',
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryColor),
-                      )
-                    ],
-                  ),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  /*SizedBox(
-  height: 220,
-  child: GridView.builder(
-    padding: const EdgeInsets.all(16.0),
-    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-      crossAxisCount: 4,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio:
-      0.8, // Adjusted to provide more space for text
-    ),
-    itemCount: specialties.length,
-    itemBuilder: (context, index) {
-      return GestureDetector(
-        onTap: () {
-          Fluttertoast.showToast(msg: 'Click');
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              height: 90,
-              width: 90,
-              decoration: BoxDecoration(
-                color: Colors.lightBlue[50],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image(
-                      image: AssetImage(
-                          'assets/images/chest_Pain.png'),
-                      width: 40.0,
-                      height: 40.0,
-                      fit: BoxFit.contain,
-                    ),
-                    SizedBox(
-                      width: 90,
-                      // Set the width to match the container width
-                      child: Text(
-                        'Heart',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'FontPoppins',
-                          fontSize: 12,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  ),
-),*/
-                  SizedBox(
-                    height: 150,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: vitalsArray.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        return InkWell(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                  builder: (context) =>
-                                       MaintainVitalScreen(vitals: vitalsArray[index])),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 7),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(height: 15),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                const PatientAppointmentScreen()),
+                          );
+                        },
+                        child: Container(
+                          height: 50,
+                          width: MediaQuery.of(context).size.width,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey, width: 0.2),
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
                               children: [
-                                Container(
-                                  height: 95,
-                                  width: 95,
-                                  decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8.0),
-                                      image: DecorationImage(
-                                          image: AssetImage(
-                                              vitalImagesArray[index]),
-                                          fit: BoxFit.cover)),
+                                Icon(
+                                  Icons.medical_information_outlined,
+                                  color: Colors.black,
+                                  size: 20,
                                 ),
-                                const SizedBox(
-                                  height: 5,
-                                ),
-                                SizedBox(
-                                  width: 95,
-                                  // Set the width to match the container width
-                                  child: Text(
-                                    vitalsArray[index],
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'FontPoppins',
-                                      fontSize: 12,
-                                      color: Colors.black87,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                SizedBox(width: 15),
+                                Text(
+                                  'My Appointments',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: 'FontPoppins',
+                                    fontSize: 14,
+                                    color: Colors.black,
                                   ),
+                                ),
+                                Spacer(),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Colors.black,
+                                  size: 15,
                                 ),
                               ],
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                const AppointmentBookScreen()),
-                      );
-                    },
-                    child: Container(
-                      height: 50,
-                      width: MediaQuery.of(context).size.width,
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey, width: 0.2)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.medical_information_outlined,
-                              color: Colors.black,
-                              size: 20,
-                            ),
-                            const SizedBox(
-                              width: 15,
-                            ),
-                            const Text(
-                              'My Appointments',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: 'FontPoppins',
-                                  fontSize: 15,
-                                  color: Colors.black),
-                            ),
-                            Expanded(child: Container()),
-                            const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.black,
-                              size: 15,
-                            )
-                          ],
                         ),
                       ),
-                    ),
-                  ),
+                    ],
+                  )
+                      : const SizedBox.shrink(),
+
                   Divider(
-                    height: 25,
+                    height:30,
                     thickness: 5,
                     color: Colors.lightBlue[50],
                   ),
@@ -2436,7 +1672,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontFamily: 'FontPoppins',
-                        fontSize: 18,
+                        fontSize:16,
                         color: Colors.black),
                   ),
                   const SizedBox(
@@ -2444,22 +1680,86 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   ),
 
                   SizedBox(
-                    height:270,
+                    height:310,
                     child: FutureBuilder<WellnessCenterResponse>(
                       future: BaseApiService().getWellnessData(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return  Center(child:Text('Error: ${snapshot.error}',
-                            style:const TextStyle(fontWeight:FontWeight.w500,
-                                fontFamily:'FontPoppins',fontSize:15,color:Colors.red),),);
+                          final errorMessage = snapshot.error.toString();
+                          if (errorMessage.contains('No internet connection')) {
+                            return  const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.wifi_off_rounded,
+                                      size:30,
+                                      color: Colors.redAccent,
+                                    ),
+                                    SizedBox(height:8),
+                                    Text(
+                                      'No Internet Connection',
+                                      style: TextStyle(
+                                        fontSize:14,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Please check your network settings and try again.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize:12,
+                                        fontFamily: 'FontPoppins',
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Center(child: Text('Error: $errorMessage'));
+                          }
                         } else if (snapshot.hasData && snapshot.data!.data != null) {
                           final wellnessData = snapshot.data!.data!;
                           if (wellnessData.isEmpty) {
-                            return const Center(
-                              child: Text("No wellness centers available."),
+                            return const  Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(height: 12),
+                                    Text(
+                                      'No wellness centers available.',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Please check back later. New wellness center data will be available soon!',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontFamily: 'FontPoppins',
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             );
+
                           }
                           return ListView.builder(
                             shrinkWrap: true,
@@ -2481,7 +1781,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Container(
-                                        height:260,
+                                        height:300,
                                         width:300,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
@@ -2497,7 +1797,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                                 topRight: Radius.circular(10),
                                               ),
                                               child: CarouselSlider(
-                                                items: packagesImages.map((imagePath) {
+                                                items: item.images!.map((imagePath) {
                                                   return SizedBox(
                                                     width: MediaQuery.of(context).size.width,
                                                     child: Image.network(
@@ -2521,7 +1821,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                                 }).toList(),
                                                 options: CarouselOptions(
                                                   viewportFraction: 1.0,
-                                                  height: 100,
+                                                  height:110,
                                                   autoPlay: true,
                                                 ),
                                               ),
@@ -2536,18 +1836,20 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                                     style: TextStyle(
                                                       fontFamily: 'FontPoppins',
                                                       fontWeight: FontWeight.w600,
-                                                      fontSize: 13,
+                                                      fontSize:12,
                                                       color:AppColors.primaryColor,
                                                     ),
                                                   ),
+                                                   const SizedBox(height:5,),
                                                    Text(item.centerName.toString(),
                                                     style: const TextStyle(
                                                       fontFamily: 'FontPoppins',
                                                       fontWeight: FontWeight.w600,
-                                                      fontSize:16,
+                                                      fontSize:14,
                                                       color: Colors.black,
                                                     ),
                                                   ),
+                                                  const SizedBox(height:5,),
                                                   RatingBar.builder(
                                                     initialRating: 5,
                                                     minRating: 1,
@@ -2573,8 +1875,8 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                                         size: 18,
                                                       ),
                                                       const SizedBox(width: 5),
-                                                      Text(
-                                                        item.locationName ?? "Unknown Location",
+
+                                                      Text(_capitalizeFirstLetter(item.locationName ?? "Unknown Location"),
                                                         style: const TextStyle(
                                                           fontFamily: 'FontPoppins',
                                                           fontWeight: FontWeight.w500,
@@ -2584,10 +1886,59 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                                       ),
                                                     ],
                                                   ),
+                                                   Divider(thickness: 0.2, height:12, color: Colors.blue[300]),
+                                                  Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,
+                                                    children: [
+                                                      OutlinedButton.icon(
+                                                        onPressed: () {
+                                                          DialogHelper.makingPhoneCall('+918447366000');
+                                                        },
+                                                        icon: const Icon(Icons.call, color: AppColors.primaryDark),
+                                                        label: const Text(
+                                                          'Call',
+                                                          style: TextStyle(
+                                                            fontFamily: 'FontPoppins',
+                                                            fontWeight: FontWeight.w500,
+                                                            fontSize: 14,
+                                                            color: AppColors.primaryDark,
+                                                          ),
+                                                        ),
+                                                        style: OutlinedButton.styleFrom(
+                                                          side: const BorderSide(color: AppColors.primaryDark),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      OutlinedButton.icon(
+                                                        onPressed: () async {
+                                                          double destinationLat = 30.3267294;
+                                                          double destinationLng = 77.9995589;
+                                                          String locationUrl = "https://www.google.com/maps/dir/$getLatitude,$getLongitude/$destinationLat,$destinationLng";
+                                                          openUrl(openingUrl: locationUrl);
+                                                        },
+                                                        icon: const Icon(Icons.directions, color: AppColors.primaryDark),
+                                                        label: const Text(
+                                                          'Directions',
+                                                          style: TextStyle(
+                                                            fontFamily: 'FontPoppins',
+                                                            fontWeight: FontWeight.w500,
+                                                            fontSize: 14,
+                                                            color: AppColors.primaryDark,
+                                                          ),
+                                                        ),
+                                                        style: OutlinedButton.styleFrom(
+                                                          side: const BorderSide(color: AppColors.primaryDark),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius: BorderRadius.circular(8),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ],
                                               ),
                                             ),
-                                            const Divider(thickness: 0.2, height: 10, color: Colors.grey),
                                           ],
                                         ),
                                       ),
@@ -2617,7 +1968,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontFamily: 'FontPoppins',
-                            fontSize: 18,
+                            fontSize:16,
                             color: Colors.black),
                       ),
                       Expanded(child: Container()),
@@ -2628,12 +1979,11 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             CupertinoPageRoute(builder: (context) => const OurBlogsScreen()),
                           );
                         },
-                        child: const Text(
-                          'View All',
+                        child: const Text(viwe_all,
                           style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontSize:13,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.primaryColor,
                           ),
                         ),
@@ -2645,17 +1995,83 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   ),
 
                   SizedBox(
-                    height: 240, // Adjusted height
+                    height:270, // Adjusted height
                     child: FutureBuilder<BlogsResponseData>(
                       future: BaseApiService().blogsData(selectedCategory),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          print('Error fetching blogs: ${snapshot.error}');
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          final errorMessage = snapshot.error.toString();
+                          if (errorMessage.contains('No internet connection')) {
+                            return  const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.wifi_off_rounded,
+                                      size:30,
+                                      color: Colors.redAccent,
+                                    ),
+                                    SizedBox(height:8),
+                                    Text(
+                                      'No Internet Connection',
+                                      style: TextStyle(
+                                        fontSize:14,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Please check your network settings and try again.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize:12,
+                                        fontFamily: 'FontPoppins',
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Center(child: Text('Error: $errorMessage'));
+                          }
                         } else if (!snapshot.hasData || snapshot.data!.blogs == null || snapshot.data!.blogs!.isEmpty) {
-                          return const Center(child: Text('No blogs available.'));
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'No blogs are available.',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Please check back later. New blogs will be available soon!',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: 'FontPoppins',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
                         } else {
                           return ListView.builder(
                             shrinkWrap: true,
@@ -2704,33 +2120,44 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                         child: Text(
                                           snapshot.data!.blogs![index].title.toString(),
                                           style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize:13,
                                             fontFamily: 'FontPoppins',
                                             color: Colors.black87,
                                           ),
-                                          maxLines: 2, // Allows text to wrap into 2 lines before truncating
+                                          maxLines: 3, // Allows text to wrap into 2 lines before truncating
                                           overflow: TextOverflow.ellipsis, // Prevents overflow
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                       const Row(
-                                        children: [
-                                          Icon(Icons.calendar_month_outlined, size: 16, color: Colors.black54),
-                                          SizedBox(width: 5),
-                                          Text(
-                                            'June 11, 2024', // Replace with dynamic date if available
-                                            style: TextStyle(fontSize: 12, color: Colors.black54,fontFamily: 'FontPoppins',fontWeight:FontWeight.w500),
-                                          ),
-                                          Spacer(),
-                                          Icon(Icons.access_time, size: 16, color: Colors.black54),
-                                          SizedBox(width: 5),
-                                           Text(
-                                            '5 min read',
-                                            style: TextStyle(fontSize: 12, color: Colors.black54,fontFamily: 'FontPoppins',fontWeight:FontWeight.w500),
-                                          ),
-                                        ],
+                                     Align(alignment:Alignment.centerRight,child:GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context, rootNavigator: true)
+                                        .push(CupertinoPageRoute(
+                                      builder: (context) => BlogDetailPageScreen(
+                                          blogs: snapshot.data!.blogs![index]),
+                                    ));
+                                  },
+                                  child: Container(
+                                    height: 30,
+                                    width: 100,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryDark,
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        'Read more',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 11,
+                                          fontFamily: 'FontPoppins',
+                                          color: Colors.white,
+                                        ),
                                       ),
+                                    ),
+                                  ),
+                                ),),
                                     ],
                                   ),
                                 ),
@@ -2754,328 +2181,221 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   Row(
                     children: [
                       const Text(
-                        'Videos',
+                        'Our Youtube Channel Videos',
                         style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontFamily: 'FontPoppins',
-                            fontSize: 18,
+                            fontSize:16,
                             color: Colors.black),
                       ),
                       Expanded(child: Container()),
-                      const Text(
-                        'View All',
-                        style: TextStyle(
+                      GestureDetector(
+                        onTap: () async {
+                          final Uri url = Uri.parse('https://www.youtube.com/@SAAOLHeartCare');
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else {
+                            throw 'Could not launch $url';
+                          }
+                        },
+                        child: const Text(
+                          'View All',
+                          style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryColor),
-                      )
+                            fontSize:13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primaryColor,
+                            decoration: TextDecoration.underline, // Optional: looks like a link
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(
                     height: 10,
                   ),
-                  /* SizedBox(
-                    height: 300, // Adjust height as needed to fit content
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: videosArray.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        final videoData = videosArray[index];
-                        final YoutubePlayerController _controller =
-                            YoutubePlayerController(
-                          initialVideoId: videoData['videoId']!,
-                          flags: const YoutubePlayerFlags(
-                            autoPlay: false,
-                            mute: false,
-                          ),
-                        );
-                        return InkWell(
-                          onTap: () {
-                            Fluttertoast.showToast(msg: 'click');
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Card(
-                                  semanticContainer: true,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  elevation: 2,
-                                  child: Container(
-                                    height: 270,
-                                    width: 310,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(5),
+
+
+                  SizedBox(
+                    height: 300,
+                    child: FutureBuilder<YoutubeResponse>(
+                      future: BaseApiService().getYoutubeData(), // Make sure this matches your actual method
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          print('Error fetching YouTube video: ${snapshot.error}');
+                          final errorMessage = snapshot.error.toString();
+                          if (errorMessage.contains('No internet connection')) {
+                            return  const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.wifi_off_rounded,
+                                      size:30,
+                                      color: Colors.redAccent,
                                     ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8),
+                                    SizedBox(height:8),
+                                    Text(
+                                      'No Internet Connection',
+                                      style: TextStyle(
+                                        fontSize:14,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Please check your network settings and try again.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize:12,
+                                        fontFamily: 'FontPoppins',
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Center(child: Text('Error: $errorMessage'));
+                          }
+                        } else if (!snapshot.hasData || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'No YouTube Video Available.',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Please check back later. New youtube video will be available soon!',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: 'FontPoppins',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        } else {
+                          final videos = snapshot.data!.data!;
+                          return ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: videos.length,
+                            itemBuilder: (context, index) {
+                              final video = videos[index];
+                              final uri = Uri.parse(video.videoId.toString());
+                              final videoId = uri.queryParameters['v'] ?? ''; // Extracts the actual video ID
+                              final thumbnailUrl = 'https://img.youtube.com/vi/$videoId/0.jpg';
+
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => VideoPlayerScreen(videoId: videoId,title:video.title.toString()),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: Card(
+                                    elevation: 4,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Container(
+                                      width: 320,
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           ClipRRect(
-                                            borderRadius:
-                                                BorderRadius.circular(5),
-                                            child: YoutubePlayer(
-                                              controller: _controller,
-                                              showVideoProgressIndicator: true,
-                                              progressIndicatorColor:
-                                                  Colors.blueAccent,
+                                            borderRadius: BorderRadius.circular(8),
+                                            child: Stack(
+                                              children: [
+                                                Image.network(
+                                                  thumbnailUrl,
+                                                  width: double.infinity,
+                                                  height: 180,
+                                                  fit: BoxFit.cover,
+                                                ),
+                                                Positioned.fill(
+                                                  child: Center(
+                                                    child: Icon(
+                                                      Icons.play_circle_fill,
+                                                      size: 60,
+                                                      color: Colors.white.withOpacity(0.8),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(
-                                            height: 5,
-                                          ),
+                                          const SizedBox(height: 10),
                                           Row(
                                             children: [
-                                              const Icon(
-                                                Icons.thumb_up,
-                                                size: 16,
-                                                color: Colors.grey,
-                                              ),
-                                              const SizedBox(width: 4),
+                                              const Icon(Icons.thumb_up, size: 18, color: Colors.grey),
+                                              const SizedBox(width: 6),
                                               Text(
-                                                videoData['likes']!,
+                                                video.like.toString(),
                                                 style: const TextStyle(
-                                                  fontSize: 14,
+                                                  fontSize:13,
+                                                  fontFamily:'FontPoppins',
                                                   fontWeight: FontWeight.w500,
-                                                  fontFamily: 'FontPoppins',
                                                   color: Colors.grey,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            videoData['title']!,
-                                            style: const TextStyle(
-                                                fontSize: 16,
-                                                fontFamily: 'FontPoppins',
+                                          const SizedBox(height: 5),
+                                          Expanded(
+                                            child: Text(
+                                              video.title.toString(),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize:13,
+                                                fontFamily:'FontPoppins',
                                                 fontWeight: FontWeight.w500,
-                                                color: Colors.black),
+                                                color: Colors.black,
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        );
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
-                  ),*/
-
-                  /*  const SizedBox(
-                    height: 10,
                   ),
-                  Divider(
-                    height: 30,
-                    thickness: 5,
-                    color: Colors.lightBlue[50],
-                  ),
-                  Container(
-                    height: 240,
-                    width: MediaQuery.of(context).size.width,
-                    decoration: BoxDecoration(
-                      color: Colors.lightBlue[50],
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'SAAOL',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 20,
-                                color: AppColors.primaryDark),
-                          ),
-                          Text(
-                            'Science and Art of Living',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: Colors.black54),
-                          ),
-                          SizedBox(
-                            height: 25,
-                          ),
-                          Row(
-                            children: [
-                              Image(
-                                image:
-                                    AssetImage('assets/icons/treated_icon.jpg'),
-                                width: 25,
-                                height: 25,
-                              ),
-                              SizedBox(
-                                width: 5,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '550000+',
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: AppColors.primaryColor),
-                                  ),
-                                  SizedBox(
-                                    width: 150,
-                                    // Adjust the width as necessary to ensure the text wraps
-                                    child: Text(
-                                      'Patients Treated',
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 11,
-                                          color: Colors.black),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Image(
-                                image:
-                                    AssetImage('assets/icons/treated_icon.jpg'),
-                                width: 25,
-                                height: 25,
-                              ),
-                              SizedBox(
-                                width: 5,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '130+',
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: AppColors.primaryColor),
-                                  ),
-                                  SizedBox(
-                                    // Adjust the width as necessary to ensure the text wraps
-                                    child: Text(
-                                      'Across the India\nCenters',
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 11,
-                                          color: Colors.black),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          Row(
-                            children: [
-                              Image(
-                                image: AssetImage(
-                                    'assets/icons/experience_icon.jpg'),
-                                width: 25,
-                                height: 25,
-                              ),
-                              SizedBox(
-                                width: 5,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '29+',
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: AppColors.primaryColor),
-                                  ),
-                                  SizedBox(
-                                    // Adjust the width as necessary to ensure the text wraps
-                                    child: Text(
-                                      'of Saaol healthcare\nyears of experience',
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 11,
-                                          color: Colors.black),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(
-                                width: 50,
-                              ),
-                              Icon(
-                                Icons.location_city,
-                                size: 30,
-                                color: AppColors.primaryColor,
-                              ),
-                              SizedBox(
-                                width: 5,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '25+',
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                        color: AppColors.primaryColor),
-                                  ),
-                                  SizedBox(
-                                    // Adjust the width as necessary to ensure the text wraps
-                                    child: Text(
-                                      'Across states in\nindia',
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 11,
-                                          color: Colors.black),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  */
 
                   const SizedBox(
                     height: 15,
@@ -3085,7 +2405,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontFamily: 'FontPoppins',
-                        fontSize: 18,
+                        fontSize:16,
                         color: Colors.black),
                   ),
                   const SizedBox(
@@ -3097,7 +2417,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         '4.6',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 30,
+                            fontSize: 27,
                             fontWeight: FontWeight.w600,
                             color: Colors.black),
                       ),
@@ -3138,126 +2458,185 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   const SizedBox(
                     height: 15,
                   ),
+
                   SizedBox(
                     height: 190,
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: treatmentsArray.length,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        return InkWell(
-                          onTap: () {
-                            Fluttertoast.showToast(msg: 'click');
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height: 170,
-                                  width: 320,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        color: Colors.grey, width: 0.2),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                              child: Image.asset(
-                                                'assets/images/profile.png',
-                                                fit: BoxFit.cover,
-                                                width: 50,
-                                                height: 50,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            // Add spacing between the image and text
-                                            const Expanded(
-                                              child: Text(
-                                                textAlign: TextAlign.start,
-                                                testimonialTxt,
-                                                style: TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontWeight: FontWeight.w400,
-                                                  fontSize: 12,
-                                                  color: Colors.black54,
-                                                ),
-                                                maxLines: 5,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        const Row(
-                                          children: [
-                                            Text(
-                                              'Vinod Kumar Joshi,',
-                                              style: TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 15,
-                                                  color: Colors.black),
-                                            ),
-                                            SizedBox(
-                                              width: 5,
-                                            ),
-                                            Text(
-                                              'Uttrakhand',
-                                              style: TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize: 14,
-                                                  color: Colors.black38),
-                                            ),
-                                          ],
-                                        ),
-                                        RatingBar.builder(
-                                          initialRating: 5,
-                                          minRating: 1,
-                                          direction: Axis.horizontal,
-                                          allowHalfRating: true,
-                                          itemCount: 5,
-                                          itemSize: 15,
-                                          itemBuilder: (context, _) =>
-                                              const Icon(
-                                            Icons.star,
-                                            color: Colors.amber,
-                                            size: 7,
-                                          ),
-                                          onRatingUpdate: (rating) {
-                                            print(
-                                                'Rating for ${items[index]}: $rating');
-                                          },
-                                        ),
-                                      ],
+                    child:FutureBuilder<ReviewRatingResponse>(
+                      future: BaseApiService().getReviewRatingData(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          print('Error fetching review rating: ${snapshot.error}');
+                          final errorMessage = snapshot.error.toString();
+                          if (errorMessage.contains('No internet connection')) {
+                            return  const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.wifi_off_rounded,
+                                      size:30,
+                                      color: Colors.redAccent,
+                                    ),
+                                    SizedBox(height:8),
+                                    Text(
+                                      'No Internet Connection',
+                                      style: TextStyle(
+                                        fontSize:14,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Please check your network settings and try again.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize:12,
+                                        fontFamily: 'FontPoppins',
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Center(child: Text('Error: $errorMessage'));
+                          }
+                        } else if (!snapshot.hasData || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'No Review Ratings Available.',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
                                     ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Please check back later. New ratings will be available soon!',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: 'FontPoppins',
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        } else {
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: snapshot.data!.data!.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal:5),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      height:180,
+                                      width: 320,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.15),
+                                            spreadRadius: 2,
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                        border: Border.all(color: Colors.grey.shade200),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                              mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                              children: [
+                                                ClipRRect(
+                                                  borderRadius:
+                                                  BorderRadius.circular(30),
+                                                  child: Image.asset('assets/images/profile.png',
+                                                    fit: BoxFit.cover,
+                                                    width: 50,
+                                                    height: 50,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 10),
+                                                 Expanded(
+                                                  child: Text(
+                                                    snapshot.data!.data![index].text.toString().trim(),
+                                                    style: const TextStyle(
+                                                      fontFamily: 'FontPoppins',
+                                                      fontWeight: FontWeight.w400,
+                                                      fontSize: 11,
+                                                      letterSpacing:0.2,
+                                                      color: Colors.black87,
+                                                    ),
+                                                    maxLines: 6,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text('${snapshot.data!.data![index].authorName.toString()},Uttrakhand',
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize:13,
+                                                  color: Colors.black),
+                                            ),
+                                        const SizedBox(height:5,),
+                                        RatingBarIndicator(
+                                          rating: double.tryParse(snapshot.data!.data![index].rating.toString()) ?? 0.0,
+                                          itemBuilder: (context, index) => const Icon(
+                                            Icons.star,
+                                            color: Colors.amber,
+                                          ),
+                                          itemCount: 5,
+                                          itemSize:18.0,
+                                          direction: Axis.horizontal,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
                   ),
@@ -3273,7 +2652,11 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
             right: 20,
             child: GestureDetector(
               onTap: () {
-                _showAgentDialog(context);
+                DialogHelper.showAgentDialog(
+                  context,
+                      () => DialogHelper.sendWhatsAppMessage("Hello! I want to book an appointment."),
+                      () => DialogHelper.makingPhoneCall(Consulation_Phone), // Replace with your call method
+                );
               },
               child: Container(
                 padding: const EdgeInsets.only(left: 5, right: 5, top: 5),
@@ -3297,18 +2680,18 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
   }
 }
 
-Widget buildClickableServiceCard(
-    String imagePath, String label, VoidCallback onTap) {
+
+Widget buildClickableServiceCard(String imagePath, String label, VoidCallback onTap) {
   return GestureDetector(
     onTap: onTap,
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
+      padding: const EdgeInsets.symmetric(horizontal:8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 95,
-            width: 80,
+            height: 110,
+            width: 95,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8.0),
               image: DecorationImage(
@@ -3319,7 +2702,7 @@ Widget buildClickableServiceCard(
           ),
           const SizedBox(height: 5),
           SizedBox(
-            width: 80,
+            width: 90,
             child: Text(
               label,
               textAlign: TextAlign.center,
@@ -3338,13 +2721,13 @@ Widget buildClickableServiceCard(
     ),
   );
 }
-
-
-_launchURLApp() async {
-  var url = Uri.parse("https://saaol.com/zero-oil-cooking");
-  if (await canLaunchUrl(url)) {
-    await launchUrl(url);
+void openUrl({required String openingUrl}) async {
+  var url = openingUrl;
+  if (await canLaunch(url)) {
+    await launch(url);
   } else {
     throw 'Could not launch $url';
   }
 }
+
+

@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/AccessRiskQuestionsResponse.dart';
-import 'package:saaoldemo/data/model/requestmodel/AccessRiskAnswerRequest.dart';
+import 'package:saaolapp/constant/ApiConstants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/app_colors.dart';
+import '../../data/model/apiresponsemodel/AccessRiskQuestionsResponse.dart';
+import '../../data/model/requestmodel/AccessRiskAnswerRequest.dart';
 import '../../data/network/BaseApiService.dart';
 import '../../data/network/ChangeNotifier.dart';
 
@@ -18,21 +20,38 @@ class HeartHealthAssessmentForm extends StatefulWidget {
 
 class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
 
   late Future<AccessRiskQuestionsResponse> futureQuestions;
   Map<String, String> answers = {};
+  String? getName;
+  String? getEmail;
+  String? getMobile;
+  late SharedPreferences sharedPreferences;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     futureQuestions = BaseApiService().getRiskQuestions();
   }
 
   String storeID = '';
   String question1 = '';
+
+  void _loadUserData() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    setState(() {
+      getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+      getEmail = sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
+      getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
+      getName = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
+      getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
+      getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
+
+    });
+  }
+
+
   void showAutoDismissAlert(BuildContext context) {
     showDialog(
       context: context,
@@ -68,9 +87,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
   }
 
   Future<void> addRiskAnswer(String questionId, String selectedAnswer) async {
-    // Show loading dialog before making the API call
     showAutoDismissAlert(context);
-
     AccessRiskAnswerRequest accessRiskAnswerRequest = AccessRiskAnswerRequest(
       question: questionId,
       answer: selectedAnswer,
@@ -93,8 +110,6 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
     }
   }
 
-
-
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -104,19 +119,19 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
           'Assess Risk',
           style: TextStyle(
               fontFamily: 'FontPoppins',
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -136,15 +151,15 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                     'Heart Health Assessment Form',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primaryColor),
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'First Name*',
+                    'First Name',
                     style: TextStyle(
-                        fontSize: 15,
+                        fontSize:14,
                         fontFamily: 'FontPoppins',
                         fontWeight: FontWeight.w500,
                         color: Colors.black54),
@@ -153,7 +168,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                     height: 10,
                   ),
                   SizedBox(
-                    height: 48,
+                    height:50,
                     child: TextFormField(
                       decoration: InputDecoration(
                         hintText: 'First Name',
@@ -163,7 +178,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                             fontWeight: FontWeight.w500,
                             color: Colors.black54),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
+                          borderRadius: BorderRadius.circular(15.0),
                           borderSide: BorderSide.none,
                         ),
                         suffixIcon: const Icon(
@@ -174,11 +189,11 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 15.0, horizontal: 20.0),
                         filled: true,
-                        fillColor: Colors.lightBlue[50],
+                        fillColor: Colors.white,
                       ),
                       style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 15,
+                          fontSize: 14,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w600),
                     ),
@@ -187,9 +202,9 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                     height: 10,
                   ),
                   const Text(
-                    'Email ID*',
+                    'Email ID',
                     style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontFamily: 'FontPoppins',
                         fontWeight: FontWeight.w500,
                         color: Colors.black54),
@@ -198,7 +213,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                     height: 10,
                   ),
                   SizedBox(
-                    height: 48,
+                    height: 50,
                     child: TextFormField(
                       decoration: InputDecoration(
                         hintText: 'Email ID',
@@ -208,7 +223,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                             fontWeight: FontWeight.w500,
                             color: Colors.black54),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
+                          borderRadius: BorderRadius.circular(15.0),
                           borderSide: BorderSide.none,
                         ),
                         suffixIcon: const Icon(
@@ -219,11 +234,11 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 15.0, horizontal: 20.0),
                         filled: true,
-                        fillColor: Colors.lightBlue[50],
+                        fillColor: Colors.white,
                       ),
                       style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 15,
+                          fontSize: 14,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w600),
                     ),
@@ -232,9 +247,9 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                     height: 10,
                   ),
                   const Text(
-                    'Mobile Number*',
+                    'Mobile Number',
                     style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 14,
                         fontFamily: 'FontPoppins',
                         fontWeight: FontWeight.w500,
                         color: Colors.black54),
@@ -243,7 +258,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                     height: 10,
                   ),
                   SizedBox(
-                    height: 48,
+                    height: 50,
                     child: TextFormField(
                       decoration: InputDecoration(
                         hintText: 'Mobile Number',
@@ -253,7 +268,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                             fontWeight: FontWeight.w500,
                             color: Colors.black54),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
+                          borderRadius: BorderRadius.circular(15.0),
                           borderSide: BorderSide.none,
                         ),
                         suffixIcon: const Icon(
@@ -264,35 +279,16 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                         contentPadding: const EdgeInsets.symmetric(
                             vertical: 15.0, horizontal: 20.0),
                         filled: true,
-                        fillColor: Colors.lightBlue[50],
+                        fillColor: Colors.white
                       ),
                       style: const TextStyle(
                           color: Colors.black,
-                          fontSize: 15,
+                          fontSize: 14,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Questionnaire
-
-                  /*_buildQuestion(
-                  'Do you have high blood pressure?', 'highBloodPressure'),
-              _buildQuestion('Do you have diabetes?', 'diabetes'),
-              _buildQuestion(
-                  'Do you have a family history of heart-related issues?',
-                  'familyHistory'),
-              _buildQuestion('Are you overweight/obese?', 'overweight'),
-              _buildQuestion('Do you smoke?', 'smoke'),
-              _buildQuestion(
-                  'Do you walk for at least 30 minutes every day?', 'walk'),
-              _buildQuestion('Do you eat non-vegetarian food?', 'nonVeg'),
-              _buildQuestion(
-                  'Do you regularly eat fruits and salads?', 'fruitsSalads'),
-              _buildQuestion(
-                  'Do you have persistent stress in your daily life?',
-                  'stress'),
-              _buildQuestion('Do you have high cholesterol or triglyceride levels?', 'cholesterol'),*/
                 ],
               ),
             ),
@@ -342,7 +338,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                                     question,
                                     style: const TextStyle(
                                       fontFamily: 'FontPoppins',
-                                      fontSize: 14,
+                                      fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black,
                                     ),
@@ -370,7 +366,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                                               'Yes',
                                               style: TextStyle(
                                                 fontFamily: 'FontPoppins',
-                                                fontSize: 14,
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                                 color: Colors.black,
                                               ),
@@ -426,7 +422,6 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                 onPressed: () {
                   if (storeID.isNotEmpty && answers.containsKey(question1)) {
                     addRiskAnswer(storeID, answers[question1]!);
-
                   } else {
                     Fluttertoast.showToast(msg: 'Please select answers.');
                   }
@@ -441,7 +436,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                   'Submit',
                   style: TextStyle(
                       fontFamily: 'FontPoppins',
-                      fontSize: 16,
+                      fontSize: 15,
                       letterSpacing: 0.3,
                       fontWeight: FontWeight.w600,
                       color: Colors.white),
@@ -450,101 +445,6 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuestion(String question, String key) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            constraints: const BoxConstraints(
-              minHeight: 95, // Minimum height to avoid overflow
-            ),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border:
-                  Border.all(color: Colors.grey.withOpacity(0.5), width: 0.5),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text(
-                    question,
-                    style: const TextStyle(
-                      fontFamily: 'FontPoppins',
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Radio<String>(
-                              activeColor: AppColors.primaryDark,
-                              // Change radio color here
-                              value: 'yes',
-                              groupValue: answers[key],
-                              onChanged: (value) {
-                                setState(() {
-                                  answers[key] = value!;
-                                });
-                              },
-                            ),
-                            const Text(
-                              'Yes',
-                              style: TextStyle(
-                                  fontFamily: 'FontPoppins',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Radio<String>(
-                              activeColor: Colors.red,
-                              // Change radio color here
-                              value: 'no',
-                              groupValue: answers[key],
-                              onChanged: (value) {
-                                setState(() {
-                                  answers[key] = value!;
-                                });
-                              },
-                            ),
-                            const Text(
-                              'No',
-                              style: TextStyle(
-                                  fontFamily: 'FontPoppins',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

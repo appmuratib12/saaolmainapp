@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../common/app_colors.dart';
 import 'AppointmentsScreen.dart';
 import 'HomePageScreen1.dart';
@@ -7,12 +8,13 @@ import 'NavBarScreens/OurCenterScreen.dart';
 import 'NavBarScreens/TreatmentScreen.dart';
 
 
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.initialIndex});
 
   final int initialIndex;
   static List<NavigationDestination> navigation = <NavigationDestination>[
-     const NavigationDestination(
+    const NavigationDestination(
       selectedIcon: Icon(
         Icons.home,
         color: AppColors.primaryColor,
@@ -103,36 +105,48 @@ class _MainHomeScreenState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: currentIndex,
-        children: pages,
-      ),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          indicatorColor: Colors.white,
-          labelTextStyle: MaterialStateProperty.all(
-            const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontFamily: 'FontPoppins',
-              fontWeight: FontWeight.w500,
+    return WillPopScope(
+      onWillPop: () async {
+        if (currentIndex == 0) {
+          SystemNavigator.pop(); // Properly exits the app
+        } else {
+          setState(() {
+            currentIndex = 0;
+          });
+        }
+        return false;
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: currentIndex,
+          children: pages,
+        ),
+        bottomNavigationBar: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            indicatorColor: Colors.white,
+            labelTextStyle: MaterialStateProperty.all(
+              const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontFamily: 'FontPoppins',
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-        child: NavigationBar(
-          animationDuration: const Duration(seconds: 1),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          selectedIndex: currentIndex,
-          height: 60,
-          elevation: 0,
-          backgroundColor: AppColors.primaryColor,
-          onDestinationSelected: (int index) {
-            setState(() {
-              currentIndex = index;
-            });
-          },
-          destinations: HomePage.navigation,
+          child: NavigationBar(
+            animationDuration: const Duration(seconds: 1),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            selectedIndex: currentIndex,
+            height: 60,
+            elevation: 0,
+            backgroundColor: AppColors.primaryColor,
+            onDestinationSelected: (int index) {
+              setState(() {
+                currentIndex = index;
+              });
+            },
+            destinations: HomePage.navigation,
+          ),
         ),
       ),
     );

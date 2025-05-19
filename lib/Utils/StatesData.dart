@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:saaolapp/Utils/UploadPrescriptionScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/PrescriptionResponse.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/SafetyCircleValuesResponse.dart';
 import '../common/app_colors.dart';
+import '../constant/ApiConstants.dart';
+import '../data/model/apiresponsemodel/PrescriptionResponse.dart';
+import '../data/model/apiresponsemodel/SafetyCircleValuesResponse.dart';
 import '../data/network/BaseApiService.dart';
+import 'DietPlanScreen.dart';
 import 'WebViewScreen.dart';
 
 
@@ -25,7 +28,6 @@ class _StatesDataState extends State<StatesData> {
   String? url;
   String tcmID = '';
   late SharedPreferences sharedPreferences;
-
 
   String formatDate(String dateTimeString) {
     final DateTime parsedDate = DateTime.parse(dateTimeString);
@@ -47,13 +49,16 @@ class _StatesDataState extends State<StatesData> {
     });
   }
 
-
-
+  Future<void> _saveTcmID(String tcmID) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString(ApiConstants.TCM_ID, tcmID);
+    print('tcmID saved: $tcmID');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -73,12 +78,13 @@ class _StatesDataState extends State<StatesData> {
       ),
       body: SingleChildScrollView(
         physics: const ScrollPhysics(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+        child:Padding(padding: const EdgeInsets.all(6),child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             if (getPatientID.isNotEmpty) ...[
               Padding(
-                padding:const EdgeInsets.only(left:5,right:5),
+                padding: const EdgeInsets.only(left: 5, right: 5),
                 child: FutureBuilder<PrescriptionResponse>(
                   future: BaseApiService().getPatientPrescription(getPatientID),
                   builder: (context, snapshot) {
@@ -87,46 +93,70 @@ class _StatesDataState extends State<StatesData> {
                     } else if (snapshot.hasError) {
                       print('Error prescription : ${snapshot.error}');
                       return Center(child: Text('Error: ${snapshot.error}'));
-                    } else if (!snapshot.hasData || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
-                      return const Center(child: Text('No prescription available.'));
+                    } else if (!snapshot.hasData ||
+                        snapshot.data!.data == null ||
+                        snapshot.data!.data!.isEmpty) {
+                      return const Center(
+                          child: Text('No prescription available.'));
                     } else {
                       return ListView.builder(
                         itemCount: snapshot.data!.data!.length,
-                        shrinkWrap:true,
-                        physics:const NeverScrollableScrollPhysics(),
-                        clipBehavior:Clip.hardEdge,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
-                          tcmID = snapshot.data!.data![index].tcmId.toString();
-                          String date = formatDate(snapshot.data!.data![index].tcmDatetime
-                              .toString());
+                          String tcmID =
+                          snapshot.data!.data![index].tcmId.toString();
+                          _saveTcmID(tcmID);
+                          String date = formatDate(
+                              snapshot.data!.data![index].tcmDatetime.toString());
 
                           return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5,horizontal:5),
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: Colors.blue.withOpacity(0.5),
-                                  width: 1,
-                                ),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: Card(
+                              elevation:2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Padding(padding: const EdgeInsets.all(15),child:DemoScreen(tcmID: tcmID,
-                                      getPatientID: getPatientID,
-                                      patientUniqueID: patientUniqueID,date:date),),
-                                  Divider(height:20, thickness: 5, color: Colors.lightBlue[100]),
-                                  Padding(padding:const EdgeInsets.all(15),child:SafetyCircleSection(
-                                    tcmID: tcmID,
-                                    getPatientID: getPatientID,
-                                    patientUniqueID: patientUniqueID,
-                                   ),
-                                  ),
-                                ],
+                              child: Container(
+                                padding: const EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  color:Colors.white
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          "Prescription ID:",
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            fontFamily:'FontPoppins',
+                                            color: Colors.blue.shade700,
+                                          ),
+                                        ),
+                                        Text(snapshot.data!.data![index].pmId.toString(),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Divider(
+                                        color: Colors.blueAccent, thickness: 0.5),
+                                    const SizedBox(height: 8),
+                                    DemoScreen(
+                                        tcmID: tcmID,
+                                        getPatientID: getPatientID,
+                                        patientUniqueID: patientUniqueID,
+                                        date: date),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -134,28 +164,148 @@ class _StatesDataState extends State<StatesData> {
                       );
                     }
                   },
+                ),),
+            ] else ...[
+              /*const SizedBox(
+                height: 150,
+              ),
+              const Center(
+                child: Text(
+                  'No Existing data available',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'FontPoppins',
+                    color: AppColors.primaryColor,
+                    fontSize: 18,
+                  ),
+                ),
+              ),*/
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                elevation:2,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.white, Colors.grey.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDark,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryDark.withOpacity(0.2),
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.description_outlined,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Consult with prescription',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'FontPoppins',
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Upload a prescription for your recommended consultations.',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w400,
+                                fontFamily: 'FontPoppins',
+                                fontSize: 11,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  CupertinoPageRoute(
+                                      builder: (context) =>
+                                      const UploadPrescriptionScreen()),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryDark,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryDark.withOpacity(0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Image(
+                                      image: AssetImage(
+                                          'assets/icons/prescription_icon.png'),
+                                      width: 18,
+                                      height: 18,
+                                      color: Colors.white,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Upload Prescription',
+                                      style: TextStyle(
+                                        fontFamily: 'FontPoppins',
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ] else ...[
-              const SizedBox(height:150,),
-              const Center(child:Text(
-                'No Existing data available',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'FontPoppins',
-                  color:AppColors.primaryColor,
-                  fontSize:18,
-                ),
-              ),),
-
             ],
-          ],
+           ],
+         ),
         ),
       ),
     );
   }
 }
-
 
 class SafetyCircleSection extends StatefulWidget {
   final String tcmID;
@@ -216,8 +366,10 @@ class _SafetyCircleSectionState extends State<SafetyCircleSection> {
                       width: 50, // Set custom width
                       height: 50, // Set custom height
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1), // Background color for the progress indicator
-                        borderRadius: BorderRadius.circular(25), // Rounded corners
+                        color: Colors.blue.withOpacity(0.1),
+                        // Background color for the progress indicator
+                        borderRadius:
+                            BorderRadius.circular(25), // Rounded corners
                       ),
                       child: const Center(
                         child: CircularProgressIndicator(
@@ -249,8 +401,8 @@ class _SafetyCircleSectionState extends State<SafetyCircleSection> {
                           response.safetyRedZoneParam!,
                           Colors.red.shade100,
                         ),
-                      const Divider(height: 40, thickness: 5, color:Colors.red),
-
+                      const Divider(
+                          height: 40, thickness: 5, color: Colors.red),
                       if (response.safetyYellowZoneParam != null &&
                           response.safetyYellowZoneParam!.isNotEmpty)
                         buildZoneSection(
@@ -258,7 +410,8 @@ class _SafetyCircleSectionState extends State<SafetyCircleSection> {
                           response.safetyYellowZoneParam!,
                           Colors.yellow.shade100,
                         ),
-                      const Divider(height: 40, thickness: 5, color:Colors.yellow),
+                      const Divider(
+                          height: 40, thickness: 5, color: Colors.yellow),
                       if (response.safetyGreenZoneParam != null &&
                           response.safetyGreenZoneParam!.isNotEmpty)
                         buildZoneSection(
@@ -317,8 +470,8 @@ class _SafetyCircleSectionState extends State<SafetyCircleSection> {
         .replaceAll('_', ' ') // Replace underscores with spaces
         .split(' ') // Split into words
         .map((word) => word.isNotEmpty
-        ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-        : word) // Capitalize each word
+            ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
+            : word) // Capitalize each word
         .join(' '); // Join the words back into a sentence
 
     return Padding(
@@ -384,7 +537,13 @@ class DemoScreen extends StatefulWidget {
   final String getPatientID;
   final String patientUniqueID;
   final String date;
-  const DemoScreen({super.key,required this.tcmID,required this.getPatientID,required this.patientUniqueID,required this.date});
+
+  const DemoScreen(
+      {super.key,
+      required this.tcmID,
+      required this.getPatientID,
+      required this.patientUniqueID,
+      required this.date});
 
   @override
   State<DemoScreen> createState() => _DemoScreenState();
@@ -393,33 +552,33 @@ class DemoScreen extends StatefulWidget {
 class _DemoScreenState extends State<DemoScreen> {
   late SharedPreferences sharedPreferences;
 
-
   void _showLoadingDialog() {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
-          Center(
-            child: Container(
-              width: 70.0,
-              height: 70.0,
-              decoration: BoxDecoration(
-                color: AppColors.primaryColor,
-                borderRadius: BorderRadius.circular(4.0),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(12.0),
-                child: CupertinoActivityIndicator(
-                  color: Colors.white,
-                  radius: 20,
-                ),
-              ),
+      builder: (context) => Center(
+        child: Container(
+          width: 70.0,
+          height: 70.0,
+          decoration: BoxDecoration(
+            color: AppColors.primaryColor,
+            borderRadius: BorderRadius.circular(4.0),
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(12.0),
+            child: CupertinoActivityIndicator(
+              color: Colors.white,
+              radius: 20,
             ),
           ),
+        ),
+      ),
     );
   }
 
-  void handleUrlOpening(String tcmID, String getPatientID, String patientUniqueID, {bool isSafetyCircle = false}) {
+  void handleUrlOpening(
+      String tcmID, String getPatientID, String patientUniqueID,
+      {bool isSafetyCircle = false}) {
     String encodedTcmID = base64Encode(utf8.encode(tcmID));
     print('CheckTCMID:$encodedTcmID');
     String encodedGetPatientID = base64Encode(utf8.encode(getPatientID));
@@ -441,13 +600,13 @@ class _DemoScreenState extends State<DemoScreen> {
     });
   }
 
-
-  void handleHapReport(String tcmID, String getPatientID,
-      String patientUniqueID) {
+  void handleHapReport(
+      String tcmID, String getPatientID, String patientUniqueID) {
     String encodedTcmID = base64Encode(utf8.encode(tcmID));
     String encodedGetPatientID = base64Encode(utf8.encode(getPatientID));
     String encodedPatientUniqueID = base64Encode(utf8.encode(patientUniqueID));
-    String url = 'https://crm.saaol.com/view_casemanager.php?pdf_id=$encodedTcmID&p_id=$encodedGetPatientID&pu_id=$encodedPatientUniqueID&app_id=5DCAD06B90925BE3D750837F392A8FC6';
+    String url =
+        'https://crm.saaol.com/view_casemanager.php?pdf_id=$encodedTcmID&p_id=$encodedGetPatientID&pu_id=$encodedPatientUniqueID&app_id=5DCAD06B90925BE3D750837F392A8FC6';
 
     _showLoadingDialog();
     Future.delayed(const Duration(seconds: 1), () {
@@ -464,26 +623,27 @@ class _DemoScreenState extends State<DemoScreen> {
   _incrementCounter() async {
     sharedPreferences = await SharedPreferences.getInstance();
     setState(() {
-      sharedPreferences.setString('tcmID',widget.tcmID);
+      sharedPreferences.setString('tcmID', widget.tcmID);
       print('storeTCMID:${widget.tcmID}');
     });
   }
 
-
   bool isExpanded = false;
+
   @override
   Widget build(BuildContext context) {
-    return  GestureDetector(
+    return GestureDetector(
       onTap: () {
         setState(() {
           isExpanded = !isExpanded;
         });
       },
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-
-          Row(crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Text(
@@ -491,17 +651,21 @@ class _DemoScreenState extends State<DemoScreen> {
                 style: TextStyle(
                   fontFamily: 'FontPoppins',
                   fontWeight: FontWeight.w600,
-                  fontSize:16,
-                  color:AppColors.primaryColor,
+                  fontSize: 16,
+                  color: AppColors.primaryColor,
                 ),
               ),
-              const SizedBox(width:5,),
-              Text(widget.date.toString(),style: const TextStyle(
-                fontFamily: 'FontPoppins',
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-                color: Colors.black87,
+              const SizedBox(
+                width: 5,
               ),
+              Text(
+                widget.date.toString(),
+                style: const TextStyle(
+                  fontFamily: 'FontPoppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
               ),
               Expanded(child: Container()),
               Icon(
@@ -518,20 +682,22 @@ class _DemoScreenState extends State<DemoScreen> {
                 const SizedBox(height: 20),
                 GestureDetector(
                   onTap: () {
-                    handleHapReport(widget.tcmID, widget.getPatientID, widget.patientUniqueID);
+                    handleHapReport(widget.tcmID, widget.getPatientID,
+                        widget.patientUniqueID);
                   },
                   child: Container(
-                    height:50,
+                    height: 50,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color:AppColors.primaryColor,
+                      color: AppColors.primaryColor,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(mainAxisAlignment:MainAxisAlignment.center,
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.remove_red_eye_rounded,
-                          color:Colors.white,
+                          color: Colors.white,
                           size: 20,
                         ),
                         SizedBox(width: 5),
@@ -541,7 +707,7 @@ class _DemoScreenState extends State<DemoScreen> {
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
-                            color:Colors.white,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -565,6 +731,47 @@ class _DemoScreenState extends State<DemoScreen> {
                   widget.patientUniqueID,
                   isSafetyCircle: true,
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: SafetyCircleSection(
+                    tcmID: widget.tcmID,
+                    getPatientID: widget.getPatientID,
+                    patientUniqueID: widget.patientUniqueID,
+                  ),
+                ),
+                Divider(height: 20, thickness: 5, color: Colors.lightBlue[100]),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (context) =>
+                                DietPlanScreen()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.next_plan,
+                        color: Colors.white),
+                    label: const Text('Recommended Diet Plain',
+                      style: TextStyle(
+                        fontFamily: 'FontPoppins',
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                Divider(height: 20, thickness: 5, color: Colors.lightBlue[100]),
                 const SizedBox(height: 10),
               ],
             )
@@ -572,20 +779,22 @@ class _DemoScreenState extends State<DemoScreen> {
       ),
     );
   }
+
   Widget _buildReportButton(
-      BuildContext context,
-      String label,
-      String tcmID,
-      String getPatientID,
-      String patientUniqueID, {
-        bool isSafetyCircle = false,
-      }) {
+    BuildContext context,
+    String label,
+    String tcmID,
+    String getPatientID,
+    String patientUniqueID, {
+    bool isSafetyCircle = false,
+  }) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
       height: 50,
       child: ElevatedButton.icon(
         onPressed: () {
-          handleUrlOpening(widget.tcmID, widget.getPatientID, widget.patientUniqueID,
+          handleUrlOpening(
+              widget.tcmID, widget.getPatientID, widget.patientUniqueID,
               isSafetyCircle: isSafetyCircle);
           _incrementCounter();
         },
@@ -609,4 +818,3 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 }
-

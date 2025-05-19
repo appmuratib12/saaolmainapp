@@ -1,13 +1,14 @@
 import 'dart:async';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_autofill/sms_autofill.dart';
-import 'package:saaoldemo/Utils/LocationScreen.dart';
-import 'package:saaoldemo/Utils/RegScreen.dart';
+import '../DialogHelper.dart';
 import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
 import '../data/network/ApiService.dart';
+import 'LocationScreen.dart';
+import 'RegScreen.dart';
+
 
 class OTPPage extends StatefulWidget {
   final String phoneNumber;
@@ -25,8 +26,6 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
   String? _errorText;
   int start = 30;
   bool isTimerRunning = false;
-
-
 
   @override
   void initState() {
@@ -46,7 +45,9 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
       _otpCode = code!;
     });
     print("Code received: $_otpCode"); // Debug statement
-
+    if (_otpCode != null && _otpCode!.length == 6) {
+      _verifyOTP1(); // Automatically verify OTP
+    }
   }
 
   @override
@@ -57,16 +58,18 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
 
   Future<void> _verifyOTP1() async {
     if (_otpCode != null && _otpCode!.length == 6) {
-      _showLoadingDialog();
+      DialogHelper.showLoadingDialog(context); // Show
       ApiService apiService = ApiService();
       var otpVerificationResult = await apiService.verifyOTP(widget.phoneNumber, _otpCode!,context);
       Navigator.pop(context); // Close loading dialog
       print('OTPCODE:$_otpCode');
 
       if (otpVerificationResult != null && otpVerificationResult.success == true) {
-        print("OTP verified successfully.Status: ${otpVerificationResult.success}");
-        print("OTP verified successfully. ${otpVerificationResult.message}");
-        var patientDetails = await apiService.verifyPatient('8800695632');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
+            backgroundColor: Colors.green),);
+        var patientDetails = await apiService.verifyPatient(widget.phoneNumber);
         if (patientDetails != null) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setBool(ApiConstants.IS_LOGIN, true);
@@ -74,9 +77,10 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
           Navigator.push(context,MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
 
         } else {
+          //DialogHelper.showThankYouDialog(context);
           //showThankYouDialog(context);
-          Navigator.push(context,MaterialPageRoute(builder: (context) => RegScreen(isFromOTP:true)));
-          print("Patient not found or phone number is incorrect.");
+          Navigator.push(context,MaterialPageRoute(builder: (context) => const RegScreen(isFromOTP:true)));
+
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,123 +89,11 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
             backgroundColor: Colors.red,
           ),
         );
-        print("OTP not found for this mobile number.");
       }
     } else {
       print("Please enter a valid OTP.");
     }
   }
-
-  void showThankYouDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          content: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                right: -10,
-                top: -10,
-                child: IconButton(
-                  icon:  const Icon(Icons.close, color:AppColors.primaryColor),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(5),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.info_rounded,
-                      color: Colors.red,
-                      size: MediaQuery.of(context).size.width * 0.2,
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Verification Failed!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w600,
-                        color: Colors.redAccent,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'you are not registered.pls contact us on ____',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 40,
-                      child: ElevatedButton(
-                        onPressed: () {
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Call us',
-                          style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 16,
-                            letterSpacing:0.1,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          width: 70.0,
-          height: 70.0,
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: CupertinoActivityIndicator(
-              color: Colors.white,
-              radius: 20,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -222,7 +114,7 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
         ),
         centerTitle: true,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       body: SingleChildScrollView(
         physics: const ScrollPhysics(),
         child: Padding(
@@ -242,9 +134,11 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
               ),
               Card(color:Colors.white,
                 elevation: 5,
+                shadowColor: Colors.grey.withOpacity(0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
                   side:BorderSide(color:Colors.grey.withOpacity(0.5),width:0.5)
+
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(15.0),
@@ -252,25 +146,26 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                       const Text(
                         'Verification Code',
                         style: TextStyle(
                           fontFamily: 'FontPoppins',
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                          color:AppColors.primaryColor,
                         ),
                       ),
                       const SizedBox(
                         height: 10,
                       ),
                       const Text(
-                        'We have sent the code verification to your mobile number:',
+                        'We have sent an OTP to your mobile number:',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87),
+                          fontFamily: 'FontPoppins',
+                          fontSize:14,
+                          color: Colors.black87,
+                        ),
                       ),
                       const SizedBox(
                         height: 10,
@@ -353,42 +248,14 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
                       const SizedBox(
                         height: 30,
                       ),
-
                     ],
-                  ),
-                ),
-              ),
-              const SizedBox(height:40),
-              SizedBox(
-                height: 55,
-                width: MediaQuery.of(context).size.width,
-                child: ElevatedButton(
-                  onPressed: () {
-                    _verifyOTP1();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Verify OTP',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
                   ),
                 ),
               ),
               const SizedBox(
                 height:10,
               ),
-              Row(
+              /*Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
@@ -421,8 +288,7 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
                     ),
                   ),
                 ],
-              ),
-
+              ),*/
             ],
           ),
         ),

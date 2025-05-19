@@ -1,14 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:saaolapp/constant/ApiConstants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/Utils/MyHomePageScreen.dart';
-import 'package:saaoldemo/constant/ApiConstants.dart';
 import '../common/app_colors.dart';
-import 'ManuallyLocationScreen.dart';
+import 'MyHomePageScreen.dart';
+
 
 class ShareLocationScreen extends StatefulWidget {
   const ShareLocationScreen({super.key});
@@ -17,49 +15,74 @@ class ShareLocationScreen extends StatefulWidget {
   State<ShareLocationScreen> createState() => _ShareLocationScreenState();
 }
 
+
 class _ShareLocationScreenState extends State<ShareLocationScreen> {
 
   late SharedPreferences sharedPreferences;
-
-  Future<void> _requestLocationPermission() async {
-    PermissionStatus permission = await Permission.location.request();
-    if (permission.isGranted) {
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      Fluttertoast.showToast(msg: 'Location: LAT: ${position.latitude}, LNG: ${position.longitude}');
-    } else if (permission.isDenied || permission.isPermanentlyDenied) {
-      Fluttertoast.showToast(msg: 'Location permission denied.');
-    }
+  void showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Column(
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
+                  ),
+                  SizedBox(height: 20),
+                  Icon(Icons.navigation, size: 30, color: AppColors.primaryColor),
+                  SizedBox(height: 10),
+                  Text(
+                    "Fetching your location...",
+                    style: TextStyle(fontSize:13,
+                        fontWeight: FontWeight.w500,fontFamily:'FontPoppins',
+                        color:Colors.black87),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-
-
-  Future<Position> getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      await Geolocator.openLocationSettings();
-      throw Exception('Location services are disabled.');
-    }
-    // Check location permissions
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      // Request permission if denied
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Location permissions are denied.');
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are permanently denied
-      throw Exception('Location permissions are permanently denied.');
-    }
-    // Get the current location
-    return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-  }
-
-  void fetchLocation() async {
+  void fetchLocation(BuildContext context) async {
     try {
-      Position position = await getCurrentLocation();
-      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          showSnackbar(context, 'Location permission denied. Please allow it to continue.');
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        showSnackbar(context, 'Location permission permanently denied. Enable it from settings.');
+        await Geolocator.openLocationSettings();
+        return;
+      }
+      showLoadingDialog(context);
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds:30),
+      );
+      if (position == null) {
+        showSnackbar(context, "Could not get location. Try again.");
+        return;
+      }
 
+      print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
@@ -67,32 +90,35 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
 
       if (placemarks.isNotEmpty) {
         Placemark placemark = placemarks.first;
-        String? locationName = placemark.locality; // City or locality name
-        String? subLocality = placemark.subLocality; // More specific location
-        String? pincode = placemark.postalCode; // Pincode
-        sharedPreferences = await SharedPreferences.getInstance();
-        if (pincode != null) {
-          await sharedPreferences.setString(ApiConstants.PINCODE, pincode);
-          await sharedPreferences.setString('locationName', locationName.toString());
-          await sharedPreferences.setString('subLocality', subLocality.toString());
-          await sharedPreferences.setString('lat',position.latitude.toString());
-          await sharedPreferences.setString('long',position.longitude.toString());
-          print('Pincode stored in SharedPreferences: $pincode');
-          print('Location Name: $locationName');
-          print('Sub Locality: $subLocality');
-          print('Pincode: $pincode');
-          Navigator.push(context,
-            CupertinoPageRoute(
-                builder: (context) => const HomePage(initialIndex:0)),
-          );
+        String? locationName = placemark.locality;
+        String? subLocality = placemark.subLocality;
+        String? pincode = placemark.postalCode;
 
-        }
+        SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+        sharedPreferences.setString(ApiConstants.PINCODE, pincode ?? 'Unknown');
+        sharedPreferences.setString('locationName', locationName ?? 'Unknown');
+        sharedPreferences.setString('subLocality', subLocality ?? 'Unknown');
+        sharedPreferences.setString('lat', position.latitude.toStringAsFixed(6));
+        sharedPreferences.setString('long', position.longitude.toStringAsFixed(6));
+        print('PincodeStore: ${placemark.postalCode}');
+        print('PincodeStoring: ${position.latitude},${position.longitude}');
+
+        Navigator.pushReplacement(context, CupertinoPageRoute(builder: (context) => const HomePage(initialIndex: 0)));
       } else {
-        print('No placemarks found.');
+        showSnackbar(context, 'No placemarks found.');
       }
     } catch (e) {
-      print('Error: $e');
+      showSnackbar(context, 'Error fetching location: $e');
     }
+  }
+  void showSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
 
@@ -100,132 +126,76 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Background container
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.white, Colors.grey[200]!],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-          // Centered content
-          Center(
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              color: Colors.white,
-              padding: const EdgeInsets.only(left: 15, right: 15, top: 20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image(
-                    image: const AssetImage('assets/images/location.jpg'),
-                    fit: BoxFit.fill,
-                    height: 410,
-                    width: MediaQuery.of(context).size.width,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 60, left: 15, right: 15, bottom: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Image.asset(
+                  'assets/images/location.jpg',
+                  fit: BoxFit.fill,
+                  height: 300,
+                  width: MediaQuery.of(context).size.width,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Please Share Your Location',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'FontPoppins',
+                    color: Colors.black87,
                   ),
-                  const SizedBox(height: 20),
-                  // Main text
-                  const Text(
-                    'Please share your location',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'We need your location to offer you the best services tailored to your area.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'FontPoppins',
+                    color: Colors.black54,
                   ),
-                  const SizedBox(height: 10),
-                  // Sub text
-                  const Text(
-                    'We need your delivery location to provide\nbetter services',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    height: 48,
-                    width: MediaQuery.of(context).size.width,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        //_requestLocationPermission();
-                        fetchLocation();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryColor,
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                ),
+                const SizedBox(height: 30),
+                SizedBox(
+                  height: 50,
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      fetchLocation(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      icon: const Icon(
-                        Icons.my_location,
-                        size: 20,
+                    ),
+                    icon: const Icon(
+                      Icons.my_location,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      'Enable device location',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'FontPoppins',
                         color: Colors.white,
                       ),
-                      label: const Text(
-                        'Enable device location',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'FontPoppins',
-                          color: Colors.white,
-                        ),
-                      ),
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  SizedBox(
-                    height: 48,
-                    width: MediaQuery.of(context).size.width,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          CupertinoPageRoute(
-                              builder: (context) => const SearchBarScreen()),
-                        );
-                        Fluttertoast.showToast(msg: 'Click');
-
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                            side: const BorderSide(
-                                color: AppColors.primaryColor, width: 0.6)),
-                      ),
-                      icon: const Icon(
-                        Icons.search_outlined,
-                        size: 25,
-                        color: AppColors.primaryColor,
-                      ),
-                      label: const Text(
-                        'Enter location manually',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'FontPoppins',
-                          color: AppColors.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 15),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

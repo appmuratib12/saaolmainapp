@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:saaoldemo/data/network/BaseApiService.dart';
+import '../DialogHelper.dart';
 import '../common/app_colors.dart';
-import 'PillReminderScreen.dart';
+import '../data/network/BaseApiService.dart';
 
 class UploadPrescriptionScreen extends StatefulWidget {
   const UploadPrescriptionScreen({super.key});
@@ -53,68 +53,82 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
 
 
 
-  void _showRemoveConfirmationDialog(BuildContext context) {
+  void uploadFile(BuildContext context) async {
+    try {
+      if (_image != null) {
+        await BaseApiService().uploadPrescription(_image!);
+      } else if (_pdfFile != null) {
+        await BaseApiService().uploadPrescription(_pdfFile!);
+      } else {
+        Fluttertoast.showToast(msg: 'No file selected.');
+        Navigator.of(context).pop(); // Dismiss loading
+        return;
+      }
+      Navigator.of(context).pop();
+      showSuccessDialog(context);
+
+    } catch (e) {
+      Navigator.of(context).pop(); // Dismiss loading
+    }
+  }
+  static void showSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          child: Container(
-            height: 150,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Icon(Icons.cloud_done, color: Colors.green, size: 90),
+                const SizedBox(height: 20),
                 const Text(
-                  "Are you sure you want to remove this prescription?",
+                  "Prescription Uploaded",
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize:15,
+                    fontWeight: FontWeight.w700,
                     fontFamily: 'FontPoppins',
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+                    color: AppColors.primaryColor,
                   ),
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      // Close the dialog
-                      child: const Text(
-                        "Cancel",
-                        style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 15,
-                            fontFamily: 'FontPoppins',
-                            fontWeight: FontWeight.w500),
-                      ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Your prescription has been successfully uploaded.\n"
+                      "💊 Our medical team will review it shortly.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize:12,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'FontPoppins',
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close dialog
+                    Navigator.pop(context); // Optionally go back to previous screen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    const SizedBox(width: 10),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Close the dialog
-                        _removeImage(); // Call your remove function
-                      },
-                      child: const Text(
-                        "Remove",
-                        style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 15,
-                            fontFamily: 'FontPoppins',
-                            fontWeight: FontWeight.w500),
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 12),
+                  ),
+                  child: const Text(
+                    "OK",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'FontPoppins',
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -124,25 +138,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
     );
   }
 
-  void uploadFile(BuildContext context) async {
-    try {
-      if (_image != null) {
-        await BaseApiService().uploadPrescription(_image!);
-      } else if (_pdfFile != null) {
-        await BaseApiService().uploadPrescription(_pdfFile!);
-      } else {
-        Fluttertoast.showToast(msg: 'No file selected.');
-        Navigator.of(context).pop(); // Dismiss the progress dialog
-        return;
-      }
-      Fluttertoast.showToast(msg: 'Upload successful.');
-    } catch (e) {
-      Fluttertoast.showToast(msg: 'Upload failed: $e');
-    } finally {
-      Navigator.of(context).pop();
-      Navigator.pop(context);
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -185,48 +181,34 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                           fontFamily: 'FontPoppins',
                           color: Colors.black),
                     ),
-                    const SizedBox(height: 15),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 5,horizontal:5),
-                      decoration: BoxDecoration(
-                        color: Colors.redAccent,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildUploadOption(
-                            icon: FontAwesomeIcons.camera,
-                            label: 'Camera',
-                            onTap: () => _pickImage(ImageSource.camera),
-                          ),
-                          _buildVerticalDivider(),
-                          _buildUploadOption(
-                            icon: FontAwesomeIcons.image,
-                            label: 'Gallery',
-                            onTap: () => _pickImage(ImageSource.gallery),
-                          ),
-                          _buildVerticalDivider(),
-                          _buildUploadOption(
-                            icon: FontAwesomeIcons.filePrescription,
-                            label: 'My Prescription',
-                            onTap: () => _pickImage(ImageSource.gallery),
-                          ),
-                          _buildVerticalDivider(),
-                          _buildUploadOption(
-                            icon: FontAwesomeIcons.filePdf,
-                            label: 'Pick PDF',
-                            onTap: _pickPDF,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height:20),
+                    Row(
+                      children: [
+                        _uploadButton(
+                          icon: FontAwesomeIcons.camera,
+                          label: 'Camera',
+                          onTap: () => _pickImage(ImageSource.camera),
+                        ),
+                        const SizedBox(width:8),
+                        _uploadButton(
+                          icon: FontAwesomeIcons.image,
+                          label: 'Gallery',
+                          onTap: () => _pickImage(ImageSource.gallery),
+                        ),
+                        const SizedBox(width:8),
+                        _uploadButton(
+                          icon: FontAwesomeIcons.filePdf,
+                          label: 'Pick PDF',
+                          onTap: _pickPDF,
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     if (_image != null || _pdfFile != null) ...[
                       const Text(
                         'ATTACHED FILE',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontFamily: 'FontPoppins',
                           fontWeight: FontWeight.w500,
                           color: Colors.black54,
@@ -260,15 +242,22 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                               icon: const Icon(Icons.cancel,
                                   color: Colors.red, size: 25),
                               onPressed: () {
-                                _showRemoveConfirmationDialog(context);
+                                DialogHelper.showRemoveConfirmationDialog(context,() {
+                                    _removeImage();
+                                  },
+                                );
                               },
                             ),
                           ),
                         ],
                       ),
                     ],
-
-                    const SizedBox(height: 15),
+                    Divider(
+                      thickness:5,
+                      color:Colors.blue[50],
+                      height:15,
+                    ),
+                    const SizedBox(height:10),
                     const Text(
                       'What is Valid Prescription?',
                       style: TextStyle(
@@ -286,7 +275,13 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                         fit: BoxFit.cover,
                       ),
                     ),
+                    Divider(
+                      thickness:5,
+                      color:Colors.blue[50],
+                      height:15,
+                    ),
                     const SizedBox(height: 15),
+
                     const Row(
                       children: [
                         Icon(
@@ -341,7 +336,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                                 Text(
                                   "Don't have a valid prescription?",
                                   style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize:13,
                                       fontFamily: 'FontPoppins',
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black),
@@ -350,7 +345,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                                 Text(
                                   'Tap here to book a tele-consultation now!',
                                   style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize:11,
                                       fontFamily: 'FontPoppins',
                                       fontWeight: FontWeight.w500,
                                       color: AppColors.primaryColor),
@@ -374,13 +369,13 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                 ),
               ),
 
-             Padding(padding: EdgeInsets.only(left:10,right:10),child: SizedBox(
+             Padding(padding: const EdgeInsets.only(left:10,right:10),
+               child: SizedBox(
                height: 45,
                width: double.infinity,
                child: ElevatedButton(
                  onPressed: () async {
                    if (_image != null || _pdfFile != null) {
-                     Fluttertoast.showToast(msg: 'Uploading Prescription');
                      showDialog(
                        context: context,
                        barrierDismissible: false,
@@ -403,7 +398,7 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                    'UPLOAD PRESCRIPTION',
                    style: TextStyle(
                        fontFamily: 'FontPoppins',
-                       fontSize: 15,
+                       fontSize: 14,
                        fontWeight: FontWeight.w600,
                        color: Colors.white),
                  ),
@@ -416,37 +411,76 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
       ),
     );
   }
-
-  Widget _buildUploadOption({
+  Widget _uploadButton({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Icon(icon, color: Colors.white, size: 25),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontFamily: 'FontPoppins',
-              fontWeight: FontWeight.w500,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.primaryDark,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: Offset(2, 2),
+            )
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size:15),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize:11,
+                fontFamily:'FontPoppins',
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+}
+class CustomProgressIndicator extends StatelessWidget {
+  const CustomProgressIndicator({super.key});
 
-  Widget _buildVerticalDivider() {
-    return Container(
-      height: 25,
-      width: 1,
-      color: Colors.white,
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.primaryColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 20),
+            Text(
+              "Please wait...",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+                fontFamily: 'FontPoppins',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

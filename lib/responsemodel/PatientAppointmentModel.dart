@@ -17,7 +17,6 @@ class PatientAppointmentModel {
     required this.paymentID,
   });
 
-  // Convert Appointment object to Map for SQLite
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -29,8 +28,6 @@ class PatientAppointmentModel {
       'paymentID': paymentID,
     };
   }
-
-  // Create Appointment object from Map
   factory PatientAppointmentModel.fromMap(Map<String, dynamic> map) {
     return PatientAppointmentModel(
       id: map['id'],

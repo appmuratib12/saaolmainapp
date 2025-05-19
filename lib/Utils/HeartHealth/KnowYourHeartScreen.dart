@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:toggle_switch/toggle_switch.dart';
-
 import '../../common/app_colors.dart';
 import '../../constant/text_strings.dart';
 
@@ -13,9 +12,6 @@ class KnowYourHeartScreen extends StatefulWidget {
 
 class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
   int initialLabelIndex = 0;
-  int _selectedIndex = 0;
-
-  final List<String> _buttonTitles = ['About', 'Risk', 'Treatments'];
   final List<String> _contentList = [aboutTxtHeart, riskTxt, treatmentTxt];
 
   @override
@@ -53,7 +49,7 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                 ),
                 child: const Center(
                   child: Icon(
-                    Icons.arrow_back,
+                    Icons.arrow_back_ios,
                     color: AppColors.primaryColor,
                     size: 20,
                   ),
@@ -62,7 +58,7 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 250.0),
+            padding: const EdgeInsets.only(top:220.0),
             child: Container(
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.only(
@@ -85,21 +81,21 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                         'What is Heart Attack?',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 18,
+                            fontSize:15,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryDark),
                       ),
                       const SizedBox(
                         height: 15,
                       ),
-                      const Text(
-                        aboutHearAttackTxt,
+                       Text(
+                        aboutHearAttackTxt.trim(),
                         textAlign: TextAlign.justify,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black54),
+                            color: Colors.black87),
                       ),
                       const SizedBox(
                         height: 15,
@@ -109,7 +105,7 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                           'High Blood Pressure',
                           style: TextStyle(
                               fontFamily: 'FontPoppins',
-                              fontSize: 18,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primaryDark),
                         ),
@@ -137,17 +133,17 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                         ],
                         customTextStyles: const [
                           TextStyle(
-                            fontSize: 14.0,
+                            fontSize: 12.0,
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w500,
                           ),
                           TextStyle(
-                            fontSize: 14.0,
+                            fontSize: 12.0,
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w500,
                           ),
                           TextStyle(
-                            fontSize: 14.0,
+                            fontSize: 12.0,
                             fontFamily: 'FontPoppins',
                             fontWeight: FontWeight.w500,
                           ),
@@ -180,7 +176,7 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                               textAlign: TextAlign.justify,
                               // Content changes based on the selected index
                               style: const TextStyle(
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontFamily: 'FontPoppins',
                                 fontWeight: FontWeight.w500,
                                 color: Colors.black54,
@@ -192,14 +188,14 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                       const SizedBox(
                         height: 30,
                       ),
-                      const Text(
+                      /*const Text(
                         'Video Gallery',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryColor),
-                      )
+                      )*/
                     ],
                   ),
                 ),

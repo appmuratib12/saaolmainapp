@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/network/BaseApiService.dart';
 import '../common/app_colors.dart';
 import '../data/model/apiresponsemodel/FaqsResponse.dart';
+import '../data/network/BaseApiService.dart';
 
 class UserFormScreen extends StatefulWidget {
   const UserFormScreen({super.key});
@@ -103,7 +103,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
                   child: Text(
                     faq.title ?? "No title",
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontFamily:'FontPoppins',
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -123,7 +123,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   faq.description ?? "No description available",
-                  style:  const TextStyle(fontSize: 14, color: Colors.black87,fontWeight:FontWeight.w500,fontFamily:'FontPoppins'),
+                  style:  const TextStyle(fontSize: 13, color: Colors.black87,fontWeight:FontWeight.w500,fontFamily:'FontPoppins'),
                 ),
               ),
               crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,

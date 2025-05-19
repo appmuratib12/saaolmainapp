@@ -22,7 +22,7 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
-          'About Dr. Bimal Chhajer',
+          'About $DrBimal',
           style: TextStyle(
               fontFamily: 'FontPoppins',
               fontSize: 18,
@@ -30,15 +30,15 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        physics: ScrollPhysics(),
+        physics: const ScrollPhysics(),
         child: Container(
-          margin: EdgeInsets.all(15),
+          margin: const EdgeInsets.all(15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -52,16 +52,14 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
               const SizedBox(
                 height: 10,
               ),
-               Text(
-                'Dr. Bimal Chhajer',
+               const Text(DrBimal,
                 style: TextStyle(
                     fontSize: 18,
                     fontFamily: 'FontPoppins',
                     fontWeight: FontWeight.w600,
                     color: AppColors.primaryColor),
               ),
-              const Text(
-                'MBBS, MD, Founder | SAAOL',
+              const Text(Mbbs,
                 style: TextStyle(
                     fontSize: 15,
                     fontFamily: 'FontPoppins',
@@ -75,7 +73,7 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
                 aboutBimalSirTxt,
                 textAlign: TextAlign.justify,
                 style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontFamily: 'FontPoppins',
                     fontWeight: FontWeight.w500,
                     color: Colors.black),
@@ -87,7 +85,7 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
                 aboutBimalSirTxt1,
                 textAlign: TextAlign.justify,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontFamily: 'FontPoppins',
                   fontWeight: FontWeight.w500,
                 ),

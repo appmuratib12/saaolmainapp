@@ -1,14 +1,15 @@
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:saaolapp/constant/text_strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple_circular_progress_bar/simple_circular_progress_bar.dart';
-import 'package:saaoldemo/constant/ApiConstants.dart';
-import 'package:saaoldemo/constant/ValidationCons.dart';
+import '../DialogHelper.dart';
 import '../common/app_colors.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import '../constant/ApiConstants.dart';
+import '../constant/ValidationCons.dart';
 
 
 class EditProfileScreen extends StatefulWidget {
@@ -22,8 +23,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final ValueNotifier<double> progressNotifier = ValueNotifier<double>(40.0);
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _dateController = TextEditingController();
-  List<String> countriesArray = ["India", "Bangladesh", "Nepal"];
   final List<String> genderOptions = ['Male', 'Female', 'Other'];
+  final List<String> nationalityOptions = ['India','China','Bangladesh','Nepal'];
   List<String> titleArrays = ["Mrs.", "Mr.", "Ms", "Dr."];
   late SharedPreferences sharedPreferences;
   String getName = '';
@@ -55,7 +56,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _dateController.dispose();
+    nameController.removeListener(_updateProgress);
+    lastNameController.removeListener(_updateProgress);
+    phoneController.removeListener(_updateProgress);
+    emailController.removeListener(_updateProgress);
+    passwordController.removeListener(_updateProgress);
+    progressNotifier.dispose();
     super.dispose();
+
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -85,9 +93,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-
   String? selectedGender;
   String? selectTitle;
+  String? selectNationality;
 
   void _showGenderPickerDialog() {
     showDialog(
@@ -101,7 +109,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             'Select Gender',
             style: TextStyle(
               fontFamily: 'FontPoppins',
-              fontSize: 20,
+              fontSize:16,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryColor,
             ),
@@ -117,7 +125,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     genderOptions[index],
                     style: const TextStyle(
                       fontFamily: 'FontPoppins',
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -135,8 +143,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       },
     );
   }
-
-
   void _showTitlePickerDialog() {
     showDialog(
       context: context,
@@ -149,7 +155,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             'Select Title',
             style: TextStyle(
               fontFamily: 'FontPoppins',
-              fontSize: 20,
+              fontSize:16,
               fontWeight: FontWeight.w600,
               color: AppColors.primaryColor,
             ),
@@ -165,13 +171,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     titleArrays[index],
                     style: const TextStyle(
                       fontFamily: 'FontPoppins',
-                      fontSize: 16,
+                      fontSize:14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   onTap: () {
                     setState(() {
                       selectTitle = titleArrays[index];
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+  void _showNationalityPickerDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Select Nationality',
+            style: TextStyle(
+              fontFamily: 'FontPoppins',
+              fontSize:16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryColor,
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: nationalityOptions.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(
+                    nationalityOptions[index],
+                    style: const TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      selectNationality = nationalityOptions[index];
                     });
                     Navigator.of(context).pop();
                   },
@@ -231,45 +283,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-
   String getPatientID = '';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadProfileImage();
+    nameController.addListener(_updateProgress);
+    lastNameController.addListener(_updateProgress);
+    phoneController.addListener(_updateProgress);
+    emailController.addListener(_updateProgress);
+    passwordController.addListener(_updateProgress);
+    _updateProgress();
+  }
+  void _updateProgress() {
+    int filled = 0;
+    int total = 5;
+    if (nameController.text.trim().isNotEmpty) filled++;
+    if (lastNameController.text.trim().isNotEmpty) filled++;
+    if (phoneController.text.trim().isNotEmpty) filled++;
+    if (emailController.text.trim().isNotEmpty) filled++;
+    if (passwordController.text.trim().isNotEmpty) filled++;
+    double progress = (filled / total) * 100;
+    progressNotifier.value = progress;
+
   }
 
 
-  void _updateSharedPreferences(String key, String value) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, value);
+  void _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? imagePath = prefs.getString('userProfileImage');
+    if (imagePath != null && imagePath.isNotEmpty) {
+      setState(() {
+        _image = File(imagePath);
+      });
+    }
   }
 
-  void _saveUpdatedData() {
-    String updatePatientName = nameController.text.trim();
-    String updatePatientLastName = lastNameController.text.trim();
-    String updatePatientEmail = emailController.text.trim();
-    String updatePatientPhone = phoneController.text.trim();
-    String updatePatientPassword = passwordController.text.trim();
-    String updatePatientDob = _dateController.text.trim();
-    String updatePatientGender = selectedGender.toString();
 
-    if (updatePatientName.isNotEmpty && updatePatientEmail.isNotEmpty &&
-        updatePatientPhone.isNotEmpty && updatePatientLastName.isNotEmpty &&
-        updatePatientPassword.isNotEmpty && updatePatientDob.isNotEmpty &&
-        updatePatientGender.isNotEmpty) {
+  Future<void> _saveUpdatedData() async {
+    String updatedName = nameController.text;
+    String updatedLastName = lastNameController.text;
+    String updatedEmail = emailController.text;
+    String updatedPhone = phoneController.text;
+    String updatedGender = genderController.text;
+    String updatedDob = _dateController.text;
 
-      _updateSharedPreferences('PatientFirstName', updatePatientName);
-      _updateSharedPreferences('PatientLastName', updatePatientLastName);
-      _updateSharedPreferences('PatientEmailName', updatePatientEmail);
-      _updateSharedPreferences('PatientPhoneName', updatePatientPhone);
-      _updateSharedPreferences('PatientPassword',  updatePatientPassword);
-      _updateSharedPreferences('PatientDob',  updatePatientDob);
-      _updateSharedPreferences('PatientGender',  updatePatientGender);
-      print("Updated First Name: $updatePatientName");
-    } else {
-      print("fields is empty, nothing to update.");
+
+    await sharedPreferences.setString('PatientFirstName', updatedName);
+    await sharedPreferences.setString('PatientLastName', updatedLastName);
+    await sharedPreferences.setString('PatientContact', updatedPhone);
+    await sharedPreferences.setString('patientEmail', updatedEmail);
+    await sharedPreferences.setString('PatientGender', updatedGender);
+    await sharedPreferences.setString('PatientDob', updatedDob);
+    await sharedPreferences.setString('GoogleUserName',updatedName);
+    await sharedPreferences.setString('GoogleUserEmail',updatedEmail);
+
+    await sharedPreferences.setString(ApiConstants.USER_NAME, updatedName);
+    await sharedPreferences.setString(ApiConstants.USER_MOBILE, updatedPhone);
+    await sharedPreferences.setString(ApiConstants.USER_EMAIL, updatedEmail);
+    await sharedPreferences.setString(ApiConstants.USER_PASSWORD, passwordController.text);
+    await sharedPreferences.setString(ApiConstants.LAST_NAME,updatedLastName);
+    await sharedPreferences.setString(ApiConstants.GENDER,selectedGender.toString());
+    await sharedPreferences.setString(ApiConstants.TITLE,selectTitle.toString());
+    await sharedPreferences.setString(ApiConstants.DOB,updatedDob);
+    await sharedPreferences.setString(ApiConstants.NATIONALITY,selectNationality.toString());
+    if (_image != null) {
+      await sharedPreferences.setString('userProfileImage', _image!.path);
     }
   }
 
@@ -277,7 +358,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     sharedPreferences = await SharedPreferences.getInstance();
     setState(() {
       getPatientID = sharedPreferences.getString('pmId') ?? '';
-
       if (getPatientID.isNotEmpty) {
         _loadPatientData();
       } else {
@@ -285,7 +365,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     });
   }
-
   void _loadPatientData() {
     getName = sharedPreferences.getString('PatientFirstName') ?? '';
     getLastName = sharedPreferences.getString('PatientLastName') ?? '';
@@ -294,33 +373,46 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     selectedGender = sharedPreferences.getString('PatientGender') ?? '';
     getDob = sharedPreferences.getString('PatientDob') ?? '';
     selectTitle = sharedPreferences.getString('PatientSalutation') ?? '';
+    getPassword = sharedPreferences.getString(ApiConstants.USER_PASSWORD) ?? '';
+    selectNationality = sharedPreferences.getString(ApiConstants.NATIONALITY) ?? '';
+
+
     nameController.text = getName;
     emailController.text = getEmail;
     phoneController.text = getPhone;
     lastNameController.text = getLastName;
     genderController.text = selectedGender ?? '';
     _dateController.text = getDob;
+    passwordController.text = getPassword;
 
-    print('LastName:--> $getLastName');
   }
-
   void _loadDefaultUserData() {
-    getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+    final googleName = sharedPreferences.getString('GoogleUserName') ?? '';
+    final googleEmail = sharedPreferences.getString('GoogleUserEmail') ?? '';
+    getName = sharedPreferences.getString(ApiConstants.USER_NAME) ??  '';
     getPhone = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
     getEmail = sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
     getPassword = sharedPreferences.getString(ApiConstants.USER_PASSWORD) ?? '';
     saveUserID = sharedPreferences.getString(ApiConstants.USER_ID) ?? '';
-
+    getLastName = sharedPreferences.getString(ApiConstants.LAST_NAME) ?? '';
+    selectedGender = sharedPreferences.getString(ApiConstants.GENDER) ?? '';
+    selectTitle = sharedPreferences.getString(ApiConstants.TITLE) ?? '';
+    getDob = sharedPreferences.getString(ApiConstants.DOB) ?? '';
+    selectNationality = sharedPreferences.getString(ApiConstants.NATIONALITY) ?? '';
+    if (getName.isEmpty) {
+      getName = googleName;
+    }
+    if (getEmail.isEmpty) {
+      getEmail = googleEmail;
+    }
     nameController.text = getName;
     emailController.text = getEmail;
     phoneController.text = getPhone;
     passwordController.text = getPassword;
-
-    print('userEmail --> $getEmail');
-    print('LogOut Message --> $getName');
-    print('getTokenStudent --> $getPhone');
+    lastNameController.text = getLastName;
+    genderController.text = selectedGender ?? '';
+    _dateController.text = getDob;
   }
-
 
   Future<void> uploadImage(String id) async {
     String name = nameController.text.trim();
@@ -329,19 +421,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     String password = passwordController.text.trim();
     String lastName = lastNameController.text.trim();
 
-
-
     if (_image == null) {
       print('No image selected');
       return;
     }
 
-    _showLoadingDialog();
+    DialogHelper.showLoadingDialog(context);
+
     var stream = http.ByteStream(_image!.openRead());
     var length = await _image!.length();
-    var uri = Uri.parse(
-        'https://saaol.org/saaolnewapp/api/update-profile/$id');
-
+    var uri = Uri.parse('https://saaol.org/saaolnewapp/api/update-profile/$id');
 
     var request = http.MultipartRequest('POST', uri);
     request.fields['name'] = name;
@@ -350,52 +439,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     request.fields['mobile'] = mobileNumber;
     request.fields['last_name'] = lastName;
 
-    var multipartFile = http.MultipartFile('image', stream, length,
-        filename: path.basename(_image!.path));
+    var multipartFile = http.MultipartFile(
+      'image',
+      stream,
+      length,
+      filename: path.basename(_image!.path),
+    );
     request.files.add(multipartFile);
 
     try {
       var response = await request.send();
       Navigator.of(context, rootNavigator: true).pop();
+      var responseData = await response.stream.toBytes();
+      var responseString = String.fromCharCodes(responseData);
+      print('Response: $responseString');
 
       if (response.statusCode == 200) {
-        var responseData = await response.stream.toBytes();
-        var responseString = String.fromCharCodes(responseData);
-        print('Response data: $responseString');
-        print('Image uploaded');
+        await _saveUpdatedData();
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(
+            content: Text('Profile updated successfully!',
+              style:
+              TextStyle(fontWeight:FontWeight.w500,
+                fontSize:14,fontFamily:'FontPoppins',color:Colors.white),),
+            backgroundColor: Colors.green,
+          ),
+        );
       } else {
-        print('Failed to upload image. Status code: ${response.statusCode}');
-        setState(() {
-          // showSpinner = false;
-        });
+        print('Failed to upload. Status: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile Upload failed',
+            style:TextStyle(fontWeight:FontWeight.w500,
+              fontSize:14,fontFamily:'FontPoppins',color:Colors.white),),backgroundColor:Colors.red,),
+        );
       }
     } catch (e) {
+      Navigator.of(context, rootNavigator: true).pop();
       print('Error uploading image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
     }
-  }
-
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          width: 70.0,
-          height: 70.0,
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: CupertinoActivityIndicator(
-              color: Colors.white,
-              radius: 20,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
 
@@ -403,6 +488,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor:Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -438,7 +524,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       height: 120,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color:AppColors.primaryColor.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: Padding(
@@ -453,7 +539,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   Text(
                                     'Please complete your profile',
                                     style: TextStyle(
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -467,7 +553,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       style: TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         color: Colors.black87,
                                       ),
                                       maxLines: 3,
@@ -497,7 +583,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         return Text(
                                           '${value.toStringAsFixed(1)}%',
                                           style: const TextStyle(
-                                            fontSize: 18.0,
+                                            fontSize: 16.0,
                                             fontFamily: 'FontPoppins',
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black,
@@ -507,31 +593,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     ),
                                   ],
                                 ),
+
+
                                 const SizedBox(
                                   height: 4,
                                 ),
                                 const Text(
                                   'Complete',
                                   style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontFamily: 'FontPoppins',
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black),
                                 )
                               ],
-                            )
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(
-                    height: 10,
+                    height:5,
                   ),
                   Container(
                     height: 40,
                     width: double.infinity,
-                    color: Colors.blue[50],
+                    margin:const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color:AppColors.primaryColor.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                     child: const Padding(
                       padding: EdgeInsets.all(10),
                       child: Text(
@@ -547,6 +639,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   const SizedBox(
                     height: 20,
                   ),
+
                   Card(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
@@ -628,9 +721,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'Title*',
+                                      'Title',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -643,14 +736,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       child: AbsorbPointer(
                                         child: SizedBox(
                                           height: 48,
-                                          child:
-                                              DropdownButtonFormField<String>(
-                                            value: selectTitle,
+                                          child: DropdownButtonFormField<String>(
+                                            value: titleArrays.contains(selectTitle) ? selectTitle : null,
                                             decoration: InputDecoration(
                                               hintText: 'Select Title',
                                               hintStyle: const TextStyle(
                                                 fontFamily: 'FontPoppins',
-                                                fontSize: 14,
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                                 color: Colors.black54,
                                               ),
@@ -669,18 +761,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                             ),
                                             style: const TextStyle(
                                                 color: Colors.black,
-                                                fontSize: 15,
+                                                fontSize:14,
                                                 fontFamily: 'FontPoppins',
                                                 fontWeight: FontWeight.w600),
-                                            items: ["Mrs.", "Mr.", "Ms", "Dr."]
-                                                .map((gender) =>
+                                            items: titleArrays.map((title) =>
                                                     DropdownMenuItem<String>(
-                                                      value: gender,
-                                                      child: Text(gender),
+                                                      value: title,
+                                                      child: Text(title),
                                                     ))
                                                 .toList(),
                                             onChanged: (String? value) {
-
+                                              setState(() {
+                                                selectTitle = value;
+                                              });
                                             },
                                           ),
                                         ),
@@ -690,9 +783,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       height: 10,
                                     ),
                                     const Text(
-                                      'First Name*',
+                                      'First Name',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 13,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -725,7 +818,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       validator: ValidationCons().validateName,
                                       style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -734,9 +827,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     ),
 
                                     const Text(
-                                      'Last Name*',
+                                      'Last Name',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 13,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -768,7 +861,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       ),
                                       style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600),
                                       validator: ValidationCons().validateName,
@@ -777,9 +870,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       height: 10,
                                     ),
                                     const Text(
-                                      'Mobile Number*',
+                                      mobile_number,
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -794,7 +887,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         hintText: 'Mobile Number',
                                         hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54),
                                         border: OutlineInputBorder(
@@ -812,7 +905,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       validator: ValidationCons().validateMobile,
                                       style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600),
                                     ),
@@ -820,9 +913,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       height: 10,
                                     ),
                                     const Text(
-                                      'Email ID*',
+                                      'Email ID',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -837,7 +930,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         hintText: 'Email ID',
                                         hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54),
                                         border: OutlineInputBorder(
@@ -855,15 +948,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       validator: ValidationCons().validateEmail,
                                       style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600),
                                     ),
                                     const SizedBox(height:10,),
                                     const Text(
-                                      'Password*',
+                                      'Password',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -878,7 +971,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         hintText:'Password',
                                         hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54),
                                         border: OutlineInputBorder(
@@ -909,17 +1002,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       validator: ValidationCons().validatePassword,
                                       style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600),
                                     ),
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    const Text(
-                                      'Gender*',
+                                    const Text(gender,
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 13,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -927,57 +1019,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    SizedBox(
-                                      height: 48,
-                                      child: DropdownButtonFormField<String>(
-                                        value: selectedGender,
-                                        decoration: InputDecoration(
-                                          hintText: 'Select Gender',
-                                          hintStyle: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black54,
+                                    GestureDetector(
+                                      onTap: _showGenderPickerDialog, // your custom dialog if needed
+                                      child: AbsorbPointer(
+                                        child: SizedBox(
+                                          height: 50,
+                                          child: DropdownButtonFormField<String>(
+                                            value: genderOptions.contains(selectedGender) ? selectedGender : null,
+                                            decoration: InputDecoration(
+                                              hintText: 'Select Gender',
+                                              hintStyle: const TextStyle(
+                                                fontFamily: 'FontPoppins',
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.black54,
+                                              ),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(30.0),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                vertical: 15.0,
+                                                horizontal: 20.0,
+                                              ),
+                                              filled: true,
+                                              fillColor: Colors.lightBlue[50],
+                                            ),
+                                            style: const TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 14,
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            items: genderOptions.map((gender) {
+                                              return DropdownMenuItem<String>(
+                                                value: gender,
+                                                child: Text(gender),
+                                              );
+                                            }).toList(),
+                                            onChanged: (String? value) {
+                                              setState(() {
+                                                selectedGender = value;
+                                              });
+                                            },
                                           ),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(30.0),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            vertical: 15.0,
-                                            horizontal: 20.0,
-                                          ),
-                                          filled: true,
-                                          fillColor: Colors.lightBlue[50],
                                         ),
-                                        style: const TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 15,
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600),
-                                        items: ['Male', 'Female', 'Other']
-                                            .map((gender) =>
-                                                DropdownMenuItem<String>(
-                                                  value: gender,
-                                                  child: Text(gender),
-                                                ))
-                                            .toList(),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            selectedGender = value;
-                                          });
-                                        },
                                       ),
                                     ),
+
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    const Text(
-                                      'Date of  Birth*',
+                                    const Text(date_of_birth,
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -988,12 +1083,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     SizedBox(
                                       height: 48,
                                       child: TextFormField(
+                                        readOnly:true,
                                         controller: _dateController,
                                         decoration: InputDecoration(
                                           hintText: 'Select Date',
                                           hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w500,
                                             color: Colors.black54,
                                           ),
@@ -1020,7 +1116,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                         style: const TextStyle(
                                           color: Colors.black,
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1030,9 +1126,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       height: 10,
                                     ),
                                     const Text(
-                                      'Nationality*',
+                                      'Nationality',
                                       style: TextStyle(
-                                          fontSize: 15,
+                                          fontSize: 14,
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
                                           color: Colors.black54),
@@ -1040,29 +1136,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
+
                                     GestureDetector(
-                                      onTap: _showGenderPickerDialog,
+                                      onTap: _showNationalityPickerDialog,
                                       child: AbsorbPointer(
                                         child: SizedBox(
-                                          height: 48,
-                                          child:
-                                              DropdownButtonFormField<String>(
-                                            value: selectedGender,
+                                          height:50,
+                                          child: DropdownButtonFormField<String>(
+                                            value: nationalityOptions.contains(selectNationality) ? selectNationality : null,
                                             decoration: InputDecoration(
-                                              hintText: 'Select Gender',
+                                              hintText: 'Select Nationality',
                                               hintStyle: const TextStyle(
                                                 fontFamily: 'FontPoppins',
-                                                fontSize: 14,
+                                                fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                                 color: Colors.black54,
                                               ),
                                               border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(30.0),
+                                                borderRadius: BorderRadius.circular(30.0),
                                                 borderSide: BorderSide.none,
                                               ),
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
+                                              contentPadding: const EdgeInsets.symmetric(
                                                 vertical: 15.0,
                                                 horizontal: 20.0,
                                               ),
@@ -1070,29 +1164,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                               fillColor: Colors.lightBlue[50],
                                             ),
                                             style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 15,
-                                                fontFamily: 'FontPoppins',
-                                                fontWeight: FontWeight.w600),
-                                            items: ['Male', 'Female', 'Other']
-                                                .map((gender) =>
-                                                    DropdownMenuItem<String>(
-                                                      value: gender,
-                                                      child: Text(gender),
-                                                    ))
-                                                .toList(),
-                                            onChanged: (String? value) {},
+                                              color: Colors.black,
+                                              fontSize: 14,
+                                              fontFamily: 'FontPoppins',
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            items: nationalityOptions.map((country) {
+                                              return DropdownMenuItem<String>(
+                                                value: country,
+                                                child: Text(country),
+                                              );
+                                            }).toList(),
+                                            onChanged: (String? value) {
+                                              setState(() {
+                                                selectNationality = value;
+                                              });
+                                            },
                                           ),
                                         ),
                                       ),
                                     ),
-
-
                                   ],
                                 ),
                               ),
                             ],
-                          )),
+                          ),
+                      ),
                     ),
                   ),
                   const SizedBox(
@@ -1123,12 +1220,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       height: 40,
                       width: 250,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
                             uploadImage(saveUserID.toString());
-                            _saveUpdatedData();
-
+                            //await _saveUpdatedData();
+                            //Navigator.pop(context, true);
 
                           } else {
                             setState(() {
@@ -1143,7 +1240,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         child: const Text(
-                          'Save',
+                            'Save',
                           style: TextStyle(
                               fontFamily: 'FontPoppins',
                               fontSize: 16,

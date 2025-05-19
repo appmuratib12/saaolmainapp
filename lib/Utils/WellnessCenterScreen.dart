@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/WellnessCenterResponse.dart';
+import 'package:saaolapp/DialogHelper.dart';
+import 'package:saaolapp/data/model/apiresponsemodel/WellnessCenterResponse.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
@@ -15,38 +16,14 @@ class PropertyScreen extends StatefulWidget {
 }
 
 class _PropertyScreenState extends State<PropertyScreen> {
-  List<String> roomsArray = [
-    "assets/images/room_image1.jpg",
-    "assets/images/room_image2.jpg"
-  ];
   final DraggableScrollableController sheetController =
       DraggableScrollableController();
 
-   late GoogleMapController mapController;
-  final LatLng _center = const LatLng(28.4829, 77.1640); // Example: Dubai
-  final Set<Marker> _markers = {
-    const Marker(
-      markerId: MarkerId('Saaol'),
-      position: LatLng(28.4829, 77.1640),
-      infoWindow: InfoWindow(
-          title: 'Saaol',
-          snippet: 'Saaol Heart Centre : EECP Treatment | Best Cardiologist & Heart Specialist in Delhi'),
-    ),
-  };
-
+  late GoogleMapController mapController;
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
   }
 
-
-  _makingPhoneCall() async {
-    var url = Uri.parse("tel:9953027222");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
 
   _sendingMails() async {
     var email = 'saaol.wellness@saaol.co.in';
@@ -61,16 +38,6 @@ class _PropertyScreenState extends State<PropertyScreen> {
     }
   }
 
-  void sendMessage() async {
-    var phoneNumber = '9953027222'; // The phone number to send the message to
-    var message = 'Hello, this is a message from Flutter!'; // The message you want to send
-    var url = 'https://wa.me/$phoneNumber?text=${Uri.encodeComponent(message)}';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,9 +89,9 @@ class _PropertyScreenState extends State<PropertyScreen> {
             builder: (BuildContext context, scrollController) {
               return Container(
                 clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).canvasColor,
-                  borderRadius: const BorderRadius.only(
+                decoration: const BoxDecoration(
+                  color:Colors.white,
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(25),
                     topRight: Radius.circular(25),
                   ),
@@ -158,7 +125,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                Text(widget.data.centerName.toString(),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 18,
+                                    fontSize:15,
                                     fontFamily: 'FontPoppins',
                                     color: Colors.black),
                               ),
@@ -169,7 +136,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                 children: [
                                   const Icon(
                                     Icons.location_on,
-                                    size: 18,
+                                    size: 15,
                                     color: AppColors.primaryDark,
                                   ),
                                   const SizedBox(
@@ -178,7 +145,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                   Text(widget.data.locationName.toString(),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 16,
+                                        fontSize:12,
                                         fontFamily: 'FontPoppins',
                                         color: AppColors.primaryColor),
                                   )
@@ -188,7 +155,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                 height: 10,
                               ),
                               Container(
-                                height: 80,
+                                height:75,
                                 width: double.infinity,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
@@ -198,25 +165,26 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                 child:  Padding(
                                   padding: const EdgeInsets.all(10),
                                   child: Text(
-                                    widget.data.content.toString(),
+                                    widget.data.content.toString().trim(),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 14,
+                                        fontSize:11,
+                                        letterSpacing: 0.2,
                                         fontFamily: 'FontPoppins',
                                         color: Colors.white),
                                   ),
                                 ),
                               ),
-                              const Divider(
-                                height: 15,
-                                color: Colors.grey,
-                                thickness: 0.2,
+                               Divider(
+                                height:20,
+                                color: Colors.blue[50],
+                                thickness:5,
                               ),
                               const Text(
                                 'Features & Facilities',
                                 style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 16,
+                                    fontSize: 15,
                                     fontFamily: 'FontPoppins',
                                     color: Colors.black),
                               ),
@@ -242,18 +210,20 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                 style: TextStyle(
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 18,
+                                    fontSize:15,
                                     color: AppColors.primaryDark),
                               ),
                               const SizedBox(
                                 height: 10,
                               ),
-                              const Text(
-                                therapiesTxt,
-                                style: TextStyle(
+                               Text(
+                                therapiesTxt.trim(),
+                                style: const TextStyle(
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 14,
+                                    fontSize: 12,
+                                    letterSpacing: 0.2,
+                                    height: 1.5,
                                     color: Colors.black87),
                               ),
                               const SizedBox(
@@ -270,7 +240,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                       style: TextStyle(
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           color: Colors.black),
                                     ),
                                     const SizedBox(
@@ -289,14 +259,15 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    const Text(
+                                     Text(
                                       textAlign: TextAlign.justify,
-                                      aboutTherapiesTxt,
-                                      style: TextStyle(
+                                      aboutTherapiesTxt.trim(),
+                                      style: const TextStyle(
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
-                                          fontSize: 14,
-                                          color: AppColors.primaryColor),
+                                          fontSize: 12,
+                                          letterSpacing:0.2,
+                                          color:Colors.black87),
                                     ),
                                     const SizedBox(
                                       height: 10,
@@ -306,7 +277,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                       style: TextStyle(
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           color: Colors.black),
                                     ),
                                     const SizedBox(
@@ -325,57 +296,19 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                    const Text(
-                                      textAlign: TextAlign.justify,
-                                      aboutDetoxTxt,
-                                      style: TextStyle(
+                                     Text(
+                                      aboutDetoxTxt.trim(),
+                                      style: const TextStyle(
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w500,
-                                          fontSize: 14,
-                                          color: AppColors.primaryColor),
+                                          fontSize: 12,
+                                          height: 1.5,
+                                          letterSpacing:0.2,
+                                          color:Colors.black87),
                                     ),
                                     const SizedBox(
                                       height: 10,
                                     ),
-                                  /*  const Text(
-                                      'Modern Medicine',
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: Colors.black),
-                                    ),
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: const Image(
-                                        image: AssetImage(
-                                            'assets/images/saaol_detox_image.jpg'),
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: 150,
-                                      ),
-                                    ),*/
-                                    /*const SizedBox(
-                                      height: 10,
-                                    ),*/
-
-                                    /*const Text(
-                                      textAlign: TextAlign.justify,
-                                      aboutModernMedicineTxt,
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 14,
-                                          color: AppColors.primaryColor),
-                                    ),
-                                    const Divider(
-                                      height: 15,
-                                      color: Colors.grey,
-                                      thickness: 0.2,
-                                    ),*/
                                   ],
                                 ),
                               ),
@@ -393,10 +326,9 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                     style: TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 18,
+                                        fontSize: 15,
                                         color: AppColors.primaryDark),
                                   ),
-
 
                                   SizedBox(
                                     height: 7,
@@ -407,7 +339,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                     style: TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 16,
+                                        fontSize: 15,
                                         color: Colors.black),
                                   ),
                                   SizedBox(
@@ -418,7 +350,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                     style: TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         color: Colors.black87),
                                   )
                                 ],
@@ -433,14 +365,13 @@ class _PropertyScreenState extends State<PropertyScreen> {
                                 style: TextStyle(
                                     fontFamily: 'FontPoppins',
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 18,
+                                    fontSize: 15,
                                     color: AppColors.primaryDark),
                               ),
-                              const Text(
-                                'You can reach us by road, rail, or air. We are conveniently located and easily accessible:',
+                              const Text(wellnessLoction_txt,
                                 style: TextStyle(
                                   color: Colors.black87,
-                                  fontSize: 15,
+                                  fontSize: 12,
                                   fontFamily: 'FontPoppins',
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -448,18 +379,15 @@ class _PropertyScreenState extends State<PropertyScreen> {
                               const SizedBox(height: 10.0),
                               const DirectionItem(
                                 icon: Icons.play_arrow,
-                                description:
-                                    'By Road: Follow the 14.4 km highway and look for signs directing you to the SAAOL Institute. The drive typically takes about 43 minutes.',
+                                description:wellnessByRoad_txt,
                               ),
                               const DirectionItem(
                                 icon: Icons.play_arrow,
-                                description:
-                                    'By Train: The nearest railway station is Dehradun, approximately 14.7 km from the institute, with a travel time of about 42 minutes.',
+                                description:wellnessByRail_txt,
                               ),
                               const DirectionItem(
                                 icon: Icons.play_arrow,
-                                description:
-                                    'By Air: The closest airport is Jolly Grant Airport, situated approximately 48.6 km away. The journey usually takes around 1 hour and 30 minutes.',
+                                description:wellnessByAir_txt
                               ),
                               const SizedBox(
                                 height: 10,
@@ -552,7 +480,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                     label: 'Call',
                     color: Colors.blue.withOpacity(0.3),
                     onTap: () {
-                      _makingPhoneCall();
+                     DialogHelper.makingPhoneCall('');
                     },
                   ),
                   _buildButton(
@@ -568,7 +496,7 @@ class _PropertyScreenState extends State<PropertyScreen> {
                     label: 'WhatsApp',
                     color: Colors.blue.withOpacity(0.3),
                     onTap: () {
-                      sendMessage();
+                      DialogHelper.sendWhatsAppMessage('Hello, this is a message from Flutter!');
                     },
                   ),
                 ],
@@ -604,13 +532,13 @@ class _PropertyScreenState extends State<PropertyScreen> {
                 color: AppColors.primaryDark,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width:4),
               Text(
                 label,
                 style: const TextStyle(
                   color: AppColors.primaryDark,
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 11,
                   fontFamily: 'FontPoppins',
                 ),
               ),
@@ -659,8 +587,9 @@ class AmenitiesItem extends StatelessWidget {
                 color: Colors.black87,
                 fontFamily: 'FontPoppins',
                 fontWeight: FontWeight.w500,
-                fontSize: 15),
-          ),),
+                fontSize:13),
+          ),
+          ),
         ],
       ),
     );
@@ -689,7 +618,7 @@ class DirectionItem extends StatelessWidget {
               description,
               style: const TextStyle(
                 color: Colors.black87,
-                fontSize: 14.0,
+                fontSize: 13.0,
                 fontFamily: 'FontPoppins',
                 fontWeight: FontWeight.w500,
               ),

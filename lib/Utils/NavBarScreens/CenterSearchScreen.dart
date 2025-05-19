@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/network/BaseApiService.dart';
+import '../../data/network/BaseApiService.dart';
 import '../CenterDetailsPageScreen.dart';
-
 
 class CenterSearchScreen extends StatefulWidget {
   final TextEditingController searchController;
   const CenterSearchScreen({super.key,required this.searchController});
+
 
   @override
   _CenterSearchScreenState createState() => _CenterSearchScreenState();
@@ -29,6 +29,7 @@ class _CenterSearchScreenState extends State<CenterSearchScreen> {
     super.dispose();
   }
 
+
   void _onSearchChanged() {
     final query = widget.searchController.text;
     if (query.isNotEmpty) {
@@ -39,7 +40,6 @@ class _CenterSearchScreenState extends State<CenterSearchScreen> {
       });
     }
   }
-
   Future<void> _fetchSearchResults(String query) async {
     setState(() {
       _isLoading = true;
@@ -48,7 +48,11 @@ class _CenterSearchScreenState extends State<CenterSearchScreen> {
     try {
       final response = await BaseApiService().getCenterCitiesResponse(query);
       setState(() {
-        _searchResults = response.data!;
+        _searchResults = response.data!
+            .map((dataItem) => dataItem.cityName ?? '')
+            .where((name) => name.isNotEmpty)
+            .toSet()
+            .toList();
       });
     } catch (e) {
       debugPrint("Error fetching data: $e");
@@ -118,7 +122,6 @@ class _CenterSearchScreenState extends State<CenterSearchScreen> {
                   trailing: const Icon(Icons.north_east,color:Colors.black87,size:20,),
 
                   onTap: () {
-                    // Handle city selection
                     Navigator.push(
                       context,
                       MaterialPageRoute(

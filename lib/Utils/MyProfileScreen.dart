@@ -1,27 +1,28 @@
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/Utils/HeartRateScreen.dart';
-import 'package:saaoldemo/Utils/MedicineReminderDetailScreen.dart';
-import 'package:saaoldemo/Utils/SignInScreen.dart';
-import 'package:saaoldemo/constant/ApiConstants.dart';
 import '../AboutDrBimalChhajerScreen.dart';
 import '../common/app_colors.dart';
+import '../constant/ApiConstants.dart';
 import 'AboutSaaolScreen.dart';
 import 'AppointmentBookScreen.dart';
 import 'DemoScreen.dart';
 import 'EditProfileScreen.dart';
 import 'EmagazineScreen.dart';
-import 'FeedbackScreen.dart';
 import 'HeartHealthScreen.dart';
+import 'NotificationScreen.dart';
 import 'OurBlogsScreen.dart';
 import 'PatientInstructionScreen.dart';
-import 'PaymentHistoryScreen.dart';
 import 'PrivacyPoliciesScreen.dart';
+import 'SignInScreen.dart';
 import 'SupportAndHelpScreen.dart';
 import 'TermConditionScreen.dart';
 import 'UserFormAScreen.dart';
 import 'WebinarScreen.dart';
+
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -43,6 +44,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   String googlePatientName = '';
   String googlePatientEmail = '';
   bool _showVerifyButton = false;
+  File? _image;
+  String? _networkImageUrl;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
 
   void _loadUserData() async {
     sharedPreferences = await SharedPreferences.getInstance();
@@ -60,12 +66,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         userEmail = (sharedPreferences.getString('patientEmail') ?? '');
         patientLastName = (sharedPreferences.getString('PatientLastName') ?? '');
         patientMiddleName = (sharedPreferences.getString('PatientMiddleName') ?? '');
+
       } else {
         userName = (sharedPreferences.getString(ApiConstants.USER_NAME) ?? '');
         userEmail = (sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '');
         patientLastName = (sharedPreferences.getString(ApiConstants.USER_LASTNAME) ?? '');
         patientMiddleName = (sharedPreferences.getString(ApiConstants.USER_MIDDLE_NAME) ?? '');
         userToken = (sharedPreferences.getString('UserToken') ?? '');
+
+
       }
     });
   }
@@ -74,16 +83,56 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+    _loadProfileImage();
   }
 
+  void _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? imagePath = prefs.getString('userProfileImage');
+    String? googleProfileUrl = prefs.getString('GoogleUserProfile');
+    if (imagePath != null && imagePath.isNotEmpty) {
+      setState(() {
+        _image = File(imagePath); // Local file image
+      });
+    } else if (googleProfileUrl != null && googleProfileUrl.isNotEmpty) {
+      setState(() {
+        _networkImageUrl = googleProfileUrl;
+      });
+    }
+  }
+
+
   Future<void> _logoutUser(BuildContext context) async {
-    sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.clear();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const SignInScreen()),
-          (Route<dynamic> route) => false,
-    );
+    try {
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      await _googleSignIn.signOut();
+      await _auth.signOut();
+      await preferences.setBool(ApiConstants.IS_LOGIN, false);
+      await preferences.clear();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SignInScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+      print('User successfully logged out');
+      ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(
+           backgroundColor:AppColors.primaryColor,
+          content: Text('Logout Successfully',
+            style:TextStyle(fontWeight:FontWeight.w500,
+                fontSize:15,fontFamily:'FontPoppins',color:Colors.white),),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+            content: Text('Logout Error: $e'),
+          ),
+        );
+      }
+    }
   }
 
 
@@ -98,7 +147,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           children: [
             Stack(
               children: [
-                // Background Container
                 Container(
                   height: 170,
                   padding: const EdgeInsets.only(top: 45, left: 10, right: 10),
@@ -121,7 +169,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   ),
                 ),
 
-                // Profile Card
                 Padding(
                   padding: const EdgeInsets.only(left: 10, right: 10, top: 110),
                   child: Card(
@@ -147,7 +194,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       const SizedBox(height: 75),
                       Stack(
                         children: [
-                          // Profile Image
                           Container(
                             height: 75,
                             width: 75,
@@ -159,8 +205,22 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 width: 2.5,
                               ),
                             ),
-                            child: const Center(
-                              child: Image(
+                            child: ClipOval(
+                              child: _image != null
+                                  ? Image.file(
+                                _image!,
+                                width: 75,
+                                height: 75,
+                                fit: BoxFit.cover,
+                              )
+                                  : (_networkImageUrl != null && _networkImageUrl!.isNotEmpty)
+                                  ? Image.network(
+                                _networkImageUrl!,
+                                width: 75,
+                                height: 75,
+                                fit: BoxFit.cover,
+                              )
+                                  : const Image(
                                 image: AssetImage('assets/images/profile.png'),
                                 width: 75,
                                 height: 75,
@@ -171,14 +231,11 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 10),
-
-                      // User Info
                       if (getPatientID.isNotEmpty) ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              userName.toString(),
+                            Text('Hi,${userName.toString()}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontFamily: 'FontPoppins',
@@ -216,8 +273,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           ),
                         ),
                       ] else if (googleUserID.isNotEmpty) ...[
-                        Text(
-                          googlePatientName.toString(),
+                        Text('Hi,${googlePatientName.toString()}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontFamily: 'FontPoppins',
@@ -235,8 +291,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           ),
                         ),
                       ] else ...[
-                        Text(
-                          userName.toString(),
+                        Text('Hi,${userName.toString()}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontFamily: 'FontPoppins',
@@ -257,19 +312,19 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     ],
                   ),
                 ),
-
-                // Edit Icon Positioned in Top Right Corner
                 Positioned(
                   top: 120, // Adjust the position to match the profile card's top
                   right: 25, // Position it properly inside the card
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => EditProfileScreen(),
-                        ),
-                      );
+                        MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                      ).then((result) {
+                        if (result == true) {
+                          _loadProfileImage();
+                        }
+                      });
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -295,8 +350,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
               ],
             ),
-
-
             const SizedBox(
               height: 20,
             ),
@@ -337,73 +390,17 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ),)
                   : const SizedBox.shrink(), // Placeholder if button should not be visible
             ),
-
-           /* Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                SizedBox(
-                  height: 30,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(6))),
-                    ),
-                    onPressed: () {
-                      Fluttertoast.showToast(msg: 'click');
-                    },
-                    child: const Text(
-                      'Manage Profile',
-                      style: TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  height: 30,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
-                      shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(6))),
-                    ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                            builder: (context) => const EditProfileScreen()),
-                      );
-                      Fluttertoast.showToast(msg: 'click');
-                    },
-                    child: const Text(
-                      'Complete Your Profile',
-                      style: TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white),
-                    ),
-                  ),
-                )
-              ],
-            ),*/
             const Padding(
               padding: EdgeInsets.all(10),
               child: Text(
                 'Your Information',
                 style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: 'FontPoppins',
                     fontWeight: FontWeight.w600,
                     color: Colors.black),
               ),
             ),
-
-
-
             Padding(
               padding: const EdgeInsets.all(10),
               child: Card(
@@ -412,7 +409,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
                 elevation: 2,
                 child: Container(
-                  height: 330,
+                  height:222,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -430,7 +427,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
-                                builder: (context) => const AppointmentBookScreen(),
+                                builder: (context) => const PatientAppointmentScreen(),
                               ),
                             );
                           },
@@ -449,7 +446,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                     child: Text(
                                       'Appointments',
                                       style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize:13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black,
@@ -468,55 +465,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 color: Colors.black87,
                                 thickness: 0.2,
                               ),
-                            ],
-                          ),
-                        ),
-
-
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                  builder: (context) =>
-                                  const MyPurchase()),
-                            );
-                          },
-                          child:  const Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Image(
-                                    image: AssetImage(
-                                        'assets/icons/payment_history_icon.png'),
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  SizedBox(
-                                    width: 15,
-                                  ),
-                                  Expanded(child: Text(
-                                    'Payment History',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black),
-                                  )),
-                                  Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: Colors.black,
-                                    size: 14,
-                                  )
-                                ],
-                              ),
-                              Divider(
-                                height: 25,
-                                color: Colors.black87,
-                                thickness: 0.2,
-                              ),
-
                             ],
                           ),
                         ),
@@ -548,7 +496,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     'Our Blogs',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -571,12 +519,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                         GestureDetector(
                           onTap: () {
-                            /*Navigator.push(
+                            Navigator.push(
                               context,
                               CupertinoPageRoute(
                                   builder: (context) =>
                                   const NotificationScreen()),
-                            );*/
+                            );
                           },
                           child:const Column(
                             children: [
@@ -596,11 +544,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:   Text(
                                     'Notifications',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
-                                  )),
+                                  ),
+                                  ),
                                   Icon(
                                     Icons.arrow_forward_ios_rounded,
                                     color: Colors.black,
@@ -643,7 +592,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     'Our Webinar',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -655,17 +604,10 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   )
                                 ],
                               ),
-                              Divider(
-                                height: 20,
-                                color: Colors.black87,
-                                thickness: 0.2,
-                              ),
-
-
                             ],
                           ),
                         ),
-                        GestureDetector(
+                       /* GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
@@ -691,7 +633,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child: Text(
                                     'Pill reminder',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -705,7 +647,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               ),
                             ],
                           ),
-                        ),
+                        ),*/
                       ],
                     ),
                   ),
@@ -718,13 +660,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               child: Text(
                 'Account',
                 style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: 'FontPoppins',
                     fontWeight: FontWeight.w600,
                     color: Colors.black),
               ),
             ),
-
 
             Padding(
               padding: const EdgeInsets.all(10),
@@ -734,7 +675,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
                 elevation: 2,
                 child: Container(
-                  height:280,
+                  height:170,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -746,8 +687,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-
-                        GestureDetector(
+                       /* GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
@@ -794,8 +734,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                             ],
                           ),
-                        ),
-
+                        ),*/
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -822,7 +761,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:  Text(
                                     'Heart Health',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -842,7 +781,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             ],
                           ),
                         ),
-
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -870,7 +808,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     'SAAOL E-Magzine',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -891,7 +829,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                             ],
                           ),
                         ),
-
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -918,7 +855,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     "Instructions for Patient's",
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -930,18 +867,20 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                                 ],
                               ),
-                              Divider(
+                              /*Divider(
                                 height: 25,
                                 color: Colors.black87,
                                 thickness: 0.2,
-                              ),
+                              ),*/
 
 
                             ],
                           ),
                         ),
 
-                        GestureDetector(
+
+
+                       /* GestureDetector(
                           onTap: () {
 
                           },
@@ -976,7 +915,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               ),
                             ],
                           ),
-                        ),
+                        ),*/
                       ],
                     ),
                   ),
@@ -989,13 +928,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               child: Text(
                 'About',
                 style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontFamily: 'FontPoppins',
                     fontWeight: FontWeight.w600,
                     color: Colors.black),
               ),
             ),
-
 
             Padding(
               padding: const EdgeInsets.all(10),
@@ -1005,7 +943,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
                 elevation: 2,
                 child: Container(
-                  height:450,
+                  height:330,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -1045,7 +983,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:  Text(
                                     'About Us',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -1062,8 +1000,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 color: Colors.black87,
                                 thickness: 0.2,
                               ),
-
-
                             ],
                           ),
                         ),
@@ -1095,7 +1031,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child: Text(
                                     'About Dr. Bimal Chhajer',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -1113,8 +1049,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 color: Colors.black87,
                                 thickness: 0.2,
                               ),
-
-
                             ],
                           ),
                         ),
@@ -1145,7 +1079,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child: Text(
                                     'Terms & Conditions',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -1194,7 +1128,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     'Privacy Policy',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -1211,102 +1145,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 color: Colors.black87,
                                 thickness: 0.2,
                               ),
-
-                            ],
-                          ),
-                        ),
-
-
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                  builder: (context) =>
-                                  const FeedbackScreen()),
-                            );
-                          },
-                          child: Column(
-                            children: [
-
-                              Row(
-                                children: [
-                                  const Image(
-                                    image: AssetImage(
-                                        'assets/icons/feedback_icon.png'),
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  const SizedBox(
-                                    width: 15,
-                                  ),
-                                  const Text(
-                                    'Provide Feedback',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black),
-                                  ),
-                                  Expanded(child: Container()),
-                                  const Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: Colors.black,
-                                    size: 14,
-                                  ),
-                                ],
-                              ),
-                              const Divider(
-                                height: 25,
-                                color: Colors.black87,
-                                thickness: 0.2,
-                              ),
-
-                            ],
-                          ),
-                        ),
-
-                        GestureDetector(
-                          onTap: () {
-
-                          },
-                          child: const Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Image(
-                                    image:
-                                    AssetImage('assets/icons/rate_us_icon.png'),
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.cover,
-                                  ),
-                                  SizedBox(
-                                    width: 15,
-                                  ),
-                                  Expanded(child: Text(
-                                    'Rate Us',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black),
-                                  ),),
-                                  Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: Colors.black,
-                                    size: 14,
-                                  ),
-                                ],
-                              ),
-                              Divider(
-                                height: 25,
-                                color: Colors.black87,
-                                thickness: 0.2,
-                              ),
-
-
                             ],
                           ),
                         ),
@@ -1336,7 +1174,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     'Faqs',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
@@ -1353,7 +1191,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                 color: Colors.black87,
                                 thickness: 0.2,
                               ),
-
                             ],
                           ),
                         ),
@@ -1384,11 +1221,12 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                                   Expanded(child:Text(
                                     'Support & Help',
                                     style: TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
                                         color: Colors.black),
-                                  ),),
+                                  ),
+                                  ),
                                   Icon(
                                     Icons.arrow_forward_ios_rounded,
                                     color: Colors.black,
@@ -1442,6 +1280,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             const SizedBox(
               height: 30,
             ),
+
           ],
         ),
       ),
@@ -1521,6 +1360,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       color: Colors.white),
                 ),
                 onPressed: () async {
+
                   await _logoutUser(context);
                 },
               ),

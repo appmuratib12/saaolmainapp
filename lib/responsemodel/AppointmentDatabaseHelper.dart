@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:saaoldemo/responsemodel/PatientAppointmentModel.dart';
+import 'PatientAppointmentModel.dart';
+
 
 class AppointmentDatabaseHelper {
   static final AppointmentDatabaseHelper _instance = AppointmentDatabaseHelper._internal();

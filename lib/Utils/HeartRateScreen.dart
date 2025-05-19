@@ -1,7 +1,5 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/common/app_colors.dart';
-import 'HeartRateMeasurement.dart';
+import '../common/app_colors.dart';
 
 class HeartRateScreen extends StatelessWidget {
   const HeartRateScreen({super.key});
@@ -31,7 +29,6 @@ class HeartRateScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
             const SizedBox(height: 40),
-            // Circle with Image/Icon
             Container(
               height: 120,
               width: 120,
@@ -121,11 +118,7 @@ class HeartRateScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                        builder: (context) => const HeartRateMonitor()),
-                  );
+
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryDark, // Background color

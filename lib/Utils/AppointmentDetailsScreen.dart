@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/constant/ApiConstants.dart';
 import '../common/app_colors.dart';
+import '../constant/ApiConstants.dart';
 
 class AppointmentDetailScreen extends StatefulWidget {
   final String patientID;
@@ -75,8 +75,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         patientName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
         patientMiddleName = sharedPreferences.getString(ApiConstants.USER_MIDDLE_NAME) ?? '';
         patientLastName = sharedPreferences.getString(ApiConstants.USER_LASTNAME) ?? '';
+
       }
-      // Update propertyDetails map
       propertyDetails['Full Name'] = '${patientName ?? ''} ${patientMiddleName ?? ''} ${patientLastName ?? ''}'.trim();
       propertyDetails['Gender'] = patientGender ?? '';
       propertyDetails['Age'] = patientAge ?? '';
@@ -177,28 +177,6 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                                 height: 15,
                               ),
 
-                              /*SizedBox(
-                                height: 36,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.primaryColor,
-                                    shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(30))),
-                                  ),
-                                  onPressed: () {
-                                    Fluttertoast.showToast(msg: 'click');
-                                  },
-                                  child: const Text(
-                                    'Call now',
-                                    style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.white),
-                                  ),
-                                ),
-                              ),*/
                             ],
                           ),
                         ],
@@ -222,7 +200,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
 
                           if (widget.appointmentID.isNotEmpty) ...[
-                               Text(
+                            Text(
                               widget.appointmentCategory == '1'
                                   ? 'Online'
                                   : widget.appointmentCategory == '0'

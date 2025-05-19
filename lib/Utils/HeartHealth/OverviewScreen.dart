@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/network/BaseApiService.dart';
 import '../../common/app_colors.dart';
 import '../../data/model/apiresponsemodel/OverviewItemResponse.dart';
 import '../../data/model/apiresponsemodel/overviewsResponse.dart';
+import '../../data/network/BaseApiService.dart';
 
 
 class OverviewScreen extends StatefulWidget {
@@ -30,7 +30,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -71,7 +71,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
 
                     final overviewItems = snapshot.data!.data;
                     return ListView.builder(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(5),
                       itemCount: overviewItems!.length,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
@@ -84,7 +84,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                             });
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            padding: const EdgeInsets.symmetric(horizontal:8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -113,7 +113,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontFamily: 'FontPoppins',
-                                            fontSize: 14,
+                                            fontSize: 13,
                                             fontWeight: FontWeight.w500,
                                             color: isSelected
                                                 ? Colors.white
@@ -166,7 +166,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(10),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.start,
@@ -356,7 +356,7 @@ Widget buildHeaderCell(String text) {
       style: const TextStyle(
         fontWeight: FontWeight.w600,
         color: Colors.white,
-        fontSize: 14,
+        fontSize: 13,
         fontFamily: 'FontPoppins',
       ),
       textAlign: TextAlign.center,
@@ -370,7 +370,7 @@ Widget buildDataCell(String text) {
     child: Text(
       text,
       style: const TextStyle(
-          fontSize: 13,
+          fontSize: 12,
           fontFamily: 'FontPoppins',
           fontWeight: FontWeight.w500,
           color: Colors.black54),

@@ -27,7 +27,7 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
       body: Stack(
         children: [
           SizedBox(
-            height: 300, // Adjust this height value as needed
+            height:400, // Adjust this height value as needed
             width: MediaQuery.of(context).size.width,
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +56,7 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                 ),
                 child: const Center(
                   child: Icon(
-                    Icons.arrow_back,
+                    Icons.arrow_back_ios,
                     color: AppColors.primaryColor,
                     size: 20,
                   ),
@@ -65,14 +65,14 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 250.0),
+            padding: const EdgeInsets.only(top: 210.0),
             child: Container(
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
+              decoration:  BoxDecoration(
+                borderRadius:const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
-                color: Colors.white,
+                color: Colors.grey[200],
               ),
               height: double.infinity,
               width: double.infinity,
@@ -88,103 +88,32 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                         'Heart Health Causes',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryColor),
                       ),
                       const SizedBox(
                         height: 15,
                       ),
-                      const Text(
-                        causesTxt,
+                       Text(
+                        causesTxt.trim(),
                         textAlign: TextAlign.justify,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black54),
+                            color: Colors.black87),
                       ),
                       const SizedBox(
                         height: 15,
                       ),
-                      const Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 20,
-                            color: AppColors.primaryDark,
-                          ),
-                          SizedBox(
-                            width: 7,
-                          ),
-                          Text(
-                            'Diabetes',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black54),
-                          )
-                        ],
-                      ),
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 20,
-                            color: AppColors.primaryDark,
-                          ),
-                          SizedBox(
-                            width: 7,
-                          ),
-                          Text(
-                            'Overweight and obesity',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black54),
-                          )
-                        ],
-                      ),
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 20,
-                            color: AppColors.primaryDark,
-                          ),
-                          SizedBox(
-                            width: 7,
-                          ),
-                          Text(
-                            'Unhealthy diet',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black54),
-                          )
-                        ],
-                      ),
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 20,
-                            color: AppColors.primaryDark,
-                          ),
-                          SizedBox(
-                            width: 7,
-                          ),
-                          Text(
-                            'Physical inactivity',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black54),
-                          )
+                          _buildHealthPoint('Diabetes', isBold: true, textColor: Colors.black87),
+                          _buildHealthPoint('Overweight and obesity',isBold: true, textColor: Colors.black87),
+                          _buildHealthPoint('Unhealthy diet',isBold: true, textColor: Colors.black87),
+                          _buildHealthPoint('Physical inactivity',isBold: true, textColor: Colors.black87),
                         ],
                       ),
                       const SizedBox(
@@ -193,21 +122,21 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                       const Text('Causes Treatment',
                           style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primaryColor,
                           )),
                       const SizedBox(
                         height: 10,
                       ),
-                      const Text(
-                        causesTxt2,
+                       Text(
+                        causesTxt2.trim(),
                         textAlign: TextAlign.justify,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black54),
+                            color: Colors.black87),
                       ),
                       const SizedBox(
                         height: 15,
@@ -215,141 +144,143 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
                       SizedBox(
                         height: 270,
                         child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: causesTreatmentArray.length,
                           scrollDirection: Axis.horizontal,
+                          itemCount: causesTreatmentArray.length,
                           itemBuilder: (context, index) {
                             return InkWell(
                               onTap: () {
-
+                                // Handle tap
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 5),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      height:260,
-                                      width: 250,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        color: Colors.white,
-                                        border: Border.all(
-                                          color: Colors.grey.withOpacity(0.5),
-                                          width: 0.4,
-                                        ),
+                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: Container(
+                                  width: 250,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12.withOpacity(0.08),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
                                       ),
-                                      child: Padding(
-                                        padding: EdgeInsets.all(10),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
+                                    ],
+                                    border: Border.all(
+                                      color: Colors.grey.withOpacity(0.2),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      // Image
+                                      ClipRRect(
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(16),
+                                          topRight: Radius.circular(16),
+                                        ),
+                                        child: Stack(
                                           children: [
-                                            Stack(
-                                              children: [
-                                                ClipRRect(
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                          8.0),
-                                                  child: Image.asset(
-                                                    'assets/images/lifestyle_Image.jpg',
-                                                    fit: BoxFit.cover,
-                                                    height: 100,
-                                                    width: double.infinity,
+                                            Image.asset(
+                                              'assets/images/lifestyle_Image.jpg',
+                                              fit: BoxFit.cover,
+                                              height: 110,
+                                              width: double.infinity,
+                                            ),
+                                            Positioned.fill(
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [
+                                                      Colors.black.withOpacity(0.3),
+                                                      Colors.transparent
+                                                    ],
+                                                    begin: Alignment.bottomCenter,
+                                                    end: Alignment.topCenter,
                                                   ),
                                                 ),
-                                                Positioned.fill(
-                                                  child: Container(
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8.0),
-                                                      gradient: LinearGradient(
-                                                        colors: [
-                                                          Colors.black
-                                                              .withOpacity(0.3),
-                                                          Colors.transparent,
-                                                        ],
-                                                        begin: Alignment
-                                                            .bottomCenter,
-                                                        end:
-                                                            Alignment.topCenter,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                Positioned.fill(
-                                                  child: ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8.0),
-                                                    child: BackdropFilter(
-                                                      filter: ImageFilter.blur(
-                                                        sigmaX: 0.3,
-                                                        sigmaY: 0.3,
-                                                      ),
-                                                      child: Container(
-                                                        color: Colors.black
-                                                            .withOpacity(0.0),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 8),
-                                            SizedBox(
-                                              width: 250,
-                                              child: Text(
-                                                textAlign: TextAlign.start,
-                                                causesTreatmentArray[index],
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontFamily: 'FontPoppins',
-                                                  fontSize:14,
-                                                  color: Colors.black,
-                                                ),
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              height: 7,
-                                            ),
-                                            Container(
-                                              constraints: const BoxConstraints(
-                                                minHeight:70, // Set the minimum height as needed
-                                              ),
-                                              child: Text(
-                                                titleTxt,
-                                                style: const TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Colors.black54,
-                                                ),
-                                                maxLines: 4, // Limit the number of lines to handle long text
-                                                overflow: TextOverflow.ellipsis, // Add ellipsis to indicate overflow
                                               ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    ),
 
-                                  ],
+                                      // Content
+                                      Padding(
+                                        padding: const EdgeInsets.all(12.0),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            // Title
+                                            Text(
+                                              causesTreatmentArray[index],
+                                              style: const TextStyle(
+                                                fontFamily: 'FontPoppins',
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+
+                                            const SizedBox(height: 6),
+
+                                            // Subtitle or Description
+                                            Text(
+                                              titleTxt,
+                                              style: const TextStyle(
+                                                fontFamily: 'FontPoppins',
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                                color: Colors.black54,
+                                                height: 1.4,
+                                              ),
+                                              maxLines: 4,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );
                           },
                         ),
                       ),
+
+                      const SizedBox(height:50,)
                     ],
                   ),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildHealthPoint(String title, {bool isBold = false, Color textColor = Colors.black54}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical:3.0),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.check_circle,
+            size: 22,
+            color: AppColors.primaryDark,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'FontPoppins',
+                fontSize:13,
+                fontWeight: isBold ? FontWeight.w600 : FontWeight.w500,
+                color: textColor,
               ),
             ),
           ),

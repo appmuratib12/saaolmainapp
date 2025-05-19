@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:material_floating_search_bar_2/material_floating_search_bar_2.dart';
@@ -177,7 +176,6 @@ final List<Map<String, dynamic>> indianStates = [
   {'name': 'West Bengal', 'lat': 22.9868, 'lng': 87.8550},
   {'name': 'Madhya Pradesh', 'lat': 22.9734, 'lng': 78.6569},
   {'name': 'Bihar', 'lat': 25.0961, 'lng': 85.3131},
-  // Add more states as needed
 ];
 
 class MapScreen2 extends StatefulWidget {
@@ -191,8 +189,7 @@ class _MapScreen2State extends State<MapScreen2> {
   GoogleMapController? _mapController;
   Position? _currentPosition;
   final LatLng _initialPosition = const LatLng(20.5937, 78.9629); // Default to center of India
-  Set<Marker> _markers = {};
-  Set<Polyline> _polylines = {};
+  final Set<Marker> _markers = {};
   String _searchQuery = '';
   List _filteredStates = indianStates.map((state) => state['name']).toList();
 
@@ -257,58 +254,6 @@ class _MapScreen2State extends State<MapScreen2> {
         .asUint8List();
   }
 
-  /*void _addMarkers() async {
-    if (_currentPosition != null) {
-      _markers.clear();
-
-      // Add a marker for the user's current location
-      _markers.add(
-        Marker(
-          markerId: MarkerId('currentLocation'),
-          position:
-              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          infoWindow: InfoWindow(title: 'Your Location'),
-        ),
-      );
-
-      // Calculate the distance between the user's location and each SAAOL Heart Center
-      List<Map<String, dynamic>> nearestCenters =
-          saaolHeartCenters.map((center) {
-        double distance = Geolocator.distanceBetween(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-          center['lat'],
-          center['lng'],
-        );
-        return {...center, 'distance': distance};
-      }).toList();
-
-      // Sort the centers by distance
-      nearestCenters.sort((a, b) => a['distance'].compareTo(b['distance']));
-
-       BitmapDescriptor customIcon = await BitmapDescriptor.fromAssetImage(
-        const ImageConfiguration(size: Size(48, 48)), // Adjust size as needed
-        'assets/images/saool_logo.png', // Replace with your logo image path
-      );
-
-      // Add markers for the nearest centers (you can limit to a specific number if needed)
-      nearestCenters.take(140).forEach((center) {
-        _markers.add(
-          Marker(
-            markerId: MarkerId(center['name']),
-            position: LatLng(center['lat'], center['lng']),
-            infoWindow: InfoWindow(
-              title: center['name'],
-              snippet: 'Saaol Heart Center',
-            ),
-          ),
-        );
-      });
-
-      setState(() {});
-    }
-  }*/
-
   void _filterStates(String query) {
     setState(() {
       _searchQuery = query;
@@ -320,66 +265,12 @@ class _MapScreen2State extends State<MapScreen2> {
     });
   }
 
-  void _navigateToState(String stateName) async {
-    final selectedState = indianStates.firstWhere(
-      (state) => state['name'].toLowerCase() == stateName.toLowerCase(),
-      orElse: () => {'name': '', 'lat': 0.0, 'lng': 0.0},
-    );
-
-    if (selectedState['name'].isNotEmpty && _currentPosition != null) {
-      final LatLng stateLatLng =
-          LatLng(selectedState['lat'], selectedState['lng']);
-      _mapController?.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: stateLatLng, zoom: 10.0),
-        ),
-      );
-
-      // Add marker at the selected state location
-      _markers.add(
-        Marker(
-          markerId: MarkerId(selectedState['name']),
-          onTap: () {
-            Fluttertoast.showToast(msg: 'Click');
-          },
-          position: stateLatLng,
-          infoWindow: InfoWindow(
-            title: selectedState['name'],
-            snippet: 'Saaol Heart Centre',
-          ),
-        ),
-      );
-
-      // Draw polyline from the current location to the selected state
-      final PolylineId polylineId = PolylineId('route');
-      final Polyline polyline = Polyline(
-        polylineId: polylineId,
-        color: AppColors.primaryColor,
-        width: 5,
-        points: [
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          stateLatLng,
-        ],
-      );
-
-      setState(() {
-        _polylines.clear(); // Clear existing polylines if any
-        _polylines.add(polyline); // Add new polyline
-      });
-    }
-  }
 
   Future<void> _addMarkers() async {
     if (_currentPosition != null) {
       _markers.clear();
-
-      // Load the custom marker icon
-      Uint8List markerIcon =
-          await getImages('assets/icons/location_logo.png',160);
-
+      Uint8List markerIcon = await getImages('assets/icons/location_logo.png',160);
       BitmapDescriptor customIcon = BitmapDescriptor.fromBytes(markerIcon);
-
-      // Add a marker for the user's current location
       _markers.add(
         Marker(
           markerId: const MarkerId('currentLocation'),
@@ -389,8 +280,6 @@ class _MapScreen2State extends State<MapScreen2> {
           icon: customIcon, // Use the custom icon
         ),
       );
-
-      // Calculate the distance between the user's location and each SAAOL Heart Center
       List<Map<String, dynamic>> nearestCenters =
           saaolHeartCenters.map((center) {
         double distance = Geolocator.distanceBetween(
@@ -401,11 +290,7 @@ class _MapScreen2State extends State<MapScreen2> {
         );
         return {...center, 'distance': distance};
       }).toList();
-
-      // Sort the centers by distance
       nearestCenters.sort((a, b) => a['distance'].compareTo(b['distance']));
-
-      // Add markers for the nearest centers
       nearestCenters.take(140).forEach((center) {
         _markers.add(
           Marker(
@@ -447,14 +332,12 @@ class _MapScreen2State extends State<MapScreen2> {
                               _currentPosition!.longitude,
                             ),
                             radius: 3000,
-                            // Adjust the radius as needed
                             fillColor: Colors.blue.shade100.withOpacity(0.5),
                             strokeColor: Colors.blue.shade100.withOpacity(0.1),
                             strokeWidth: 2, // Adjust the stroke width as needed
                           ),
                         },
                   markers: _markers,
-                  //  polylines: _polylines,
                   onMapCreated: (GoogleMapController controller) {
                     _mapController = controller;
                     if (_currentPosition != null) {
@@ -470,7 +353,7 @@ class _MapScreen2State extends State<MapScreen2> {
                     }
                   },
                 ),
-          buildFloatingSearchBar(),
+
         ],
       ),
       floatingActionButton: Padding(
@@ -487,122 +370,4 @@ class _MapScreen2State extends State<MapScreen2> {
     );
   }
 
-  Widget buildFloatingSearchBar() {
-    final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
-
-    return FloatingSearchBar(
-      hint: _searchQuery.isEmpty ? 'Search for center or state' : _searchQuery,
-      hintStyle: const TextStyle(
-          fontSize: 14,
-          fontFamily: 'FontPoppins',
-          fontWeight: FontWeight.w500,
-          color: Colors.black),
-      openAxisAlignment: 0.0,
-      axisAlignment: isPortrait ? 0.0 : -1.0,
-      scrollPadding: const EdgeInsets.only(top: 25, bottom: 56),
-      elevation: 4.0,
-      backgroundColor: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      physics: const BouncingScrollPhysics(),
-      onQueryChanged: (query) {
-        _filterStates(query);
-      },
-      transitionDuration: const Duration(milliseconds: 500),
-      transitionCurve: Curves.easeInOut,
-      debounceDelay: const Duration(milliseconds: 300),
-      leadingActions: [
-        FloatingSearchBarAction(
-          child: CircularButton(
-            icon: const Icon(Icons.search, color: Colors.black, size: 22),
-            onPressed: () {
-              // Optionally handle icon tap if needed
-            },
-          ),
-        ),
-      ],
-      actions: [
-        FloatingSearchBarAction(
-          showIfOpened: false,
-          child: CircularButton(
-            icon: const Icon(Icons.mic, color: Colors.black, size: 22),
-            onPressed: () {},
-          ),
-        ),
-        FloatingSearchBarAction.searchToClear(
-          showIfClosed: false,
-        ),
-      ],
-      builder: (context, transition) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Material(
-            color: Colors.white,
-            elevation: 4.0,
-            child: SizedBox(
-              height: 400,
-              child: ListView.builder(
-                itemCount: _filteredStates.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _searchQuery = _filteredStates[index];
-                        FloatingSearchBar.of(context)!.close();
-                      });
-                      // _navigateToState(_filteredStates[index]);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 15),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.grey.shade200,
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            color: AppColors.primaryColor,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _filteredStates[index],
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontFamily: 'FontPoppins',
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const Text(
-                                'Saaol Heart Centre : EECP Treatment',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 }

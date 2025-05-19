@@ -2,12 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:saaolapp/data/network/BaseApiService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/common/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../DialogHelper.dart';
+import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
 import '../data/model/apiresponsemodel/NearestCenterResponseData.dart';
-import '../data/network/BaseApiService.dart';
-import 'ManuallyLocationScreen.dart';
 
 class NearByCenterScreen extends StatefulWidget {
   const NearByCenterScreen({super.key});
@@ -15,29 +16,34 @@ class NearByCenterScreen extends StatefulWidget {
   @override
   State<NearByCenterScreen> createState() => _NearByCenterScreenState();
 }
-
 class _NearByCenterScreenState extends State<NearByCenterScreen> {
   late GoogleMapController mapController;
   final LatLng _center = const LatLng(28.4829, 77.1640);
   final Set<Marker> _markers = {}; // Set to hold markers dynamically
   String savedLocation = 'No location saved';
   String getCityName = '';
+  String getSubLocality = '';
   String getPinCode = '';
   String coordinates = '';
   String nearByCentersName = '';
   String address = '';
+  String getLatitude = '';
+  String getLongitude = '';
+  late Future<NearestCenterResponseData>? nearestCenterFuture;
 
+  
 
   @override
   void initState() {
     super.initState();
     _loadSavedLocation();
     _initializeMarkers();
+    nearestCenterFuture = null;
   }
 
   @override
   void dispose() {
-    mapController.dispose(); // Dispose the controller to avoid memory leaks
+    mapController.dispose();
     super.dispose();
   }
 
@@ -57,13 +63,26 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
   void _loadSavedLocation() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? location = prefs.getString('saved_location');
+    String? selectedLat = prefs.getDouble('selected_latitude')?.toString();
+    String? selectedLng = prefs.getDouble('selected_longitude')?.toString();
+    String defaultLat = prefs.getString('lat') ?? '';
+    String defaultLng = prefs.getString('long') ?? '';
+
     setState(() {
       savedLocation = location ?? 'No location saved';
-      getCityName = (prefs.getString('cityName') ?? '');
-      getPinCode = prefs.getString('pinCode') ??
-          prefs.getString(ApiConstants.PINCODE) ??
-          '';
-      print('NearestCenterPinCode:$getPinCode');
+      getCityName = prefs.getString('cityName') ?? '';
+      getCityName = prefs.getString('locationName') ?? '';
+      getSubLocality = prefs.getString('subLocality') ?? '';
+      getLatitude = selectedLat ?? defaultLat;
+      getLongitude = selectedLng ?? defaultLng;
+      getPinCode = prefs.getString('pinCode') ?? prefs.getString(ApiConstants.PINCODE) ?? '';
+      if (getLatitude.isNotEmpty && getLongitude.isNotEmpty && getPinCode.isNotEmpty) {
+        nearestCenterFuture = BaseApiService().getNearestCenters(
+          latitude: double.tryParse(getLatitude) ?? 0.0,
+          longitude: double.tryParse(getLongitude) ?? 0.0,
+          radius: 10,
+        );
+      }
     });
   }
 
@@ -83,11 +102,10 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
     }
   }
 
-  // Function to set the marker on the map and animate the camera
   Future<void> _setSelectedLocation(
       LatLng selectedLocation, String centerName, String address) async {
     Uint8List? customMarkerIcon =
-        await _getMarkerIcon('assets/icons/location_logo.png', 150);
+    await _getMarkerIcon('assets/icons/location_logo.png', 150);
 
     setState(() {
       _markers.clear();
@@ -115,6 +133,15 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
     mapController = controller;
   }
 
+  void openUrl({required String openingUrl}) async {
+    var url = openingUrl;
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -125,7 +152,7 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
           'Nearby Centers',
           style: TextStyle(
             fontFamily: 'FontPoppins',
-            fontSize: 18,
+            fontSize: 16,
             letterSpacing: 0.2,
             fontWeight: FontWeight.w600,
             color: Colors.white,
@@ -136,56 +163,9 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                  getCityName,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontFamily: 'FontPoppins',
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const SearchBarScreen()),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      Text(
-                        getPinCode,
-                        style: const TextStyle(
-                            fontSize: 13,
-                            fontFamily: 'FontPoppins',
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
       body: Column(
         children: [
-          // Display the Google Map
           Expanded(
             child: GoogleMap(
               onMapCreated: _onMapCreated,
@@ -196,156 +176,278 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
               markers: _markers,
             ),
           ),
-          Expanded(
-            child: FutureBuilder<NearestCenterResponseData>(
-              future: BaseApiService().getNearestCenter(getPinCode, '10'),
-              builder: (context, snapshot) {
-                if (snapshot.hasData) {
-                  return ListView.builder(
-                    itemCount: snapshot.data!.centers!.length,
-                    itemBuilder: (context, index) {
-                      // Parse coordinates from the API response
-                      String coordinatesString = snapshot
-                          .data!.centers![index].hmPincodeCoordinates
-                          .toString();
-                      List<String> latLng = coordinatesString.split(',');
-                      LatLng centerCoordinates = LatLng(
-                        double.parse(latLng[0].trim()), // Latitude
-                        double.parse(latLng[1].trim()), // Longitude
-                      );
 
-                      String centerName =
-                          snapshot.data!.centers![index].centerName ??
-                              'Unknown Center';
-                      String centerAddress =
-                          snapshot.data!.centers![index].address1 ??
-                              'No Address';
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 7, horizontal: 8),
-                        child: Container(
-                          constraints: const BoxConstraints(
-                            minHeight:150, // Set the minimum height here
+          Expanded(child: FutureBuilder<NearestCenterResponseData>(
+            future:nearestCenterFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                final errorMessage = snapshot.error.toString();
+                if (errorMessage.contains('No internet connection')) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.wifi_off_rounded,
+                            size:30,
+                            color: Colors.redAccent,
                           ),
-                          decoration: BoxDecoration(
-                            color:Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                                color: Colors.white,
-                                width:1),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  centerName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.location_on,
-                                      color: Colors.black,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Text(snapshot.data!.centers![index].distanceText.toString(),
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontFamily: 'FontPoppins',
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Container(
-                                      height: 15,
-                                      width: 0.8,
-                                      color: Colors.grey.withOpacity(0.6),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Expanded(
-                                      child: Text(
-                                        centerAddress,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 15),
-                                SizedBox(
-                                  height: 36,
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _setSelectedLocation(
-                                        centerCoordinates,
-                                        centerName,
-                                        centerAddress,
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primaryDark,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'View Center',
-                                      style: TextStyle(
-                                        fontFamily: 'FontPoppins',
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          SizedBox(height:8),
+                          Text(
+                            'No Internet Connection',
+                            style: TextStyle(
+                              fontSize:14,
+                              fontFamily: 'FontPoppins',
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black87,
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
-                }
-                return Center(
-                  child: Container(
-                    width: 60, // Set custom width
-                    height:60, // Set custom height
-                    decoration: BoxDecoration(
-                      color:AppColors.primaryColor.withOpacity(0.1), // Background color for the progress indicator
-                      borderRadius: BorderRadius.circular(30), // Rounded corners
-                    ),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryColor, // Custom color
-                        strokeWidth:6, // Set custom stroke width
+                          Text(
+                            'Please check your network settings and try again.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize:12,
+                              fontFamily: 'FontPoppins',
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                  );
+                } else {
+                  return Center(child: Text('Error: $errorMessage'));
+                }
+              } else if (!snapshot.hasData || snapshot.data!.centers == null || snapshot.data!.centers!.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 40,
+                        color: AppColors.primaryDark,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No Centers Found',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'FontPoppins',
+                            color: Colors.black),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'We couldn’t find any centers for your selected location.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                          fontFamily: 'FontPoppins',
+                        ),
+                      ),
+                    ],
                   ),
                 );
-              },
-            ),
+              } else {
+                return ListView.builder(
+                  itemCount: snapshot.data!.centers!.length,
+                  itemBuilder: (context, index) {
+                    String coordinatesString = snapshot
+                        .data!.centers![index].hmPincodeCoordinates
+                        .toString();
+                    List<String> latLng = coordinatesString.split(',');
+                    LatLng centerCoordinates = LatLng(
+                      double.parse(latLng[0].trim()), // Latitude
+                      double.parse(latLng[1].trim()), // Longitude
+                    );
+
+                    String centerName =
+                        snapshot.data!.centers![index].cityName ??
+                            'Unknown Center';
+                    String centerAddress =
+                        snapshot.data!.centers![index].cityAddr ??
+                            'No Address';
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 7, horizontal: 8),
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minHeight:150, // Set the minimum height here
+                        ),
+                        decoration: BoxDecoration(
+                          color:Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width:1),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child:Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Saaol $centerName Center',
+                                style: const TextStyle(
+                                  fontSize:14,
+                                  fontFamily: 'FontPoppins',
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.location_on,
+                                    color: Colors.black,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    snapshot.data!.centers![index].distanceText.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontFamily: 'FontPoppins',
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Container(
+                                    height: 15,
+                                    width: 0.8,
+                                    color: Colors.grey.withOpacity(0.6),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Expanded(
+                                    child: Text(
+                                      centerAddress,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontFamily: 'FontPoppins',
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                              const SizedBox(height: 15),
+                              SizedBox(
+                                height: 36,
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    _setSelectedLocation(centerCoordinates, centerName, centerAddress);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryDark,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'View Center',
+                                    style: TextStyle(
+                                      fontFamily: 'FontPoppins',
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  if (snapshot.data!.centers![index].phoneNo != null &&
+                                      snapshot.data!.centers![index].phoneNo!.trim().isNotEmpty)
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          DialogHelper.makingPhoneCall(
+                                            snapshot.data!.centers![index].phoneNo.toString(),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.call, color: AppColors.primaryDark),
+                                        label: const Text(
+                                          'Call',
+                                          style: TextStyle(
+                                            fontFamily: 'FontPoppins',
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 13,
+                                            color: AppColors.primaryDark,
+                                          ),
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: AppColors.primaryDark),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (snapshot.data!.centers![index].phoneNo != null &&
+                                      snapshot.data!.centers![index].phoneNo!.trim().isNotEmpty)
+                                    const SizedBox(width: 10),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        if (getLatitude.isEmpty && getLongitude.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Unable to get current location.'),
+                                            ),
+                                          );
+                                          return;
+                                        }
+
+                                        String location = snapshot.data!.centers![index].hmPincodeCoordinates.toString();
+                                        String locationUrl =
+                                            "https://www.google.com/maps/dir/$getLatitude,$getLongitude/$location";
+                                        openUrl(openingUrl: locationUrl);
+                                      },
+                                      icon: const Icon(Icons.directions, color: AppColors.primaryDark),
+                                      label: const Text(
+                                        'Directions',
+                                        style: TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13,
+                                          color: AppColors.primaryDark,
+                                        ),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: AppColors.primaryDark),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }
+            },
+          ),
           ),
         ],
       ),
     );
   }
 }
+

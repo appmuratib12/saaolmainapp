@@ -1,14 +1,14 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:expandable/expandable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/ZeroOilHealthyFoodResponseData.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/ZeroOilRecipeResponseData.dart';
-import 'package:saaoldemo/data/network/BaseApiService.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:saaolapp/DialogHelper.dart';
 import '../../common/app_colors.dart';
 import '../../data/model/apiresponsemodel/TreatmentsDetailResponseData.dart';
+import '../../data/model/apiresponsemodel/ZeroOilHealthyFoodResponseData.dart';
+import '../../data/model/apiresponsemodel/ZeroOilRecipeResponseData.dart';
+import '../../data/network/BaseApiService.dart';
 import '../AppointmentsScreen.dart';
+
 
 class ZeroOilPageScreen extends StatefulWidget {
   final String id;
@@ -23,15 +23,6 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
     "https://saaol.com/psd//assets/images/about/home/zero-oil-cooking-page.jpeg",
     "https://saaol.com/blog/saaol-blog-storage/2023/10/How-is-Zero-Oil-Cooking-Good-for-Your-Heart-Health.jpg",
   ];
-
-  _makingPhoneCall() async {
-    var url = Uri.parse("tel:8447776000");
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
 
   late Future<TreatmentsDetailResponseData> treatmentDetails;
 
@@ -129,210 +120,121 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.primaryColor,
-        title: const Text(
-          'ZERO OIL COOKING',
-          style: TextStyle(
-              fontFamily: 'FontPoppins',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor:Colors.white,
       body: Stack(
         children: [
-
-          SizedBox(
-            height: 260, // Adjust this height value as needed
-            width: MediaQuery.of(context).size.width,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Stack(
-                  alignment: Alignment.center,
+          FutureBuilder<TreatmentsDetailResponseData>(
+            future: treatmentDetails,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return const Center(
+                    child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return const Center(
+                  child: Text("Error loading data"),
+                );
+              } else if (snapshot.hasData) {
+                var treatmentData = snapshot.data!.data!;
+                String fullDescription =
+                    snapshot.data!.data!.description ?? '';
+                String extractedDescription =
+                extractDescription(fullDescription);
+                String extractedPortion = extractPortion(
+                    fullDescription, "Welcome", "heart");
+                String advantage =
+                    snapshot.data!.data!.advantage ?? '';
+                String disadvantage =
+                    snapshot.data!.data!.disadvantge ?? '';
+                String avoidOther =
+                    snapshot.data!.data!.whythisOtherData ?? '';
+                List<Map<String, String>> advantageList =
+                extractAdvantageDetails(advantage);
+                List<Map<String, String>> disadvantageList =
+                extractDisadvantageDetails(disadvantage);
+                List<Map<String, String>> avoidOtherList =
+                extractAvoidData(avoidOther);
+                return Stack(
                   children: [
-                    ClipRRect(
-                      child: CarouselSlider(
-                        items: zeroOilArray.map((imagePath) {
-                          return SizedBox(
-                            width: MediaQuery.of(context).size.width,
-                            child: Image.network(
-                              imagePath,
-                              fit: BoxFit.cover,
-                              errorBuilder: (BuildContext context,
-                                  Object exception, StackTrace? stackTrace) {
-                                return Image.asset("assets/logo.png");
-                              },
-                              loadingBuilder: (BuildContext context,
-                                  Widget child,
-                                  ImageChunkEvent? loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                        ? loadingProgress
-                                        .cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        }).toList(),
-                        options: CarouselOptions(
-                          viewportFraction: 1,
-                          height: 240, // Adjust this height value as needed
-                          autoPlay: true,
+                    SizedBox(
+                      height:260,
+                      width: MediaQuery.of(context).size.width,
+                      child: Image.network(
+                        snapshot.data!.data!.chooseDescriptionImage
+                            .toString(),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top:30, // Adjust according to your app bar height / status bar
+                      left:10,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.4),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white,size:22,),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
                         ),
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              /*carouselController.previousPage(
-                                curve: Curves.easeIn,
-                              );*/
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: Colors.white.withOpacity(.5),
-                              child: const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Icon(
-                                  Icons.arrow_back_ios_new_outlined,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
+                      padding: const EdgeInsets.only(top:220.0),
+                      child: Container(
+                        decoration:  BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              /*carouselController.nextPage(
-                                curve: Curves.easeIn,
-                              );*/
-                            },
-                            child: CircleAvatar(
-                              backgroundColor: Colors.white.withOpacity(.5),
-                              child: const Padding(
-                                padding: EdgeInsets.all(8),
-                                child: Icon(
-                                  Icons.arrow_forward_ios_outlined,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 210.0),
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                color: Colors.white,
-              ),
-              height: double.infinity,
-              width: double.infinity,
-              child: SingleChildScrollView(
-                physics: const ScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    FutureBuilder<TreatmentsDetailResponseData>(
-                      future: treatmentDetails,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return const Center(
-                            child: Text("Error loading data"),
-                          );
-                        } else if (snapshot.hasData) {
-                          var treatmentData = snapshot.data!.data!;
-                          String fullDescription =
-                              snapshot.data!.data!.description ?? '';
-                          String extractedDescription =
-                              extractDescription(fullDescription);
-                          String extractedPortion = extractPortion(
-                              fullDescription, "Welcome", "heart");
-                          String advantage =
-                              snapshot.data!.data!.advantage ?? '';
-                          String disadvantage =
-                              snapshot.data!.data!.disadvantge ?? '';
-                          String avoidOther =
-                              snapshot.data!.data!.whythisOtherData ?? '';
-                          List<Map<String, String>> advantageList =
-                              extractAdvantageDetails(advantage);
-                          List<Map<String, String>> disadvantageList =
-                              extractDisadvantageDetails(disadvantage);
-                          List<Map<String, String>> avoidOtherList =
-                              extractAvoidData(avoidOther);
-
-                          return Column(
+                          color: Colors.grey[200],
+                        ),
+                        height: double.infinity,
+                        width: double.infinity,
+                        child: SingleChildScrollView(
+                          physics: const ScrollPhysics(),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 10),
                               Padding(
                                 padding: const EdgeInsets.all(15),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      extractedDescription,
+                                      extractedDescription.trim(),
                                       style: const TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 18,
+                                        fontSize:15,
                                         color: AppColors.primaryColor,
                                       ),
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      extractedPortion, // Replace with API data
-                                      textAlign: TextAlign.justify,
+                                      extractedPortion.trim(), // Replace with API data
                                       style: const TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 15,
-                                        color: Colors.black54,
+                                        fontSize:13,
+                                        letterSpacing:0.2,
+                                        height:1.5,
+                                        color: Colors.black87,
                                       ),
-                                      maxLines: 8,
+                                      maxLines: 12,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
                               ),
-                              Divider(
+                              const Divider(
                                 height: 15,
                                 thickness: 5,
-                                color: Colors.lightBlue[50],
+                                color: AppColors.primaryColor
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(15),
@@ -344,7 +246,7 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                       style: TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 18,
+                                        fontSize:15,
                                         color: Colors.black,
                                       ),
                                     ),
@@ -355,7 +257,7 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                           icon: Icons.check_circle,
                                           title: advantage['title'] ?? '',
                                           subTitle:
-                                              advantage['description'] ?? '',
+                                          advantage['description'] ?? '',
                                           isCompleted: true,
                                         );
                                       }).toList(),
@@ -363,10 +265,10 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                   ],
                                 ),
                               ),
-                              Divider(
+                              const Divider(
                                 height: 15,
                                 thickness: 5,
-                                color: Colors.lightBlue[50],
+                                color: AppColors.primaryColor
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(15),
@@ -378,19 +280,19 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                       style: TextStyle(
                                         fontFamily: 'FontPoppins',
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 18,
+                                        fontSize:16,
                                         color: Colors.black,
                                       ),
                                     ),
                                     const SizedBox(height: 15),
                                     Column(
                                       children:
-                                          disadvantageList.map((advantage) {
+                                      disadvantageList.map((advantage) {
                                         return _buildTimelineTile(
                                           icon: Icons.check_circle,
                                           title: advantage['title'] ?? '',
                                           subTitle:
-                                              advantage['description'] ?? '',
+                                          advantage['description'] ?? '',
                                           isCompleted: true,
                                         );
                                       }).toList(),
@@ -398,10 +300,10 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                   ],
                                 ),
                               ),
-                              Divider(
+                              const Divider(
                                 height: 15,
                                 thickness: 5,
-                                color: Colors.lightBlue[50],
+                                color: AppColors.primaryColor
                               ),
                               Padding(
                                 padding: EdgeInsets.all(15),
@@ -413,7 +315,7 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                       style: TextStyle(
                                           fontFamily: 'FontPoppins',
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 18,
+                                          fontSize:16,
                                           color: Colors.black),
                                     ),
                                     const SizedBox(
@@ -425,7 +327,7 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                           icon: Icons.check_circle,
                                           title: avoidData['title'] ?? '',
                                           subTitle:
-                                              avoidData['description'] ?? '',
+                                          avoidData['description'] ?? '',
                                           isCompleted: true,
                                         );
                                       }).toList(),
@@ -433,355 +335,290 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                                   ],
                                 ),
                               ),
-                            ],
-                          );
-                        }
-                        return const Center(child: Text("No data found"));
-                      },
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Mastering the Art of Zero-Oil Cooking: Creative Techniques and Recipes',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          SizedBox(
-                            height: 350,
-                            child: FutureBuilder<ZeroOilRecipeResponseData>(
-                              future: BaseApiService().getZeroOilRecipeData(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  return ListView.builder(
-                                    shrinkWrap: true,
-                                    itemCount: snapshot.data!.data!.length,
-                                    scrollDirection: Axis.horizontal,
-                                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                                    itemBuilder: (context, index1) {
-                                      String description1 = snapshot.data!
-                                              .data![index1].contentCard ??
-                                          '';
-                                      String extractedPortion = extractPortion1(
-                                          description1, "Create", "oil.");
-                                      String extractedPortion2 =
-                                          extractPortion1(description1, "Puree",
-                                              "dressing.");
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Mastering the Art of Zero-Oil Cooking: Creative Techniques and Recipes',
+                                      style: TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontSize:16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    SizedBox(
+                                      height:380,
+                                      child: FutureBuilder<ZeroOilRecipeResponseData>(
+                                        future: BaseApiService().getZeroOilRecipeData(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData) {
+                                            return ListView.builder(
+                                              scrollDirection: Axis.horizontal,
+                                              itemCount: snapshot.data!.data!.length,
+                                              itemBuilder: (context, index) {
+                                                final item = snapshot.data!.data![index];
+                                                final String description = cleanText(item.contentCard ?? '');
+                                                final String tag = item.tag ?? '';
+                                                final String imageUrl = item.image ?? '';
 
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 7),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                  color: Colors.white,
-                                                  border: Border.all(
-                                                      color: Colors.grey,
-                                                      width: 0.4)),
-                                              width: 350,
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(10),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              10),
-                                                      child: Image(
-                                                        image: NetworkImage(
-                                                            snapshot
-                                                                .data!
-                                                                .data![index1]
-                                                                .image
-                                                                .toString()),
-                                                        height: 130,
-                                                        width: double.infinity,
-                                                        fit: BoxFit.cover,
-                                                      ),
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                                  child: Container(
+                                                    width: 320,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius: BorderRadius.circular(18),
+                                                      boxShadow: const [
+                                                        BoxShadow(
+                                                          color: Colors.black12,
+                                                          blurRadius: 8,
+                                                          offset: Offset(0, 4),
+                                                        ),
+                                                      ],
                                                     ),
-                                                    const SizedBox(
-                                                      height: 10,
-                                                    ),
-                                                    Text(
-                                                      snapshot.data!
-                                                          .data![index1].tag
-                                                          .toString(),
-                                                      style: const TextStyle(
-                                                          fontFamily:
-                                                              'FontPoppins',
-                                                          fontSize: 17,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                          color: AppColors
-                                                              .primaryColor),
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 10,
-                                                    ),
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              5),
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .start,
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        ClipRRect(
+                                                          borderRadius: const BorderRadius.only(
+                                                              topLeft: Radius.circular(18),
+                                                              topRight: Radius.circular(18)),
+                                                          child: Image.network(
+                                                            imageUrl,
+                                                            height: 160,
+                                                            width: double.infinity,
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        ),
+                                                        Padding(
+                                                          padding: const EdgeInsets.all(12),
+                                                          child: Column(
+                                                            crossAxisAlignment: CrossAxisAlignment.start,
                                                             children: [
+                                                              // Tag badge
                                                               Container(
-                                                                width: 8,
-                                                                height: 8,
-                                                                decoration:
-                                                                    const BoxDecoration(
-                                                                  shape: BoxShape
-                                                                      .circle,
-                                                                  color: AppColors
-                                                                      .primaryDark,
+                                                                padding: const EdgeInsets.symmetric(
+                                                                    vertical: 4, horizontal: 10),
+                                                                decoration: BoxDecoration(
+                                                                  color: AppColors.primaryColor.withOpacity(0.1),
+                                                                  borderRadius: BorderRadius.circular(20),
                                                                 ),
-                                                              ),
-                                                              const SizedBox(
-                                                                width: 10,
-                                                              ),
-                                                              Expanded(
                                                                 child: Text(
-                                                                  snapshot
-                                                                      .data!
-                                                                      .data![
-                                                                          index1]
-                                                                      .contentCard
-                                                                      .toString(),
+                                                                  tag,
                                                                   style: const TextStyle(
-                                                                      fontSize:
-                                                                          13,
-                                                                      fontFamily:
-                                                                          'FontPoppins',
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w500,
-                                                                      color: Colors
-                                                                          .black54),
+                                                                    fontFamily: 'FontPoppins',
+                                                                    fontSize:13,
+                                                                    fontWeight: FontWeight.w600,
+                                                                    color: AppColors.primaryColor,
+                                                                  ),
                                                                 ),
+                                                              ),
+                                                              const SizedBox(height: 10),
+                                                              // Description
+                                                              Text(
+                                                                description.trim(),
+                                                                style: const TextStyle(
+                                                                  fontFamily: 'FontPoppins',
+                                                                  fontSize: 13,
+                                                                  fontWeight: FontWeight.w500,
+                                                                  color: Colors.black87,
+                                                                  letterSpacing:0.2,
+                                                                  height: 1.5,
+                                                                ),
+                                                                maxLines: 6,
+                                                                overflow: TextOverflow.ellipsis,
                                                               ),
                                                             ],
                                                           ),
-                                                          const SizedBox(
-                                                            height: 5,
-                                                          ),
-                                                        ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return Text('Error: ${snapshot.error}');
+                                          } else {
+                                            return const Center(child: CircularProgressIndicator());
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Divider(
+                                height: 15,
+                                thickness: 5,
+                                color: AppColors.primaryColor
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'What are some healthy food recipes without Oil',
+                                      style: TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontSize:16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black),
+                                    ),
+                                    SizedBox(
+                                      height: 300,
+                                      child:
+                                      FutureBuilder<ZeroOilHealthyFoodResponseData>(
+                                        future: BaseApiService().getZeroOilHealthyData(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData) {
+                                            return ListView.builder(
+                                              itemCount: snapshot.data!.data!.length,
+                                              scrollDirection: Axis.vertical,
+                                              physics:const ScrollPhysics(),
+                                              itemBuilder: (context, index) {
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(
+                                                      vertical: 5),
+                                                  child: Card(
+                                                    color: Colors.white,
+                                                    elevation: 4,
+                                                    shape: RoundedRectangleBorder(
+                                                        borderRadius:
+                                                        BorderRadius.circular(12)),
+                                                    child: ExpandablePanel(
+                                                      theme: const ExpandableThemeData(
+                                                        headerAlignment:
+                                                        ExpandablePanelHeaderAlignment
+                                                            .center,
+                                                        tapBodyToExpand: true,
+                                                        tapBodyToCollapse: true,
+                                                        hasIcon: true,
                                                       ),
-                                                    )
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return Text(
-                                      'ZeroOilResponse-->${snapshot.data!.message}');
-                                } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                }
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Divider(
-                      height: 15,
-                      thickness: 5,
-                      color: Colors.lightBlue[50],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'What are some healthy food recipes without Oil',
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black),
-                          ),
-                          const SizedBox(
-                            height: 15,
-                          ),
-                          SizedBox(
-                            height: 300,
-                            child:
-                                FutureBuilder<ZeroOilHealthyFoodResponseData>(
-                              future: BaseApiService().getZeroOilHealthyData(),
-                              builder: (context, snapshot) {
-                                if (snapshot.hasData) {
-                                  return ListView.builder(
-                                    itemCount: snapshot.data!.data!.length,
-                                    scrollDirection: Axis.vertical,
-                                    itemBuilder: (context, index) {
-                                      return Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 5),
-                                        child: Card(
-                                          color: Colors.white,
-                                          elevation: 4,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12)),
-                                          child: ExpandablePanel(
-                                            theme: const ExpandableThemeData(
-                                              headerAlignment:
-                                                  ExpandablePanelHeaderAlignment
-                                                      .center,
-                                              tapBodyToExpand: true,
-                                              tapBodyToCollapse: true,
-                                              hasIcon: true,
-                                            ),
-                                            header: Padding(
-                                              padding: EdgeInsets.all(10.0),
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    child: Text(
-                                                      snapshot.data!
-                                                          .data![index].tag
-                                                          .toString(),
-                                                      style: const TextStyle(
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontFamily:
-                                                            'FontPoppins',
-                                                        color: AppColors
-                                                            .primaryColor,
+                                                      header: Padding(
+                                                        padding: EdgeInsets.all(10.0),
+                                                        child: Row(
+                                                          children: [
+                                                            Expanded(
+                                                              child: Text(
+                                                                snapshot.data!
+                                                                    .data![index].tag
+                                                                    .toString(),
+                                                                style: const TextStyle(
+                                                                  fontSize:14,
+                                                                  fontWeight:
+                                                                  FontWeight.w600,
+                                                                  fontFamily:
+                                                                  'FontPoppins',
+                                                                  color: AppColors
+                                                                      .primaryColor,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      collapsed: Container(),
+                                                      // Keep collapsed state empty
+                                                      expanded: Column(
+                                                        crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                        mainAxisAlignment:
+                                                        MainAxisAlignment.start,
+                                                        children: [
+                                                          Padding(
+                                                            padding: const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 10),
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                              mainAxisAlignment:
+                                                              MainAxisAlignment.start,
+                                                              children: [
+                                                                ClipRRect(
+                                                                  borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(10),
+                                                                  child: Image.network(
+                                                                    snapshot
+                                                                        .data!
+                                                                        .data![index]
+                                                                        .image
+                                                                        .toString(),
+                                                                    // Use the image from the array
+                                                                    fit: BoxFit.cover,
+                                                                    height: 120,
+                                                                    width:
+                                                                    double.infinity,
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                    height: 10),
+                                                                Text(
+                                                                  snapshot
+                                                                      .data!
+                                                                      .data![index]
+                                                                      .contentCard
+                                                                      .toString(),
+                                                                  // Use the description from the array
+                                                                  style: const TextStyle(
+                                                                      fontSize:12,
+                                                                      fontFamily:
+                                                                      'FontPoppins',
+                                                                      fontWeight:
+                                                                      FontWeight.w500,
+                                                                      color:
+                                                                      Colors.black54),
+                                                                  textAlign:
+                                                                  TextAlign.justify,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 10),
+                                                        ],
                                                       ),
                                                     ),
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                            collapsed: Container(),
-                                            // Keep collapsed state empty
-                                            expanded: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.start,
-                                              children: [
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 10),
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment.start,
-                                                    children: [
-                                                      ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10),
-                                                        child: Image.network(
-                                                          snapshot
-                                                              .data!
-                                                              .data![index]
-                                                              .image
-                                                              .toString(),
-                                                          // Use the image from the array
-                                                          fit: BoxFit.cover,
-                                                          height: 120,
-                                                          width:
-                                                              double.infinity,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                          height: 10),
-                                                      Text(
-                                                        snapshot
-                                                            .data!
-                                                            .data![index]
-                                                            .contentCard
-                                                            .toString(),
-                                                        // Use the description from the array
-                                                        style: const TextStyle(
-                                                            fontSize: 14,
-                                                            fontFamily:
-                                                                'FontPoppins',
-                                                            fontWeight:
-                                                                FontWeight.w500,
-                                                            color:
-                                                                Colors.black54),
-                                                        textAlign:
-                                                            TextAlign.justify,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 10),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                } else if (snapshot.hasError) {
-                                  return Text(
-                                      'ZeroOilHealthyFoodResponse-->${snapshot.data!.message}');
-                                } else {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
-                                }
-                              },
-                            ),
+                                                );
+                                              },
+                                            );
+                                          } else if (snapshot.hasError) {
+                                            return Text(
+                                                'ZeroOilHealthyFoodResponse-->${snapshot.data!.message}');
+                                          } else {
+                                            return const Center(
+                                                child: CircularProgressIndicator());
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
+                );
+              }
+              return const Center(child: Text("No data found"));
+            },
           ),
+
           Positioned(
             bottom: 0,
             left: 0,
@@ -850,7 +687,8 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
                   color: Colors.white,
                 ),
                 onPressed: () {
-                  _makingPhoneCall();
+                  DialogHelper.makingPhoneCall('');
+
                 },
               ),
             ),
@@ -888,9 +726,9 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                title.trim(),
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize:13,
                   fontWeight: FontWeight.w600,
                   fontFamily: 'FontPoppins',
                   color: Colors.black,
@@ -898,12 +736,12 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
               ),
               Text(
                 subTitle,
-                textAlign: TextAlign.justify,
                 style: const TextStyle(
                   fontFamily: 'FontPoppins',
                   fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                  color: Colors.black54,
+                  fontSize:12,
+                  color: Colors.black87,
+                  height:1.5,
                   letterSpacing: 0.1,
                 ),
                 maxLines: 4,
@@ -915,4 +753,11 @@ class _ZeroOilPageScreenState extends State<ZeroOilPageScreen> {
       ],
     );
   }
+  String cleanText(String rawText) {
+    return rawText
+        .replaceAll('\n', ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
 }

@@ -4,13 +4,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_autofill/sms_autofill.dart';
-import 'package:saaoldemo/common/app_colors.dart';
+import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
-import '../constant/GoogleSignInService.dart';
 import '../data/network/ApiService.dart';
 import 'OTPVerifyScreen.dart';
-
-
 
 class DemoScreen extends StatefulWidget {
   const DemoScreen({super.key});
@@ -29,7 +26,6 @@ class _DemoScreenState extends State<DemoScreen> {
   TextEditingController userMobileController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
-  final GoogleSignInService _googleSignInService = GoogleSignInService();
   final ApiService _apiService = ApiService();
 
   Future<void> _sendOTP() async {

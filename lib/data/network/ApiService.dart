@@ -3,11 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:saaolapp/data/model/apiresponsemodel/offlineAppointmentRequestResponse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../constant/ApiConstants.dart';
+import '../model/apiresponsemodel/OnlineAppointmentRequestResponse.dart';
 import '../model/apiresponsemodel/PatientDetailsResponse.dart';
 import '../model/apiresponsemodel/SendOTPResponse.dart';
 import '../model/apiresponsemodel/VerifyOTPResponse.dart';
+
 
 
 class ApiService {
@@ -63,25 +66,9 @@ class ApiService {
         final jsonResponse = jsonDecode(response.body);
         final VerifyOTPResponse verifyOTPResponse = VerifyOTPResponse.fromJson(jsonResponse);
         print('Status: ${verifyOTPResponse.success}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(jsonResponse['message'] ?? 'Mobile number verified successfully.'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
         return verifyOTPResponse;
       } else {
         print('Failed to verify OTP. Status Code: ${response.statusCode}');
-        // Show error message in SnackBar
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to verify OTP. Please try again.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 2),
-          ),
-        );
-
         return null;
       }
     } catch (error) {
@@ -105,46 +92,6 @@ class ApiService {
     }
   }
 
-
-  /*Future<VerifyOTPResponse?> verifyOTP(String mobile, String otp) async {
-    final url = Uri.parse('https://saaol.org/saaolnewapp/api/verify');
-    final body = {
-      'mobile': mobile,
-      'otp': otp,
-    };
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'API-KEY': ApiConstants.apiKey,
-        },
-        body: jsonEncode(body),
-      );
-      if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
-        final VerifyOTPResponse verifyOTPResponse = VerifyOTPResponse.fromJson(jsonResponse);
-        SharedPreferences preferences = await SharedPreferences.getInstance();
-        await preferences.setString('UserToken', verifyOTPResponse.success.toString());
-        print('Status: ${verifyOTPResponse.success}');
-        return verifyOTPResponse;
-      } else {
-        print('Failed to verify OTP. Status Code: ${response.statusCode}');
-        return null;
-      }
-    } catch (error) {
-      if (error is TimeoutException) {
-        print('Request timed out: $error');
-      } else if (error is SocketException) {
-        print('Network error: $error');
-      } else {
-        print('Error to verify OTP: $error');
-      }
-      return null;
-    }
-  }*/
-
   Future<void> savePatientDetails(PatientDetailsResponse response) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     if (response.data != null && response.data!.isNotEmpty) {
@@ -153,10 +100,8 @@ class ApiService {
       await preferences.setString('patientUniqueID', data.patientUniqueId.toString());
       print('Patient ID: ${data.pmId}');
       await preferences.setString('PatientFirstName', data.pmFirstName.toString());
-      await preferences.setString(
-          'PatientLastName', data.pmLastName.toString());
-      await preferences.setString(
-          'PatientMiddleName', data.pmMiddleName.toString());
+      await preferences.setString('PatientLastName', data.pmLastName.toString());
+      await preferences.setString('PatientMiddleName', data.pmMiddleName.toString());
       await preferences.setString('PatientGender', data.pmGender.toString());
       print('Patient gender: ${data.pmGender}');
       await preferences.setString('PatientDob', data.pmDob.toString());
@@ -222,6 +167,9 @@ class ApiService {
     }
   }
 
+
+
+
   Future<bool> sendCallRequest({
     required int userId,
     required String mobileNumber,
@@ -254,5 +202,117 @@ class ApiService {
       print("Error: $error");
       return false;
     }
+  }
+
+  Future<OnlineAppointmentRequestResponse?> sendLeadData({
+    required String contactCountryCode,
+    required String contactNo,
+    required String appointmentType,
+    required String address,
+    required String email,
+    required String name,
+  }) async {
+    const String url = "https://crm.saaol.com/app/api/lead/app/request";
+
+    final Map<String, String> requestBody = {
+      "contact_country_code": contactCountryCode,
+      "contact_no": contactNo,
+      "appointment_type": appointmentType,
+      "address": address,
+      "email": email,
+      "name": name,
+    };
+
+    try {
+      final response = await http
+          .post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          'x-api-key': ApiConstants.crmAPIkEY
+        },
+        body: jsonEncode(requestBody),
+      )
+          .timeout(const Duration(seconds: 10));
+      print("Response Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 201) {
+        final jsonResponse = jsonDecode(response.body);
+        final OnlineAppointmentRequestResponse onlineAppointmentRequestResponse = OnlineAppointmentRequestResponse.fromJson(jsonResponse);
+        print('OnlinAppointmentResponse: $onlineAppointmentRequestResponse');
+        return onlineAppointmentRequestResponse;
+      }
+    } on TimeoutException {
+      print("Error: Request timed out. Please try again.");
+    } on SocketException {
+      print("Error: No internet connection.");
+    } on HttpException {
+      print("Error: HTTP error occurred.");
+    } on FormatException {
+      print("Error: Bad response format.");
+    } catch (e) {
+      print("Error: Something went wrong - $e");
+    }
+    return null;
+  }
+
+
+  Future<OfflineAppointmentRequestResponse?> offlineCRMApi({
+    required String contactCountryCode,
+    required String contactNo,
+    required String appointmentType,
+    required String address,
+    required String email,
+    required String name,
+    required String date,
+    required String centerName,
+    required String time,
+  }) async {
+    const String url = "https://crm.saaol.com/app/api/lead/app/request";
+
+    final Map<String, String> requestBody = {
+      "contact_country_code": contactCountryCode,
+      "contact_no": contactNo,
+      "appointment_type": appointmentType,
+      "address": address,
+      "email": email,
+      "name": name,
+      "desired_date": date,
+      "desired_hm_id": centerName,
+      "desired_slot": time,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          'x-api-key': ApiConstants.crmAPIkEY
+        },
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 10));
+
+      print("Response Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+
+      if (response.statusCode == 201) {
+        final jsonResponse = jsonDecode(response.body);
+        final offlineAppointmentRequestResponse = OfflineAppointmentRequestResponse.fromJson(jsonResponse);
+        print('OfflineAppointmentRequestResponse: $offlineAppointmentRequestResponse');
+        return offlineAppointmentRequestResponse;
+      }
+    } on TimeoutException {
+      print("Error: Request timed out. Please try again.");
+    } on SocketException {
+      print("Error: No internet connection.");
+    } on HttpException {
+      print("Error: HTTP error occurred.");
+    } on FormatException {
+      print("Error: Bad response format.");
+    } catch (e) {
+      print("Error: Something went wrong - $e");
+    }
+    return null;
   }
 }

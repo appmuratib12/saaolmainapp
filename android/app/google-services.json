@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "962990416170",
-    "project_id": "medicalapp-cbd20",
-    "storage_bucket": "medicalapp-cbd20.firebasestorage.app"
+    "project_number": "932330612993",
+    "project_id": "saaolapp-4918b",
+    "storage_bucket": "saaolapp-4918b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:962990416170:android:cc1ead30782848be4fbe53",
+        "mobilesdk_app_id": "1:932330612993:android:23bab3693f0d4359175300",
         "android_client_info": {
-          "package_name": "com.saaoldemo"
+          "package_name": "com.saaol2.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "932330612993-s0v3sr0bvje2541f6a44a7vfn5c1u2b2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.saaol2.app",
+            "certificate_hash": "ac480930dce3ecddfef725e58e2dfd62f4169cbb"
+          }
+        },
+        {
+          "client_id": "932330612993-hcrmb5d0601gcd9e8plfjlcthde5b3k6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDFl9xOvVOopsjMh5RoRwXxi6kiW3QxhFo"
+          "current_key": "AIzaSyADEcKQhH4L_kmAISPHjEJSBGVIgjduuAg"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "932330612993-hcrmb5d0601gcd9e8plfjlcthde5b3k6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

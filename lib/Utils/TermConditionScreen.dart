@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/TermsAndConditionResponse.dart';
 import '../common/app_colors.dart';
+import '../data/model/apiresponsemodel/TermsAndConditionResponse.dart';
 import '../data/network/BaseApiService.dart';
 
 
@@ -103,10 +103,10 @@ class _TermConditionScreenState extends State<TermConditionScreen> {
                  const Icon(Icons.assignment, color:Colors.grey),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    faq.title?.toUpperCase() ?? "No title",
+                  child: Text(textAlign:TextAlign.start,
+                    faq.title?.toUpperCase() ?? "No title".trim(),
                     style:  const TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontFamily: 'FontPoppins',
                       fontWeight: FontWeight.w600,
                       color:AppColors.primaryColor,
@@ -131,14 +131,14 @@ class _TermConditionScreenState extends State<TermConditionScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        textAlign:TextAlign.justify,
-                        faq.content ?? "No content available",
+                        faq.content ?? "No content available".trim(),
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: Colors.black87,
                           fontWeight: FontWeight.w500,
                           fontFamily: 'FontPoppins',
                         ),
+                        softWrap: true,
                       ),
                     ),
                   ],
@@ -152,8 +152,6 @@ class _TermConditionScreenState extends State<TermConditionScreen> {
       ),
     );
   }
-
-  /// UI when API fails
   Widget _buildErrorUI() {
     return Center(
       child: Padding(
@@ -183,7 +181,7 @@ class _TermConditionScreenState extends State<TermConditionScreen> {
     );
   }
 
-  /// UI when no FAQs are available
+
   Widget _buildEmptyUI() {
     return const Center(
       child: Text(

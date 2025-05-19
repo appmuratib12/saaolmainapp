@@ -13,6 +13,7 @@ import 'NearByCenterScreen.dart';
 class SearchBarScreen extends StatefulWidget {
   const SearchBarScreen({super.key});
 
+
   @override
   _SearchBarScreenState createState() => _SearchBarScreenState();
 }
@@ -27,7 +28,6 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
   @override
   void initState() {
     super.initState();
-    //_getCurrentLocation();
     _searchController
         .addListener(_filterCities); // Listen for changes in the search bar
     _fetchCities(); // Fetch the cities from API
@@ -36,23 +36,6 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
   String currentLocation = 'Unknown location';
   final LocationService _locationService = LocationService();
 
-  void _getCurrentLocation() async {
-    try {
-      Position position = await _locationService.getCurrentLocation();
-      String cityAndPincode =
-          await _locationService.getCityAndPincode(position);
-      setState(() {
-        currentLocation = cityAndPincode;
-      });
-    } catch (e) {
-      setState(() {
-        currentLocation = 'Failed to get location';
-      });
-      Fluttertoast.showToast(msg: 'Failed to get location: ${e.toString()}');
-    }
-  }
-
-  // Fetch cities from API
   Future<void> _fetchCities() async {
     try {
       final statesResponse = await BaseApiService().getStatesData();
@@ -65,8 +48,6 @@ class _SearchBarScreenState extends State<SearchBarScreen> {
     }
   }
 
-
-  // Filter cities based on search input
   void _filterCities() {
     String query = _searchController.text.toLowerCase();
 

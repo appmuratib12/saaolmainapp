@@ -5,7 +5,6 @@ import 'HeartHealth/AssessRiskScreen.dart';
 import 'HeartHealth/CausesHealthScreen.dart';
 import 'HeartHealth/KnowYourHeartScreen.dart';
 import 'HeartHealth/OverviewScreen.dart';
-import 'SaaolBooksScreen.dart';
 
 class HeartHealthScreen extends StatefulWidget {
   const HeartHealthScreen({super.key});
@@ -15,26 +14,25 @@ class HeartHealthScreen extends StatefulWidget {
 }
 
 class _HeartHealthScreenState extends State<HeartHealthScreen> {
-  final List<Map<String, String>> heartArray = [
-    {'name': 'Overview', 'image': 'assets/images/india_gate.png'},
-    {'name': 'Assess Risk', 'image': 'assets/images/india_gate.png'},
-    {'name': 'Know Your Heart', 'image': 'assets/images/india_gate.png'},
-    {'name': 'Heart Health Causes', 'image': 'assets/images/india_gate.png'},
-    {'name': 'SAAOL Books', 'image': 'assets/images/india_gate.png'},
-  ];
-
   List<String> healthArray = [
     "Overview",
     "Assess Risk",
     "Know Your Heart",
     "Heart Health Causes",
-    "SAAOL Books"
+  ];
+
+  List<IconData> healthIcons = [
+    Icons.info_outline,
+    Icons.assignment,
+    Icons.favorite,
+    Icons.local_hospital,
+    Icons.book
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:Colors.white,
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
         title: const Text(
@@ -46,7 +44,7 @@ class _HeartHealthScreenState extends State<HeartHealthScreen> {
               color: Colors.white),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_outlined, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         centerTitle: true,
@@ -54,65 +52,11 @@ class _HeartHealthScreenState extends State<HeartHealthScreen> {
       body: SingleChildScrollView(
         physics: const ScrollPhysics(),
         child: Container(
-          margin: const EdgeInsets.all(10),
+          margin: const EdgeInsets.all(15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              /* SizedBox(
-                height: 500,
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(10.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12.0,
-                    crossAxisSpacing: 10.0,
-                    childAspectRatio: 1.3,
-                  ),
-                  itemCount: heartArray.length,
-                  itemBuilder: (ctx, i) => GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      height: 100,
-                      width: 100,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            height: 65,
-                            width: 65,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Image(
-                                image: AssetImage(
-                                    'assets/icons/heartbeat_icon.png'),
-                                height: 40,
-                                width: 40,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height:10,),
-                          Text(heartArray[i]['name']!,
-                            style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),*/
               SizedBox(
                 height: 500,
                 child: ListView.builder(
@@ -134,68 +78,72 @@ class _HeartHealthScreenState extends State<HeartHealthScreen> {
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
-                                  builder: (context) => const HeartHealthAssessmentForm ()),
+                                  builder: (context) => const HeartHealthAssessmentForm()),
                             );
                             break;
                           case 2:
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
-                                  builder: (context) => const KnowYourHeartScreen ()),
+                                  builder: (context) => const KnowYourHeartScreen()),
                             );
                             break;
                           case 3:
                             Navigator.push(
                               context,
                               CupertinoPageRoute(
-                                  builder: (context) => const CausesHealthScreen ()),
-                            );
-                            break;
-                          case 4:
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                  builder: (context) => const BooksHealthScreen()),
+                                  builder: (context) => const CausesHealthScreen()),
                             );
                             break;
                           default:
-
                         }
                       },
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             Container(
-                              height: 70,
+                              height: 80,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                      color: Colors.grey.withOpacity(0.5),
-                                      width: 0.5)),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.2),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
                               child: Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 15, right: 10),
+                                padding: const EdgeInsets.all(15),
                                 child: Row(
                                   children: [
-                                    Text(
-                                      healthArray[index],
-                                      style: const TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black),
+                                    Icon(
+                                      healthIcons[index],
+                                      color: AppColors.primaryColor,
+                                      size: 30,
                                     ),
-                                    Expanded(child: Container()),
+                                    const SizedBox(width: 20),
+                                    Expanded(
+                                      child: Text(
+                                        healthArray[index],
+                                        style: const TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontSize:14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
                                     const Icon(
                                       Icons.arrow_forward_ios,
-                                      size: 16,
+                                      size: 15,
                                       color: AppColors.primaryDark,
-                                    )
+                                    ),
                                   ],
                                 ),
                               ),
@@ -207,7 +155,6 @@ class _HeartHealthScreenState extends State<HeartHealthScreen> {
                   },
                 ),
               ),
-
             ],
           ),
         ),

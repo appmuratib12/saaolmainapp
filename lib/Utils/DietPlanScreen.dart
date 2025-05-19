@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import '../common/app_colors.dart';
-import 'HapsReportScreen.dart';
-
 
 class DietPlanScreen extends StatefulWidget {
   const DietPlanScreen({super.key});
@@ -10,6 +7,7 @@ class DietPlanScreen extends StatefulWidget {
   @override
   State<DietPlanScreen> createState() => _DietPlanScreenState();
 }
+
 
 class _DietPlanScreenState extends State<DietPlanScreen> {
   @override
@@ -19,7 +17,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Section
             Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
@@ -39,7 +36,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                   const SizedBox(height: 14),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    // Aligns the text and image to the top
                     children: [
                       const Expanded(
                         child: Text(
@@ -67,7 +63,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            // Ingredients Section
             Expanded(
               child: Container(
                 margin: const EdgeInsets.all(10),
@@ -79,7 +74,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Ingredients Header
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -136,19 +130,18 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
     );
   }
 
-  // Widget for Ingredient Item
   Widget _buildIngredientItem(
       String name, String description, String imageUrl) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
+        /*Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const PDFScreen(),  // No URL, load from assets
           ),
         );
 
-        Fluttertoast.showToast(msg:'Click');
+        Fluttertoast.showToast(msg:'Click');*/
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10.0),
@@ -171,7 +164,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Expanded or Flexible to manage text overflow
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,7 +178,6 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                             color: Colors.black),
                       ),
                       const SizedBox(height: 4),
-                      // Add some spacing between title and content
                       Text(
                         description,
                         style: const TextStyle(
@@ -200,7 +191,7 @@ class _DietPlanScreenState extends State<DietPlanScreen> {
                     ],
                   ),
                 ),
-                 const Icon(Icons.arrow_circle_right,
+                const Icon(Icons.arrow_circle_right,
                     color: AppColors.primaryDark, size: 20)
               ],
             ),

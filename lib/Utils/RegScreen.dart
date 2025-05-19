@@ -1,15 +1,21 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:saaoldemo/constant/ApiConstants.dart';
-import 'package:saaoldemo/data/model/requestmodel/RegisterRequestData.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../DialogHelper.dart';
 import '../common/app_colors.dart';
+import '../constant/ApiConstants.dart';
 import '../constant/ValidationCons.dart';
+import '../data/model/requestmodel/RegisterRequestData.dart';
 import '../data/network/ApiService.dart';
 import '../data/network/ChangeNotifier.dart';
 import 'LocationScreen.dart';
 import 'LoginOtpScreen.dart';
+import 'NotificationScreen.dart';
 import 'SignInScreen.dart';
 
 
@@ -44,7 +50,6 @@ class _RegScreenState extends State<RegScreen> {
   }
 
 
-
   Future<void> _incrementCounter() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString(ApiConstants.USER_NAME, userNameController.text.trim());
@@ -63,12 +68,12 @@ class _RegScreenState extends State<RegScreen> {
     }
 
     String enteredPhoneNumber = mobileNumberController.text.trim();
-    _showLoadingDialog(); // Display loading indicator
+    DialogHelper.showLoadingDialog(context);
     try {
       var patient = await apiService.verifyPatient(enteredPhoneNumber);
       if (patient != null) {
         if (mounted) {
-          Navigator.pop(context); // Close the loading dialog
+          Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -83,7 +88,7 @@ class _RegScreenState extends State<RegScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); // Close the loading dialog
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -95,58 +100,60 @@ class _RegScreenState extends State<RegScreen> {
         );
       }
       return;
+    } finally {
+      if (mounted) Navigator.pop(context); // Ensure dialog is closed
     }
 
-
     String name = userNameController.text.trim();
-    //mobileNumberController.text = widget.phoneNumber;
     String email = userEmailController.text.trim();
     String phone = mobileNumberController.text.trim();
     String password = userPasswordController.text.trim();
 
     RegisterRequestData registerRequestData = RegisterRequestData(
       name: name,
-      mobile:phone,
+      mobile: phone,
       email: email,
       password: password,
     );
 
-
-    var provider = Provider.of<DataClass>(context, listen: false);
-    _showLoadingDialog();
+    var provider = Provider.of<DataClass>(context,listen: false);
+    DialogHelper.showLoadingDialog(context);
     try {
       await provider.postUserRegisterRequest(registerRequestData);
       print("Registration response: ${provider.isBack}");
     } catch (e) {
       print("Error during registration: $e");
     } finally {
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context); // Close loading dialog always
     }
+
     if (provider.isBack) {
       await _incrementCounter();
-      // Save the registered phone number locally
-      //SharedPreferences prefs = await SharedPreferences.getInstance();
-      //await prefs.setString('registered_phone',widget.phoneNumber);
-
-
       if (mounted) {
         if (widget.isFromOTP) {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const ShareLocationScreen()),
           );
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setBool(ApiConstants.IS_LOGIN, true);
+          FirebaseMessage('Welcome to SAAOL','You have registered successfully.Let’s begin your journey to better heart health!');
+
         } else {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => LoginOtpScreen(phone:phone)),
+            MaterialPageRoute(builder: (context) => LoginOtpScreen(phone: phone)),
           );
         }
       }
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration failed. Please try again.'),
+          SnackBar(
+            content: Text(
+              provider.errorMessage ?? 'Registration failed.',
+              style: TextStyle(fontSize: MediaQuery.of(context).size.width * 0.04),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -154,36 +161,84 @@ class _RegScreenState extends State<RegScreen> {
     }
   }
 
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          width: 70.0,
-          height: 70.0,
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: CupertinoActivityIndicator(
-              color: Colors.white,
-              radius: 20,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-
-
   @override
   Widget build(BuildContext context) {
-   //mobileNumberController.text = widget.phoneNumber;
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async {
+      if (widget.isFromOTP) {
+        bool exitApp = await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: Colors.white,
+            title: const Row(
+              children: [
+                Icon(Icons.exit_to_app, color:AppColors.primaryColor),
+                SizedBox(width: 10),
+                Text(
+                  'Exit App',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize:14,
+                    fontFamily:'FontPoppins',
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              'Are you sure you want to exit the app?',
+              style: TextStyle(
+                fontSize:12,
+                color: Colors.black54,
+                fontWeight:FontWeight.w500,
+                fontFamily:'FontPoppins'
+              ),
+            ),
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black87,
+                  backgroundColor: Colors.grey.shade300,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Cancel',style:TextStyle(fontWeight:FontWeight.w500,
+                    fontSize:13,fontFamily:'FontPoppins',
+                    color:Colors.black),),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Exit',style:TextStyle(fontWeight:FontWeight.w500,
+                    fontSize:13,fontFamily:'FontPoppins',
+                    color:Colors.white),),
+              ),
+            ],
+          ),
+        );
+        if (exitApp) {
+          if (Platform.isAndroid) {
+            SystemNavigator.pop(); // recommended for Android
+          } else {
+            exit(0); // fallback
+          }
+        }
+        return false; // prevent navigation back
+      } else {
+        return true; // allow default back behavior
+      }
+    },child:Scaffold(
       body: Stack(
         children: [
           Container(
@@ -201,7 +256,7 @@ class _RegScreenState extends State<RegScreen> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Text(
-                    'Create an account*',
+                    'Sign Up',
                     style: TextStyle(
                       fontSize: 26,
                       fontFamily: 'FontPoppins',
@@ -209,8 +264,9 @@ class _RegScreenState extends State<RegScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  SizedBox(height:5,),
                   Text(
-                    'Enter Your Personal Information!',
+                    'Enter Your Personal Information',
                     style: TextStyle(
                       fontFamily: 'FontPoppins',
                       fontSize: 15,
@@ -223,7 +279,7 @@ class _RegScreenState extends State<RegScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 200.0),
+            padding: const EdgeInsets.only(top:150.0),
             child: Container(
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.only(
@@ -235,7 +291,7 @@ class _RegScreenState extends State<RegScreen> {
               width: double.infinity,
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 15, right: 15, top: 25),
+                  padding: const EdgeInsets.only(left:20, right: 20, top: 15),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
@@ -248,7 +304,7 @@ class _RegScreenState extends State<RegScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const Text(
-                              'Username',
+                              'Your Name',
                               style: TextStyle(
                                   fontFamily: 'FontPoppins',
                                   fontSize: 16,
@@ -265,13 +321,13 @@ class _RegScreenState extends State<RegScreen> {
                                 hintText: 'Enter your name',
                                 hintStyle: const TextStyle(
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize:14,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black54),
                                 prefixIcon: const Icon(Icons.contact_page,
                                     color: AppColors.primaryColor),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30.0),
+                                  borderRadius: BorderRadius.circular(15.0),
                                   borderSide: BorderSide.none,
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -290,7 +346,7 @@ class _RegScreenState extends State<RegScreen> {
                               height: 15,
                             ),
                             const Text(
-                              'Email',
+                              'Your Email',
                               style: TextStyle(
                                   fontFamily: 'FontPoppins',
                                   fontSize: 16,
@@ -307,7 +363,7 @@ class _RegScreenState extends State<RegScreen> {
                                 hintText: 'Enter your email',
                                 hintStyle: const TextStyle(
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black54),
                                 prefixIcon: const Icon(Icons.mail,
@@ -315,7 +371,7 @@ class _RegScreenState extends State<RegScreen> {
                                 filled: true,
                                 fillColor: Colors.lightBlue[50],
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30.0),
+                                  borderRadius: BorderRadius.circular(15.0),
                                   borderSide: BorderSide.none,
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -328,11 +384,12 @@ class _RegScreenState extends State<RegScreen> {
                                   color: Colors.black),
                               validator: ValidationCons().validateEmail,
                             ),
+
                             const SizedBox(
                               height: 15,
                             ),
                             const Text(
-                              'Mobile Number',
+                              'Your Mobile Number',
                               style: TextStyle(
                                   fontFamily: 'FontPoppins',
                                   fontSize: 16,
@@ -349,7 +406,7 @@ class _RegScreenState extends State<RegScreen> {
                                 hintText: 'Enter your mobile number',
                                 hintStyle: const TextStyle(
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black54),
                                 prefixIcon: const Icon(Icons.phone,
@@ -357,7 +414,7 @@ class _RegScreenState extends State<RegScreen> {
                                 filled: true,
                                 fillColor: Colors.lightBlue[50],
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30.0),
+                                  borderRadius: BorderRadius.circular(15.0),
                                   borderSide: BorderSide.none,
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -374,7 +431,7 @@ class _RegScreenState extends State<RegScreen> {
                               height: 15,
                             ),
                             const Text(
-                              'Password',
+                              'Enter Your Password',
                               style: TextStyle(
                                   fontFamily: 'FontPoppins',
                                   fontSize: 16,
@@ -391,7 +448,7 @@ class _RegScreenState extends State<RegScreen> {
                                 hintText: 'Create your password',
                                 hintStyle: const TextStyle(
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black54),
                                 prefixIcon: const Icon(Icons.lock,
@@ -459,7 +516,7 @@ class _RegScreenState extends State<RegScreen> {
                                 ),
                           ),
                           child: const Text(
-                            'Register',
+                            'Sign Up Now',
                             style: TextStyle(
                                 fontFamily: 'FontPoppins',
                                 fontSize: 18,
@@ -469,10 +526,11 @@ class _RegScreenState extends State<RegScreen> {
                         ),
                       ),
                       const SizedBox(
-                        height: 10,
+                        height:15,
                       ),
 
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Checkbox(
                             value: this.value,
@@ -482,18 +540,56 @@ class _RegScreenState extends State<RegScreen> {
                               });
                             },
                           ),
-                          const Expanded(
-                            child: Text(
-                              "By clicking 'Register' you agree to our Terms & Conditions as well as our Privacy Policy",
-                              textAlign: TextAlign.start,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontFamily: 'FontPoppins',
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black54,
+                          Expanded(
+                            child: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontFamily: 'FontPoppins',
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54,
+                                ),
+                                children: [
+                                  const TextSpan(text: "By clicking 'Register' you agree to our "),
+                                  TextSpan(
+                                    text: "Terms & Conditions",
+                                    style:  const TextStyle(
+                                      color:AppColors.primaryColor,
+                                      fontSize:12,
+                                      fontFamily:'FontPoppins',
+                                      fontWeight:FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () async {
+                                        final url = Uri.parse("https://saaol.com/terms-conditions");
+                                        if (await canLaunchUrl(url)) {
+                                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                                        }
+                                      },
+                                  ),
+                                  const TextSpan(text: " as well as our "),
+                                  TextSpan(
+                                    text: "Privacy Policy",
+                                    style:  const TextStyle(
+                                      color:AppColors.primaryColor,
+                                      fontSize:12,
+                                      fontFamily:'FontPoppins',
+                                      fontWeight:FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = () async {
+                                        final url = Uri.parse("https://saaol.com/privacy-policy");
+                                        if (await canLaunchUrl(url)) {
+                                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                                        }
+                                      },
+                                  ),
+                                ],
                               ),
                             ),
-                          )
+                          ),
                         ],
                       ),
 
@@ -519,7 +615,7 @@ class _RegScreenState extends State<RegScreen> {
                               );
                             },
                             child: const Text(
-                              " Sign In",
+                              "Sign In",
                               style: TextStyle(
                                 fontSize: 15,
                                 fontFamily: 'FontPoppins',
@@ -539,6 +635,7 @@ class _RegScreenState extends State<RegScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }

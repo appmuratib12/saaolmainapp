@@ -1,9 +1,9 @@
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/constant/text_strings.dart';
+import 'package:saaolapp/constant/ApiConstants.dart';
 import '../common/app_colors.dart';
-import '../common/widgets/AppAssets.dart';
+import '../constant/text_strings.dart';
 import 'SignInScreen.dart';
 
 class OnBoardingScreen extends StatefulWidget {
@@ -12,8 +12,6 @@ class OnBoardingScreen extends StatefulWidget {
   @override
   State<OnBoardingScreen> createState() => _OnBoardingScreenState();
 }
-
-
 
 class _OnBoardingScreenState extends State<OnBoardingScreen> {
   final PageController _pageController1 = PageController(initialPage: 0);
@@ -73,9 +71,9 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 37),
+          const SizedBox(height:30),
           Padding(
-            padding: const EdgeInsets.only(left: 25, right: 23, bottom: 36),
+            padding: const EdgeInsets.only(left: 25, right: 23, bottom:70),
             child: PrimaryButton(
               elevation: 0,
               onTap: () {
@@ -142,6 +140,7 @@ class _PrimaryButtonState extends State<PrimaryButton>
   late AnimationController _controller;
   final Duration _animationDuration = const Duration(milliseconds: 300);
   final Tween<double> _tween = Tween<double>(begin: 1.0, end: 0.95);
+
 
   @override
   void initState() {
@@ -232,7 +231,7 @@ class _OnBoardingCardState extends State<OnBoardingCard> {
             width: double.maxFinite,
             fit: BoxFit.cover,
           ),
-          const SizedBox(height:10,),
+          const SizedBox(height:30,),
           Text(
             widget.onBoardingModel.title,
             textAlign: TextAlign.center,
@@ -241,7 +240,7 @@ class _OnBoardingCardState extends State<OnBoardingCard> {
               fontWeight: FontWeight.w500,
               color: AppColors.kGrayscaleDark100,
             ).copyWith(
-                fontSize: 24,
+                fontSize:19,
                 fontFamily: 'FontPoppins',
                 fontWeight: FontWeight.w600,
                 color: Colors.black),
@@ -253,7 +252,7 @@ class _OnBoardingCardState extends State<OnBoardingCard> {
             child: Text(widget.onBoardingModel.description,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontFamily: 'FontPoppins',
                 fontWeight: FontWeight.w500,
                 color: Colors.black54,
@@ -281,18 +280,18 @@ class OnBoarding {
 List<OnBoarding> onBoardinglist = [
   OnBoarding(
     title: onBoardingTitle1,
-    image: AppAssets.kOnboarding1,
-    description:
-    onBoardingDescription1,
+    image: ApiConstants.kOnboarding1,
+    description: onBoardingDescription1,
   ),
-  OnBoarding(
+
+  /*OnBoarding(
       title: onBoardingTitle2,
-      image: AppAssets.kOnboarding2,
+      image: ApiConstants.kOnboarding2,
       description: onBoardingDescription2),
   OnBoarding(
       title: onBoardingTitle3,
-      image: AppAssets.kOnboarding3,
+      image: ApiConstants.kOnboarding3,
       description:
-      onBoardingDescription3),
+      onBoardingDescription3),*/
 ];
 

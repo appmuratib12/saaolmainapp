@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/PrivacyPoliciesResponse.dart';
 import '../common/app_colors.dart';
+import '../data/model/apiresponsemodel/PrivacyPoliciesResponse.dart';
 import '../data/network/BaseApiService.dart';
 
 class PrivacyPoliciesScreen extends StatefulWidget {
@@ -19,6 +19,8 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
     super.initState();
     _privacyFuture = BaseApiService().getPrivacyPolicy();
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -41,62 +43,66 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
           ),
           centerTitle: true,
         ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            FutureBuilder<PrivacyPoliciesResponse>(
-              future: _privacyFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return _buildErrorUI();
-                } else if (!snapshot.hasData || snapshot.data!.data!.isEmpty) {
-                  return _buildEmptyUI();
-                }
+        body: SingleChildScrollView(
+          physics: const ScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              FutureBuilder<PrivacyPoliciesResponse>(
+                future: _privacyFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return _buildErrorUI();
+                  } else if (!snapshot.hasData ||
+                      snapshot.data!.data!.isEmpty) {
+                    return _buildEmptyUI();
+                  }
 
-                final privacy = snapshot.data!.data!; // List of FAQ data
+                  final privacy = snapshot.data!.data!; // List of FAQ data
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(15),
-                  itemCount: privacy.length,
-                  shrinkWrap: true,
-                  clipBehavior: Clip.hardEdge,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    return _buildPrivacyItem(privacy[index], index);
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.all(15),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      backgroundColor: AppColors.primaryColor),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Agree & Continue",
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'FontPoppins',
-                        color: Colors.white),
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(15),
+                    itemCount: privacy.length,
+                    shrinkWrap: true,
+                    clipBehavior: Clip.hardEdge,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      return _buildPrivacyItem(privacy[index], index);
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.all(15),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        backgroundColor: AppColors.primaryColor),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "Agree & Continue",
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'FontPoppins',
+                          color: Colors.white),
+                    ),
                   ),
                 ),
-              ),
-            )
-          ],
+              )
+            ],
+          ),
         ));
   }
 
@@ -138,7 +144,7 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
                   child: Text(
                     privacy.title?.toUpperCase() ?? "No title",
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize:14,
                       fontFamily: 'FontPoppins',
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
@@ -161,7 +167,7 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
                   textAlign: TextAlign.justify,
                   privacy.description ?? "No description available",
                   style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       color: Colors.black87,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'FontPoppins'),

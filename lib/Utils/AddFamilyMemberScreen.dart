@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:saaoldemo/data/model/requestmodel/AddMemberRequest.dart';
+import 'package:saaolapp/DialogHelper.dart';
+import 'package:saaolapp/constant/text_strings.dart';
+import 'package:saaolapp/data/model/FamilyMember.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../common/app_colors.dart';
+import '../data/model/requestmodel/AddMemberRequest.dart';
 import '../data/network/ChangeNotifier.dart';
 
 class AddFamilyMemberScreen extends StatefulWidget {
@@ -19,6 +24,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
     'Spouse',
     'Child',
     'Parent',
+    'Brother'
     'Grand Parent',
     'Sibling',
     'Friend',
@@ -106,39 +112,6 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
 
   bool isMaleSelected = true;
 
-  void showAutoDismissAlert(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // prevent dismissing by tapping outside
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(20.0),
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CupertinoActivityIndicator(
-                  color: AppColors.primaryDark,
-                  radius: 20,
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Add member...',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'FontPoppins'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   Future<void> addMember() async {
     String name = nameController.text.trim();
@@ -146,7 +119,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
     String email = emailController.text.trim();
     String age = ageController.text.trim();
 
-    showAutoDismissAlert(context);
+    DialogHelper.showAutoDismissAlert(context);
     AddMemberRequest addMemberRequest = AddMemberRequest(
       name: name,
       mobile_number: phone,
@@ -163,21 +136,32 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
       print("Member response: ${provider.isBack}");
       Navigator.of(context).pop();
       if (provider.isBack) {
-        Navigator.pop(context, {
-          'name': nameController.text,
-          'relation': selectedRelation,
-          'gender': isMaleSelected ? 'Male' : 'Female',
-          'age': ageController.text,
-        });
+        FamilyMember newMember = FamilyMember(
+          name: name,
+          relation: selectedRelation,
+          gender: isMaleSelected ? 'Male' : 'Female',
+          age: age,
+        );
+        await saveMemberToPrefs(newMember);
+        Navigator.pop(context, newMember.toJson()); // Pass back for screen update
         _showMessage('Member added successfully.');
+
       } else {
         _showMessage('Failed to add member. Please try again.');
       }
     } catch (e) {
       Navigator.of(context).pop();
-      print('Error adding member: $e');
       _showMessage('An error occurred. Please try again later.');
     }
+  }
+
+
+  Future<void> saveMemberToPrefs(FamilyMember member) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> memberList = prefs.getStringList('members') ?? [];
+
+    memberList.add(jsonEncode(member.toJson()));
+    await prefs.setStringList('members', memberList);
   }
 
   void _showMessage(String message) {
@@ -223,11 +207,11 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CupertinoTextField.borderless(
+                     const CupertinoTextField.borderless(
+                       readOnly: true,
                       padding: EdgeInsets.only(
                           left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(
-                        'Name*',
+                      prefix: Text(name,
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 15,
@@ -267,6 +251,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CupertinoTextField.borderless(
+                      readOnly: true,
                       padding: EdgeInsets.only(
                           left: 65, top: 10, right: 6, bottom: 10),
                       prefix: Text(
@@ -316,11 +301,9 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
               ),
               Row(
                 children: [
-                  // Date Of Birth Field
                   Expanded(
                     child: GestureDetector(
                       onTap: () => _selectDate(context),
-                      // Open date picker on tap
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -335,8 +318,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Date Of Birth*',
+                            const Text(date_of_birth,
                               style: TextStyle(
                                 fontFamily: 'FontPoppins',
                                 fontSize: 15,
@@ -384,8 +366,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Age*',
+                          const Text(age,
                             style: TextStyle(
                               fontFamily: 'FontPoppins',
                               fontSize: 15,
@@ -414,7 +395,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                 height: 15,
               ),
               const Text(
-                'Gender*',
+                gender,
                 style: TextStyle(
                     fontFamily: 'FontPoppins',
                     fontSize: 16,
@@ -425,7 +406,6 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // Male button
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -434,9 +414,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     },
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.3,
-                      // Adjust width
                       height: 50,
-                      // Adjust height
                       decoration: BoxDecoration(
                         color: isMaleSelected
                             ? AppColors.primaryDark
@@ -485,9 +463,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     },
                     child: Container(
                       width: MediaQuery.of(context).size.width * 0.3,
-                      // Adjust width
                       height: 50,
-                      // Adjust height
                       decoration: BoxDecoration(
                         color: !isMaleSelected
                             ? AppColors.primaryDark
@@ -539,10 +515,10 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CupertinoTextField.borderless(
+                      readOnly: true,
                       padding: EdgeInsets.only(
                           left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(
-                        'Mobile Number*',
+                      prefix: Text(mobile_number,
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 15,
@@ -583,10 +559,10 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CupertinoTextField.borderless(
+                      readOnly: true,
                       padding: EdgeInsets.only(
                           left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(
-                        'Email*',
+                      prefix: Text(email,
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 15,
@@ -603,7 +579,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                       keyboardType: TextInputType.emailAddress,
                       padding:
                           const EdgeInsets.only(top: 10, right: 6, bottom: 10),
-                      placeholder: 'someone@example.com',
+                      placeholder: 'Enter email id',
                       placeholderStyle: const TextStyle(
                           fontFamily: 'FontPoppins',
                           fontSize: 16,
@@ -622,7 +598,6 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // Cancel action
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,
@@ -647,12 +622,6 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     child: ElevatedButton(
                       onPressed: () {
                         addMember();
-                        /*Navigator.pop(context, {
-                          'name': nameController.text,
-                          'relation': selectedRelation,
-                          'gender': isMaleSelected ? 'Male' : 'Female',
-                          'age': ageController.text,
-                        });*/
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,

@@ -7,9 +7,7 @@ import '../common/app_colors.dart';
 
 class WebViewScreen extends StatefulWidget {
   final String url;
-
   const WebViewScreen({super.key, required this.url});
-
   @override
   _WebViewScreenState createState() => _WebViewScreenState();
 }
@@ -18,21 +16,12 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late InAppWebViewController _webViewController;
 
   Future<void> _downloadFile(String url) async {
-    // Request permissions
     final status = await Permission.storage.request();
     if (status.isGranted) {
       final directory = Directory('/storage/emulated/0/Download');
       if (!await directory.exists()) {
         await directory.create(recursive: true);
       }
-
-      // Start download
-      /*FlutterDownloader.enqueue(
-        url: url,
-        savedDir: directory.path,
-        showNotification: true,
-        openFileFromNotification: true,
-      );*/
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Storage permission denied")),

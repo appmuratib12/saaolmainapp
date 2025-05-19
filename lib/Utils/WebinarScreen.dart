@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/WebinarResponseData.dart';
-import 'package:saaoldemo/data/network/BaseApiService.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../common/app_colors.dart';
+import '../data/model/apiresponsemodel/WebinarResponseData.dart';
+import '../data/network/BaseApiService.dart';
 
 class WebinarScreen extends StatefulWidget {
   const WebinarScreen({super.key});
@@ -12,10 +13,8 @@ class WebinarScreen extends StatefulWidget {
 }
 
 class _WebinarScreenState extends State<WebinarScreen> {
-
-
   void openWhatsApp() async {
-    String phoneNumber = "919068544483"; // Add country code (e.g., India: +91)
+    String phoneNumber = "+919318405344"; // Add country code (e.g., India: +91)
     String message = "Hello, I want to book webinar?";
     String url = "https://api.whatsapp.com/send?phone=$phoneNumber&text=${Uri.encodeComponent(message)}";
     if (await canLaunchUrl(Uri.parse(url))) {
@@ -45,7 +44,7 @@ class _WebinarScreenState extends State<WebinarScreen> {
         ),
         centerTitle: true,
       ),
-      body:SingleChildScrollView(
+      body:  SingleChildScrollView(
         physics:const ScrollPhysics(),
         child:Container(
           margin:const EdgeInsets.all(10),
@@ -56,14 +55,80 @@ class _WebinarScreenState extends State<WebinarScreen> {
                 future: BaseApiService().getWebinarData(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return buildWebinarShimmer();
                   } else if (snapshot.hasError) {
-                    print('Error fetching webinar: ${snapshot.error}');
-                    return Center(child: Text('Error: ${snapshot.error}'));
+                    final errorMessage = snapshot.error.toString();
+                    if (errorMessage.contains('No internet connection')) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.wifi_off_rounded,
+                                size:30,
+                                color: Colors.redAccent,
+                              ),
+                              SizedBox(height:8),
+                              Text(
+                                'No Internet Connection',
+                                style: TextStyle(
+                                  fontSize:14,
+                                  fontFamily: 'FontPoppins',
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              Text(
+                                'Please check your network settings and try again.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize:12,
+                                  fontFamily: 'FontPoppins',
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else {
+                      return Center(child: Text('Error: $errorMessage'));
+                    }
                   } else if (!snapshot.hasData ||
                       snapshot.data!.data == null ||
                       snapshot.data!.data!.isEmpty) {
-                    return const Center(child: Text('No webinar available.'));
+                    return const  Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(height: 12),
+                            Text(
+                              'No webinar available.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontFamily: 'FontPoppins',
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Please check back later. New data will be available soon!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontFamily: 'FontPoppins',
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   } else {
                     return ListView.builder(
                       shrinkWrap: true,
@@ -93,10 +158,10 @@ class _WebinarScreenState extends State<WebinarScreen> {
                                       TextSpan(
                                         children: [
                                           const TextSpan(text:'Title:',style:TextStyle(fontFamily:'FontPoppins',
-                                          fontSize:16,fontWeight:FontWeight.w500,color:Colors.black)),
+                                          fontSize:15,fontWeight:FontWeight.w500,color:Colors.black)),
                                           TextSpan(text:snapshot.data!.data![index].title.toString(),
                                             style:const TextStyle(fontFamily:'FontPoppins',
-                                              fontSize:16,fontWeight:FontWeight.w500,color:AppColors.primaryColor),),
+                                              fontSize:15,fontWeight:FontWeight.w500,color:AppColors.primaryColor),),
                                         ],
                                       ),
                                     ),
@@ -104,22 +169,33 @@ class _WebinarScreenState extends State<WebinarScreen> {
                                       children: [
                                         Text('Fees:',
                                           style:TextStyle(fontFamily:'FontPoppins',
-                                              fontSize:16,fontWeight:FontWeight.w500,color:Colors.black),),
-                                        SizedBox(width:5,),
+                                              fontSize:15,fontWeight:FontWeight.w500,color:Colors.black),),
+                                        SizedBox(width:6,),
                                         Text('Free',
                                           style:TextStyle(fontFamily:'FontPoppins',
-                                              fontSize:16,fontWeight:FontWeight.w500,color:AppColors.primaryColor),),
+                                              fontSize:15,fontWeight:FontWeight.w500,color:AppColors.primaryColor),),
                                         SizedBox(width:30,),
 
                                       ],
                                     ),
                                     const SizedBox(height:10,),
                                     const Text('Scan the given QR code',
-                                      style:TextStyle(fontFamily:'FontPoppins',fontSize:15,fontWeight:FontWeight.w500,color:Colors.black),),
+                                      style:TextStyle(fontFamily:'FontPoppins',fontSize:13,fontWeight:FontWeight.w500,color:Colors.black),),
                                     const SizedBox(height:20,),
-                                    const Center(
-                                      child:  Image(image:
-                                      AssetImage('assets/icons/webinar_qr_code.jpg'),width:130,height:130,fit:BoxFit.cover,),
+                                    Center(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Image.asset(
+                                          'assets/icons/webinar_qr_code.jpg',
+                                          width: 130,
+                                          height: 130,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -140,7 +216,7 @@ class _WebinarScreenState extends State<WebinarScreen> {
                                       ),
                                       icon: const Icon(Icons.call,color:Colors.white,size:20,),
                                       label: const Text("Click to join whatsapp",
-                                        style:TextStyle(fontFamily:'FontPoppins',fontSize:14,color:Colors.white,fontWeight: FontWeight.w600,),
+                                        style:TextStyle(fontFamily:'FontPoppins',fontSize:13,color:Colors.white,fontWeight: FontWeight.w600,),
                                       )
                                   ),
                                 ),
@@ -157,6 +233,82 @@ class _WebinarScreenState extends State<WebinarScreen> {
           ),
         ),
       ),
+    );
+  }
+  Widget buildWebinarShimmer() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 2,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  height: 310,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  height: 20,
+                  width: 200,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  height: 20,
+                  width: 100,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Center(
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey.shade300,
+                  highlightColor: Colors.grey.shade100,
+                  child: Container(
+                    height: 40,
+                    width: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

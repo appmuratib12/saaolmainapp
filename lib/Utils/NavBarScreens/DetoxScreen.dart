@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../DialogHelper.dart';
 import '../../common/app_colors.dart';
+import '../../constant/text_strings.dart';
 import '../../data/model/apiresponsemodel/TreatmentsDetailResponseData.dart';
 import '../../data/network/BaseApiService.dart';
 import '../AppointmentsScreen.dart';
@@ -18,7 +20,6 @@ class DetoxScreen extends StatefulWidget {
 class _DetoxScreenState extends State<DetoxScreen> {
   String heading = '';
   String description = '';
-  String image = 'https://www.canadadrugrehab.ca/wp-content/uploads/2022/06/iStock-1300493714.jpg';
 
 
   void extractHeadingAndDescription(String content) {
@@ -32,119 +33,124 @@ class _DetoxScreenState extends State<DetoxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:AppBar(
-        backgroundColor: AppColors.primaryColor,
-        title: const Text(
-          'SAAOL Detox',
-          style: TextStyle(
-              fontFamily: 'FontPoppins',
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        centerTitle: true,
-      ),
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: Image.network(
-              image,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 220.0),
-            child: Container(
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                color: Colors.white,
-              ),
-              height: double.infinity,
-              width: double.infinity,
-              child: FutureBuilder<TreatmentsDetailResponseData>(
-                future: BaseApiService().getTreatmentDetailsData(widget.id),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(
+          FutureBuilder<TreatmentsDetailResponseData>(
+            future: BaseApiService().getTreatmentDetailsData(widget.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: Container(
+                    width: 60, // Set custom width
+                    height:60, // Set custom height
+                    decoration: BoxDecoration(
+                      color:AppColors.primaryColor.withOpacity(0.1), // Background color for the progress indicator
+                      borderRadius: BorderRadius.circular(30), // Rounded corners
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryColor, // Custom color
+                        strokeWidth:6, // Set custom stroke width
+                      ),
+                    ),
+                  ),
+                );
+              } else if (snapshot.hasError) {
+                return const Center(
+                  child: Text("Error loading data"),
+                );
+              } else if (snapshot.hasData) {
+                extractHeadingAndDescription(snapshot.data!.data!.description.toString());
+                return Stack(
+                  children: [
+                    SizedBox(
+                      height:260,
+                      width: MediaQuery.of(context).size.width,
+                      child: Image.network(
+                        snapshot.data!.data!.chooseDescriptionImage
+                            .toString(),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      top:35, // Adjust according to your app bar height / status bar
+                      left:12,
                       child: Container(
-                        width: 60, // Set custom width
-                        height:60, // Set custom height
                         decoration: BoxDecoration(
-                          color:AppColors.primaryColor.withOpacity(0.1), // Background color for the progress indicator
-                          borderRadius: BorderRadius.circular(30), // Rounded corners
+                          color: Colors.black.withOpacity(0.4),
+                          shape: BoxShape.circle,
                         ),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primaryColor, // Custom color
-                            strokeWidth:6, // Set custom stroke width
-                          ),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white,size:22,),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
                         ),
                       ),
-                    );
-                  } else if (snapshot.hasError) {
-                    return const Center(
-                      child: Text("Error loading data"),
-                    );
-                  } else if (snapshot.hasData) {
-                    // Extract the heading and description from the API data
-                    extractHeadingAndDescription(snapshot.data!.data!.description.toString());
-
-                    return SingleChildScrollView(
-                      physics: const ScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(15),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top:240.0),
+                      child: Container(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(30),
+                              topRight: Radius.circular(30),
+                            ),
+                            color: Colors.white,
+                          ),
+                          height: double.infinity,
+                          width: double.infinity,
+                          child:SingleChildScrollView(
+                            physics: const ScrollPhysics(),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
-                                Text(
-                                  heading, // Display the extracted heading
-                                  style: const TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                Text(
-                                  description,
-                                  // Display the extracted description
-                                  textAlign: TextAlign.justify,
-                                  style: const TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black54,
+                                Padding(
+                                  padding: const EdgeInsets.all(15),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        heading,
+                                        style: const TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontSize:16,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 10,
+                                      ),
+
+                                      Text(
+                                        description.trim(),
+                                        style: const TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontSize: 13,
+                                          letterSpacing:0.2,
+                                          height:1.6,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
+                          )
                       ),
-                    );
-                  }
-                  return const Center(child: Text("No data found"));
-                },
-              ),
-            ),
+                    ),
+                  ],
+                );
+              }
+              return const Center(child: Text("No data found"));
+            },
           ),
           Positioned(
             bottom: 0,
@@ -218,7 +224,9 @@ class _DetoxScreenState extends State<DetoxScreen> {
                   Icons.call,
                   color: Colors.white,
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  DialogHelper.makingPhoneCall(Consulation_Phone);
+                },
               ),
             ),
           ),

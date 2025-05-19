@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:country_code_picker/country_code_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_autofill/sms_autofill.dart';
+import '../DialogHelper.dart';
 import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
 import '../constant/ValidationCons.dart';
@@ -42,13 +42,12 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
   String? locality;
   String? subLocality;
 
-
   Future<void> _sendOTP() async {
     final phoneNumber = userMobileNumber.text.trim();
     final phone = widget.phone;
 
-    if (phoneNumber.isNotEmpty && phoneNumber != null && phoneNumber == phone){
-        _showLoadingDialog();
+    if (phoneNumber.isNotEmpty && phoneNumber == phone){
+       DialogHelper.showLoadingDialog(context);
 
       try {
         final otpResponse = await _apiService.sendOTP(phoneNumber, storeKey);
@@ -92,30 +91,27 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
 
     }
   }
-
   Future<void> _verifyOTP1() async {
     if (_otpCode != null && _otpCode!.length == 6) {
-      _showLoadingDialog();
+      DialogHelper.showLoadingDialog(context); // Show
       ApiService apiService = ApiService();
       var otpVerificationResult = await apiService.verifyOTP(widget.phone, _otpCode!,context);
       Navigator.pop(context); // Close loading dialog
       print('OTPCODE:$_otpCode');
 
-      if (otpVerificationResult != null) {
-        print("OTP verified successfully.Status: ${otpVerificationResult.success}");
-        print("OTP verified successfully. ${otpVerificationResult.message}");
-        var patientDetails = await apiService.verifyPatient('8800695632');
+      if (otpVerificationResult != null && otpVerificationResult.success == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
+              backgroundColor: Colors.green),);
+        var patientDetails = await apiService.verifyPatient(widget.phone);
         if (patientDetails != null) {
-          //SharedPreferences prefs = await SharedPreferences.getInstance();
-          //await prefs.setBool('isLoggedIn', true);
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setBool(ApiConstants.IS_LOGIN, true);
           print("Patient verified successfully.Details: ${patientDetails.status}");
           Navigator.push(context,MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
-
         } else {
-          //showThankYouDialog(context);
-          print("Patient not found or phone number is incorrect.");
+          Navigator.push(context,MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +120,6 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
             backgroundColor: Colors.red,
           ),
         );
-        print("OTP not found for this mobile number.");
       }
     } else {
       print("Please enter a valid OTP.");
@@ -145,37 +140,14 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
     );
   }
 
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Center(
-        child: Container(
-          width: 70.0,
-          height: 70.0,
-          decoration: BoxDecoration(
-            color: AppColors.primaryColor,
-            borderRadius: BorderRadius.circular(4.0),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: CupertinoActivityIndicator(
-              color: Colors.white,
-              radius: 20,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   void initState() {
     super.initState();
     _printAppSignature();
-    _loadPatientID();
-
+    userMobileNumber.text = widget.phone;
   }
+
 
   Future<void> _printAppSignature() async {
     String? appSignature = await SmsAutoFill().getAppSignature;
@@ -183,20 +155,10 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
     print('AppKey: $storeKey');
     print("App Signature: $appSignature");
   }
-  Future<void> _loadPatientID() async {
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    setState(() {
-      getMobileNumber = (sharedPreferences.getString('') ?? '');
-      userMobileNumber.text = getMobileNumber.toString();
-      print('MobileNumber:$userMobileNumber');
-    });
-  }
-
 
 
   @override
   Widget build(BuildContext context) {
-    userMobileNumber.text = widget.phone.toString();
     return Scaffold(
       body: Stack(
         children: [
@@ -285,7 +247,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                           const SizedBox(
                             height: 10,
                           ),
-                          Text(userMobileNumber.text,
+                          Text(widget.phone.toString(),
                             style: const TextStyle(
                                 fontFamily: 'FontPoppins',
                                 fontSize: 16,

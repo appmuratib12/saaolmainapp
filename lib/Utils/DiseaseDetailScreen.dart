@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:saaoldemo/data/model/apiresponsemodel/DiseaseResponseData.dart';
+import 'package:saaolapp/DialogHelper.dart';
+import 'package:saaolapp/data/model/apiresponsemodel/DiseaseResponseData.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
 import 'AppointmentsScreen.dart';
@@ -15,298 +16,276 @@ class DiseaseDetailScreen extends StatefulWidget {
 }
 
 class _DiseaseDetailScreenState extends State<DiseaseDetailScreen> {
-  String anginaTxt =
-      'EECP therapy addresses angina by enhancing blood flow to the heart and reducing the frequency and severity of chest pain episodes and Heart attacks.';
-
+  List<Map<String, String>> formattedText = [];
   List<String> treatmentArray = [
-    "Expert Team",
-    "Holistic Approach",
-    "Innovative Treatments",
-    "SAAOL Detox Therapy"
+    "Angioplasty",
+    "Bypass Surgery",
+    "Heart Valve Repair",
+    "Pacemaker Implant",
+    "Cardiac Rehabilitation"
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    formattedText = extractFormattedText(widget.data.description.toString());
+  }
+
+  List<Map<String, String>> extractFormattedText(String description) {
+    List<Map<String, String>> sections = [];
+    List<String> parts = description.split("\r\n\r\n");
+    for (String part in parts) {
+      List<String> lines = part.split("\r\n");
+      if (lines.isNotEmpty) {
+        sections.add({"heading": lines.first, "content": lines.skip(1).join("\n")});
+      }
+    }
+    return sections;
+  }
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    double padding = screenWidth * 0.05;
+
 
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: AppColors.primaryColor,
-          title: Text(
-            widget.data.title.toString(),
-            style: TextStyle(
-                fontFamily: 'FontPoppins',
-                fontSize: screenWidth * 0.05,
-                fontWeight: FontWeight.w600,
-                color: Colors.white),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          centerTitle: true,
+      backgroundColor: Colors.grey[200],
+      appBar: AppBar(
+        backgroundColor: AppColors.primaryColor,
+        elevation: 4,
+        title: Text(
+          widget.data.title.toString(),
+          style: const TextStyle(
+              fontFamily: 'FontPoppins',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white),
         ),
-        body: Stack(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SingleChildScrollView(
-              child: Container(
-                margin: EdgeInsets.all(padding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      'What is coronary artery disease?',
-                      style: TextStyle(
-                          fontSize: screenWidth * 0.045,
-                          fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryColor),
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.02,
-                    ),
-                    Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+            Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                        offset: Offset(0, 4),
                       ),
-                      elevation: 2,
-                      child: Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(padding),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: Image(
-                                  image: NetworkImage(widget.data.image.toString()),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: screenHeight * 0.2,
-                                ),
-                              ),
-                              SizedBox(
-                                height: screenHeight * 0.01,
-                              ),
-                              Text(
-                                widget.data.title.toString(),
-                                style: TextStyle(
-                                    fontSize: screenWidth * 0.045,
-                                    fontFamily: 'FontPoppins',
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black),
-                              ),
-                              SizedBox(height: screenHeight * 0.01),
-                              Text(
-                                widget.data.description.toString(),
-                                textAlign: TextAlign.start, // Changed from justify to start
-                                style: TextStyle(
-                                  fontSize: screenWidth * 0.035, // Responsive font size
-                                  fontFamily: 'FontPoppins',
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: screenHeight * 0.01),
-                    Text(
-                      'What are the symptoms of coronary artery disease?',
-                      style: TextStyle(
-                          fontSize: screenWidth * 0.045,
-                          fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryColor),
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.01,
-                    ),
-                    Text(
-                      chooseSaaolTxt, // The text to display
-                      textAlign: TextAlign.justify, // Align to start (left)
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.035, // Responsive font size
-                        fontFamily: 'FontPoppins',
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black87,
-                        letterSpacing:0.2,
-                        height: 1.5, // Line height for better readability
-                      ),
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.01,
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.2,
-                      child: SizedBox(
-                        height: 160,
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: treatmentArray.length,
-                          scrollDirection: Axis.horizontal,
-                          itemBuilder: (context, index) {
-                            return InkWell(
-                              onTap: () {},
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 5),
-                                child: Card(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  elevation: 2,
-                                  child: Container(
-                                    height: 150,
-                                    width: 320,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(10),
-                                      child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.start,
-                                        children: [
-                                          ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: const Image(
-                                              image: AssetImage(
-                                                'assets/icons/leader.png',
-                                              ),
-                                              fit: BoxFit.cover,
-                                              width: 55,
-                                              height: 55,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisAlignment: MainAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  treatmentArray[index],
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontFamily: 'FontPoppins',
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.black,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                                const SizedBox(height: 5),
-                                                const Flexible(
-                                                  child: Text(
-                                                    textAlign: TextAlign.start,
-                                                    'Our team comprises seasoned professionals dedicated to your heart health. With years of experience and expertise, we deliver top-notch care and innovative treatments.',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontFamily: 'FontPoppins',
-                                                      fontWeight: FontWeight.w500,
-                                                      color: Colors.black87,
-                                                    ),
-                                                    maxLines: 5, // Adjust maxLines to prevent overflow
-                                                    overflow: TextOverflow.ellipsis, // Ensure long text doesn't overflow
-                                                    softWrap: true, // Allow text to wrap
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.02,
-                    ),
-                    Text(
-                      anginaTxt,
-                      style: TextStyle(
-                          fontSize: screenWidth * 0.035,
-                          fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87),
-                    ),
-                    SizedBox(
-                      height: screenHeight * 0.05,
-                    ),
-                    SizedBox(
-                      height: 45,
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      widget.data.image.toString(),
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                                builder: (context) =>
-                                const MyAppointmentsScreen()),
-                          );
-                          Fluttertoast.showToast(msg: 'Book');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          shape: RoundedRectangleBorder(
+                      height: screenHeight * 0.25,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Container(
+                  height: screenHeight * 0.25,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [Colors.black.withOpacity(0.3), Colors.transparent],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Text(
+              widget.data.title.toString(),
+              style: TextStyle(
+                  fontSize:15,
+                  fontFamily: 'FontPoppins',
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black),
+            ),
+            const SizedBox(height: 10),
+            for (var section in formattedText) ...[
+              Text(
+                section["heading"]!,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryColor,
+                  fontFamily: 'FontPoppins',
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.005),
+              Text(
+                section["content"]!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'FontPoppins',
+                  color: Colors.black87,
+                ),
+              ),
+              Divider(color: Colors.grey.shade400),
+              const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 20),
+            const Text(
+              "Recommended Treatments",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: Colors.black,
+                fontFamily: 'FontPoppins',
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 160,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: treatmentArray.length,
+                itemBuilder: (context, index) {
+                  return InkWell(
+                    onTap: () {
+                      Fluttertoast.showToast(msg: "Selected: ${treatmentArray[index]}");
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 4,
+                        shadowColor: Colors.grey.withOpacity(0.3),
+                        child: Container(
+                          width: 280,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                        ),
-                        child: Text(
-                          'Book Appointment',
-                          style: TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontSize: screenWidth * 0.04,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.asset(
+                                    'assets/icons/leader.png',
+                                    fit: BoxFit.cover,
+                                    width: 60,
+                                    height: 60,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        treatmentArray[index],
+                                        style: const TextStyle(
+                                          fontSize:14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black,
+                                          fontFamily: 'FontPoppins',
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      const Text(
+                                        'Our team provides top-notch care with the latest medical advancements.',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black87,
+                                          fontFamily: 'FontPoppins',
+                                        ),
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
-            Positioned(
-              bottom: screenHeight * 0.1,
-              right: screenWidth * 0.05,
-              child: Container(
-                height: 50,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(30),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    CupertinoPageRoute(builder: (context) => const MyAppointmentsScreen()),
+                  );
+
+                },
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  elevation: 6,
+                ).copyWith(
+                  backgroundColor: MaterialStateProperty.all(Colors.transparent),
+                  shadowColor: MaterialStateProperty.all(Colors.transparent),
                 ),
-                child: IconButton(
-                  iconSize: 25,
-                  icon: const Icon(
-                    Icons.call,
-                    color: Colors.white,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primaryColor, Colors.deepPurple],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                   ),
-                  onPressed: () {
-                    Fluttertoast.showToast(msg: 'Call');
-                  },
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Book Appointment',
+                      style: TextStyle(
+                          fontSize:16, fontWeight: FontWeight.w600, color: Colors.white,fontFamily:'FontPoppins'),
+                    ),
+                  ),
                 ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
-        ));
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue[300],
+        elevation: 6,
+        child: const Icon(Icons.call, color: Colors.white, size: 28),
+        onPressed: () {
+          DialogHelper.makingPhoneCall(Consulation_Phone);
+        }
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Fixed at the bottom right
+    );
   }
 }
