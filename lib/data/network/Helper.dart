@@ -8,7 +8,9 @@ import '../model/requestmodel/AddMemberRequest.dart';
 import '../model/requestmodel/RegisterRequestData.dart';
 
 
-class Helper {}
+class Helper {
+
+}
 
 Future<http.Response?> userRegistered(RegisterRequestData register) async {
   http.Response? response;
@@ -55,4 +57,6 @@ Future<http.Response?> storeAccessRiskAnswer(AccessRiskAnswerRequest request) as
   }
   return response;
 }
+
+
 

@@ -17,7 +17,6 @@ import '../Utils/NotificationScreen.dart';
 import '../Utils/OurBlogsScreen.dart';
 import '../Utils/StatesData.dart';
 import '../Utils/TreatmentDetailsPageScreen.dart';
-import '../Utils/UploadPrescriptionScreen.dart';
 import '../Utils/WellnessCenterScreen.dart';
 import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
@@ -46,26 +45,11 @@ class HomPageScreen1 extends StatefulWidget {
 }
 
 class _HomPageScreen1State extends State<HomPageScreen1> {
-  final PageController _pageController = PageController();
-  final PageController pageController = PageController();
   int selectedIndex1 = -1;
   int selectedIndex = 0;
   int currentPage = 0;
   Timer? _timer;
   Timer? timer1;
-  List<String> treatmentsArray = [
-    'SAAOL Natural Bypass',
-    'SAAOL Detox',
-    'Life Style',
-    'Zero oil cooking',
-  ];
-  List<String> toolsArray = ['Steps Counter','Heart Rate',];
-  final List<String> toolImages = [
-    'assets/icons/step_counter_tool.png',
-    'assets/icons/heart_rate_latest.png',
-  ];
-
-
   final List<String> items = List<String>.generate(10, (i) => "Item $i");
 
 
@@ -106,8 +90,6 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
   void dispose() {
     _timer?.cancel();
     timer1?.cancel();
-    _pageController.dispose();
-    pageController.dispose();
     super.dispose();
   }
 

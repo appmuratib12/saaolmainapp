@@ -8,6 +8,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:provider/provider.dart';
+import 'package:saaolapp/data/network/ChangeNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../DialogHelper.dart';
@@ -120,6 +122,8 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
     );
   }
+
+
   Future<void> checkForUpdates() async {
     try {
       final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
@@ -158,6 +162,7 @@ class _SignInScreenState extends State<SignInScreen> {
   );
   GoogleSignInAccount? _user;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
   Future<void> _handleSignIn() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -178,22 +183,47 @@ class _SignInScreenState extends State<SignInScreen> {
       if (firebaseUser != null) {
         _user = googleUser;
         await _saveUserData(firebaseUser);
+        final provider = Provider.of<DataClass>(context, listen: false);
+        await provider.sendGoogleUserData(
+          name: firebaseUser.displayName ?? '',
+          email: firebaseUser.email ?? '',
+          googleId: firebaseUser.uid,
+          token: googleAuth.accessToken.toString(),
+          image: firebaseUser.photoURL ?? '',
+        );
+
+        final response = provider.googleUserResponse;
+        if (response != null && response.message != null && response.status == '') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message.toString(),
+                  style:const TextStyle(fontWeight:FontWeight.w500,fontSize:15,color:Colors.white)),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool(ApiConstants.IS_LOGIN, true);
+        FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const ShareLocationScreen(),
           ),
         );
-        FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
-        print('Firebase Authenticated User ID: ${firebaseUser.uid}');
-
       }
     } catch (error) {
       print('Sign-In Error: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Google Sign-In failed"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+
   Future<void> _saveUserData(User firebaseUser) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', true);
