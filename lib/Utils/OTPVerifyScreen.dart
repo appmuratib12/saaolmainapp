@@ -49,6 +49,17 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
       _verifyOTP1(); // Automatically verify OTP
     }
   }
+  void onCodeChanged(
+      String? code,
+      BuildContext context,
+      ) {
+    setState(() {
+      _otpCode = code ?? '';
+    });
+    if (_otpCode != null && _otpCode!.length == 6) {
+      _verifyOTP1(); // Automatically verify OTP
+    }
+  }
 
   @override
   void dispose() {
@@ -202,6 +213,7 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
                             PinFieldAutoFill(
                               codeLength: 6,
                               onCodeChanged: (code) {
+                                onCodeChanged(code,context);
                                 if (code != null && code.length == 6) {
                                   setState(() {
                                     _otpCode = code ?? '';
@@ -210,6 +222,15 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
                                   FocusScope.of(context).requestFocus(FocusNode());
                                 }
                               },
+                              // onCodeChanged: (code) {
+                              //   if (code != null && code.length == 6) {
+                              //     setState(() {
+                              //       _otpCode = code ?? '';
+                              //       _errorText = null;
+                              //     });
+                              //     FocusScope.of(context).requestFocus(FocusNode());
+                              //   }
+                              // },
                               onCodeSubmitted: (code) {
                                 print("Code submitted: $code");
                               },

@@ -36,13 +36,7 @@ class MyApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor:AppColors.primaryColor),
             useMaterial3: true,
           ),
-          home: UpgradeAlert(
-            upgrader: Upgrader(
-                debugLogging: true,
-                debugDisplayAlways: true,
-            ),
-            child: const SplashScreen(),
-          ),
+          home: SplashScreen(),
       );
     });
   }

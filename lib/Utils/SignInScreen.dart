@@ -61,7 +61,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
         try {
 
-        final otpResponse = await _apiService.sendOTP(phoneNumber, storeKey);
+        final otpResponse = await _apiService.sendOTP(phoneNumber,"/V67ByYTp3G");
         Navigator.pop(context);
         if (otpResponse != null && otpResponse.status == "success") {
           SharedPreferences prefs = await SharedPreferences.getInstance();
