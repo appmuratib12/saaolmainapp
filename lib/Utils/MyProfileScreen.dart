@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:saaolapp/Utils/EditProfileScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../AboutDrBimalChhajerScreen.dart';
 import '../common/app_colors.dart';
@@ -10,7 +11,6 @@ import '../constant/ApiConstants.dart';
 import 'AboutSaaolScreen.dart';
 import 'AppointmentBookScreen.dart';
 import 'DemoScreen.dart';
-import 'EditProfileScreen.dart';
 import 'EmagazineScreen.dart';
 import 'HeartHealthScreen.dart';
 import 'NotificationScreen.dart';
@@ -319,16 +319,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   right: 25, // Position it properly inside the card
                   child: GestureDetector(
                     onTap: () async {
-                     /* Navigator.push(
+                      Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                       ).then((result) {
                         if (result == true) {
                           _loadProfileImage();
                         }
-                      });*/
-
-                      FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
+                      });
                     },
                     child: Container(
                       decoration: BoxDecoration(

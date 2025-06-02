@@ -31,7 +31,7 @@ class SignInScreen extends StatefulWidget {
   State<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignInScreenState extends   State<SignInScreen> {
   bool value = false;
   bool checkedValue = true;
   String mobileNumber = '';
