@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:saaolapp/data/model/apiresponsemodel/AppointmentBookingResponse.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/offlineAppointmentRequestResponse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../constant/ApiConstants.dart';
@@ -45,8 +46,9 @@ class ApiService {
     }
   }
 
+
   Future<VerifyOTPResponse?> verifyOTP(String mobile, String otp, BuildContext context) async {
-    final url = Uri.parse('https://saaol.org/saaolnewapp/api/verify');
+    final url = Uri.parse('https://saaol.org/saaolnewapp/api/verify-otp');
     final body = {
       'mobile': mobile,
       'otp': otp,
@@ -65,7 +67,10 @@ class ApiService {
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final VerifyOTPResponse verifyOTPResponse = VerifyOTPResponse.fromJson(jsonResponse);
-        print('Status: ${verifyOTPResponse.success}');
+        SharedPreferences preferences = await SharedPreferences.getInstance();
+        await preferences.setString(ApiConstants.USER_ID,verifyOTPResponse.id.toString());
+        print('STOREID:${verifyOTPResponse.id}');
+        print('Status: ${verifyOTPResponse.status}');
         return verifyOTPResponse;
       } else {
         print('Failed to verify OTP. Status Code: ${response.statusCode}');
@@ -166,9 +171,6 @@ class ApiService {
       return null;
     }
   }
-
-
-
 
   Future<bool> sendCallRequest({
     required int userId,
@@ -301,6 +303,123 @@ class ApiService {
         final offlineAppointmentRequestResponse = OfflineAppointmentRequestResponse.fromJson(jsonResponse);
         print('OfflineAppointmentRequestResponse: $offlineAppointmentRequestResponse');
         return offlineAppointmentRequestResponse;
+      }
+    } on TimeoutException {
+      print("Error: Request timed out. Please try again.");
+    } on SocketException {
+      print("Error: No internet connection.");
+    } on HttpException {
+      print("Error: HTTP error occurred.");
+    } on FormatException {
+      print("Error: Bad response format.");
+    } catch (e) {
+      print("Error: Something went wrong - $e");
+    }
+    return null;
+  }
+
+
+  Future<AppointmentBookingResponse?> patientAppointmentBookingOnline({
+    required String contactCountryCode,
+    required String contactNo,
+    required String appointmentType,
+    required String address,
+    required String email,
+    required String name,
+    required int userID,
+  }) async {
+    const String url = "http://saaol.org/saaolnewapp/api/appointments";
+
+    final Map<String, dynamic> requestBody = {
+      "contactCountryCode": contactCountryCode,
+      "contactNo": contactNo,
+      "appointmentType": appointmentType,
+      "address": address,
+      "email": email,
+      "name": name,
+      "user_id": userID,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          'API-KEY': ApiConstants.apiKey
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      print("Appointment Booking Status Code: ${response.statusCode}");
+      print("Appointment Booking Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final AppointmentBookingResponse appointmentBookingResponse = AppointmentBookingResponse.fromJson(jsonResponse);
+        print('AppointmentBookingRequestResponse:$appointmentBookingResponse');
+        return appointmentBookingResponse;
+      }
+    } on TimeoutException {
+      print("Error: Request timed out. Please try again.");
+    } on SocketException {
+      print("Error: No internet connection.");
+    } on HttpException {
+      print("Error: HTTP error occurred.");
+    } on FormatException {
+      print("Error: Bad response format.");
+    } catch (e) {
+      print("Error: Something went wrong - $e");
+    }
+    return null;
+  }
+
+  Future<AppointmentBookingResponse?> patientOfflineAppointment({
+    required String contactCountryCode,
+    required String contactNo,
+    required String appointmentType,
+    required String address,
+    required String email,
+    required String name,
+    required String date,
+    required String centerName,
+    required String time,
+    required int userID,
+    required int centerID,
+  }) async {
+    const String url = "http://saaol.org/saaolnewapp/api/appointments";
+
+    final Map<String, dynamic> requestBody = {
+      "contactCountryCode": contactCountryCode,
+      "contactNo": contactNo,
+      "appointmentType": appointmentType,
+      "address": address,
+      "email": email,
+      "name": name,
+      'center_name':centerName,
+      'appointment_date':date,
+      'appointment_time':time,
+      'user_id':userID,
+      'center_id':centerID,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          'API-KEY': ApiConstants.apiKey
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      print("Offline Appointment Status Code: ${response.statusCode}");
+      print("Appointment Booking Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final AppointmentBookingResponse appointmentBookingResponse = AppointmentBookingResponse.fromJson(jsonResponse);
+        print('AppointmentBookingRequestResponse:$appointmentBookingResponse');
+        return appointmentBookingResponse;
       }
     } on TimeoutException {
       print("Error: Request timed out. Please try again.");

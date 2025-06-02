@@ -40,6 +40,12 @@ class ApiConstants {
   static const TITLE = 'TITLE';
   static const DOB = 'DOB';
   static const NATIONALITY = 'NATIONALITY';
+  static const EXISTING_REGISTERED = 'EXISTING_REGISTERED';
+  static const APPLE_NAME = 'APPLE_NAME';
+  static const APPLE_EMAIL = 'APPLE_EMAIL';
+  static const APPLE_IDENTIFIER_TOKEN = 'IDENTIFIER_TOKEN';
+  static const APPLE_LOGIN_METHOD = 'IDENTIFIER_TOKEN';
+  static const IDENTIFIER_TOKEN = 'IDENTIFIER_TOKEN';
 
 
 }

@@ -18,6 +18,7 @@ class AppointmentDetails {
     required this.appointmentLocation,
   });
 
+
   factory AppointmentDetails.fromJson(Map<String, dynamic> json) {
     return AppointmentDetails(
       patientName: json['patientName'],
@@ -42,3 +43,4 @@ class AppointmentDetails {
     };
   }
 }
+

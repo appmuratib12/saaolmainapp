@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:saaolapp/Utils/NearCenterScreen.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/ReviewRatingResponse.dart';
+import 'package:saaolapp/data/network/NotificationNotifier.dart';
+import 'package:saaolapp/responsemodel/NotificationDatabase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../DialogHelper.dart';
@@ -83,6 +85,9 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
     super.initState();
     _loadSavedAddresses();
     _loadSavedAppointment();
+    NotificationDatabase.instance.getUnreadCount().then((count) {
+      NotificationNotifier.unreadCountNotifier.value = count;
+    });
    // _getStoredLocation();
   }
 
@@ -98,9 +103,13 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       getPatientID = prefs.getString('pmId') ?? '';
-      googleUserID = prefs.getString('GoogleUserID') ?? '';
-      googlePatientName = prefs.getString('GoogleUserName') ?? '';
-      googlePatientEmail = prefs.getString('GoogleUserEmail') ?? '';
+     /* googleUserID = prefs.getString('GoogleUserID') ?? '';
+      googleUserID = prefs.getString(ApiConstants.IDENTIFIER_TOKEN) ?? '';*/
+      googleUserID = prefs.getString('GoogleUserID') ?? prefs.getString(ApiConstants.IDENTIFIER_TOKEN) ?? '';
+      googlePatientName = prefs.getString('GoogleUserName') ?? prefs.getString(ApiConstants.APPLE_NAME) ?? '' ;
+      googlePatientEmail = prefs.getString('GoogleUserEmail') ?? prefs.getString(ApiConstants.APPLE_EMAIL) ?? '';
+     /* googlePatientName = prefs.getString(ApiConstants.APPLE_NAME) ?? '';
+      googlePatientEmail = prefs.getString(ApiConstants.APPLE_EMAIL) ?? '';*/
       patientUniqueID = prefs.getString('patientUniqueID') ?? '';
       getMobileNumber = prefs.getString(ApiConstants.USER_MOBILE) ?? '';
       getEmailID = prefs.getString(ApiConstants.USER_EMAIL) ?? '';
@@ -154,6 +163,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
       savedAddresses = prefs.getStringList('saved_addresses') ?? [];
     });
   }
+
   String _capitalizeFirstLetter(String input) {
     if (input.isEmpty) return input;
     return input[0].toUpperCase() + input.substring(1);
@@ -165,7 +175,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(140.0),
+        preferredSize: const Size.fromHeight(135.0),
         child: ClipRRect(
           borderRadius: const BorderRadius.only(
             bottomLeft: Radius.circular(20.0),
@@ -378,16 +388,11 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     },
                                   );
                                 },
-                                child:Row(
+                                child:const Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        (savedLocation.isNotEmpty)
-                                            ? savedLocation
-                                              : (getCity.isNotEmpty && getPinCode.isNotEmpty)
-                                            ? '$getCity, $getPinCode'
-                                            : 'Select Location',
-                                        style: const TextStyle(
+                                      child: Text('New Delhi,110025',
+                                        style: TextStyle(
                                           color: Colors.white,
                                           fontFamily: 'FontPoppins',
                                           fontSize: 14,
@@ -396,8 +401,8 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    const SizedBox(width: 3),
-                                    const Icon(
+                                    SizedBox(width: 3),
+                                    Icon(
                                       Icons.arrow_drop_down,
                                       size: 18,
                                       color: Colors.white,
@@ -405,37 +410,69 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   ],
                                 ),
                               ),
-
-
                             ],
                           ),
                         ),
                       ),
                       Row(
                         children: [
-                          Container(
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: IconButton(
-                              iconSize: 25,
-                              icon: const Icon(
-                                Icons.notifications_none,
-                                color: Colors.white,
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  CupertinoPageRoute(
-                                    builder: (context) =>
-                                        const NotificationScreen(),
+                          ValueListenableBuilder<int>(
+                            valueListenable: NotificationNotifier.unreadCountNotifier,
+                            builder: (context, unreadCount, _) {
+                              return Stack(
+                                children: [
+                                  Container(
+                                    height: 40,
+                                    width: 40,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: IconButton(
+                                      iconSize: 25,
+                                      icon: const Icon(
+                                        Icons.notifications_none,
+                                        color: Colors.white,
+                                      ),
+                                      onPressed: () async {
+                                        await Navigator.push(
+                                          context,
+                                          CupertinoPageRoute(
+                                            builder: (context) => const NotificationScreen(),
+                                          ),
+                                        );
+                                        // No need to setState!
+                                      },
+                                    ),
                                   ),
-                                );
-                              },
-                            ),
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      right: 4,
+                                      top: 4,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 18,
+                                          minHeight: 18,
+                                        ),
+                                        child: Text(
+                                          '$unreadCount',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
                           ),
                           const SizedBox(
                             width: 8,

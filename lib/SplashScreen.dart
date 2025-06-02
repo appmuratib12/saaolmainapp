@@ -7,13 +7,13 @@ import 'Utils/SliderScreen.dart';
 import 'constant/ApiConstants.dart';
 
 
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
+
 
 class _SplashScreenState extends State<SplashScreen> {
   Widget? nextScreen;
@@ -24,15 +24,14 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkLoginStatus();
   }
 
-
   Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool(ApiConstants.IS_LOGIN) ?? false;
     print("IS_LOGIN value: $isLoggedIn");
     setState(() {
       nextScreen = isLoggedIn
-          ?  const HomePage(initialIndex: 0)
-          :  const OnBoardingScreen();
+          ? const HomePage(initialIndex: 0)
+          : const OnBoardingScreen();
     });
   }
 
@@ -67,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: Colors.white,
       nextScreen: nextScreen!,
       splashIconSize: 200,
-      duration:3500,
+      duration: 3500,
       splashTransition: SplashTransition.slideTransition,
       pageTransitionType: PageTransitionType.leftToRight,
     );

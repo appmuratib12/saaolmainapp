@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/PatientAppointmentResponseData.dart';
+import 'package:saaolapp/data/model/requestmodel/OnlineAppointmentDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constant/ApiConstants.dart';
 import '../common/app_colors.dart';
@@ -25,12 +27,14 @@ class _OnlineAppointmentScreenState extends State<OnlineAppointmentScreen> {
   String? getAppointmentType;
   String? getAppointmentName;
   List<Data> appointments = [];
+  List<OnlineAppointmentDetails> appointments1 = [];
 
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _loadAppointments();
   }
 
 
@@ -111,6 +115,18 @@ class _OnlineAppointmentScreenState extends State<OnlineAppointmentScreen> {
     }
   }
 
+  Future<void> _loadAppointments() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> storedList = prefs.getStringList('onlineAppointments') ?? [];
+    List<OnlineAppointmentDetails> tempList = storedList.map((item) {
+      final Map<String, dynamic> jsonData = jsonDecode(item);
+      return OnlineAppointmentDetails.fromJson(jsonData);
+    }).toList();
+
+    setState(() {
+      appointments1 = tempList;
+    });
+  }
 
   String _convertTo12HourFormat(String time24) {
     try {
@@ -124,61 +140,68 @@ class _OnlineAppointmentScreenState extends State<OnlineAppointmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       body: isLoading
           ? const Center(
           child: CircularProgressIndicator()) // Show loader while fetching
           : errorMessage != null && getAppointmentType == "0"?
-           Padding(
-         padding: const EdgeInsets.all(10.0),
-         child: Card(
-          color: Colors.white,
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            height:300,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.green.withOpacity(0.1),
-                  child: const Icon(Icons.check_circle, color: Colors.green, size: 40),
+          ListView.builder(
+        itemCount: appointments1.length,
+        scrollDirection: Axis.vertical,
+        itemBuilder: (context, index) {
+          final appointment = appointments1[index];
+          return Padding(
+            padding: const EdgeInsets.only(left:10,right:10,top:5,bottom:6),
+            child: Card(
+              color: Colors.white,
+              elevation:2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Container(
+                height:300,
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.green.withOpacity(0.1),
+                      child: const Icon(Icons.check_circle, color: Colors.green, size: 40),
+                    ),
+                    const SizedBox(height:10),
+                    const Text(
+                      "Your appointment request has been accepted",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize:14,
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Our team will call you soon.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const Divider(height:20, thickness: 1, color:AppColors.primaryColor),
+                    _infoRow("Name", appointment.patientName),
+                    _infoRow("Mobile", appointment.patientMobile),
+                    _infoRow("Appointment Type", appointment.appointmentType == "0" ? "Online" : appointment.appointmentType),
+                  ],
                 ),
-                const SizedBox(height:10),
-                const Text(
-                  "Your appointment request has been accepted",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize:14,
-                    fontFamily: 'FontPoppins',
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Our team will call you soon.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontFamily: 'FontPoppins',
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black87,
-                  ),
-                ),
-                const Divider(height:20, thickness: 1, color:AppColors.primaryColor),
-                _infoRow("Name", getAppointmentName),
-                _infoRow("Mobile", getMobileNumber),
-                _infoRow("Appointment Type", getAppointmentType == "0" ? "Online" : getAppointmentType),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       )
           : appointments.isEmpty
           ? Center(

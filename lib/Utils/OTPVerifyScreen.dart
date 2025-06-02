@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:saaolapp/Utils/MyHomePageScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../DialogHelper.dart';
@@ -27,7 +28,9 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
   int start = 30;
   bool isTimerRunning = false;
 
-  @override
+
+
+ /* @override
   void initState() {
     super.initState();
     listenForCode();
@@ -38,16 +41,36 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
     });
     print("Listening for OTP code...");
   }
-
   @override
   void codeUpdated() {
     setState(() {
       _otpCode = code!;
     });
     print("Code received: $_otpCode"); // Debug statement
-    if (_otpCode != null && _otpCode!.length == 6) {
-      _verifyOTP1(); // Automatically verify OTP
-    }
+  }*/
+
+  @override
+  void initState() {
+    super.initState();
+    listenForCode();
+
+    SmsAutoFill().getAppSignature.then((signature) {
+      if (!mounted) return;
+      setState(() {
+        appSignature = signature;
+      });
+    });
+
+    print("Listening for OTP code...");
+  }
+
+  @override
+  void codeUpdated() {
+    if (!mounted) return;
+    setState(() {
+      _otpCode = code!;
+    });
+    print("Code received: $_otpCode");
   }
 
   @override
@@ -56,44 +79,56 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
     super.dispose();
   }
 
+
+ /* @override
+  void dispose() {
+    SmsAutoFill().unregisterListener();
+    super.dispose();
+  }*/
+
   Future<void> _verifyOTP1() async {
-    if (_otpCode != null && _otpCode!.length == 6) {
-      DialogHelper.showLoadingDialog(context); // Show
-      ApiService apiService = ApiService();
-      var otpVerificationResult = await apiService.verifyOTP(widget.phoneNumber, _otpCode!,context);
-      Navigator.pop(context); // Close loading dialog
-      print('OTPCODE:$_otpCode');
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      bool? isRegistered = prefs.getBool('isRegistered') ?? false;
 
-      if (otpVerificationResult != null && otpVerificationResult.success == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
-            backgroundColor: Colors.green),);
-        var patientDetails = await apiService.verifyPatient(widget.phoneNumber);
-        if (patientDetails != null) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
+      print('isRegistered:$isRegistered');
+      if (_otpCode != null && _otpCode!.length == 6) {
+        DialogHelper.showLoadingDialog(context); // Show
+        ApiService apiService = ApiService();
+        var otpVerificationResult = await apiService.verifyOTP(widget.phoneNumber, _otpCode!,context);
+        Navigator.pop(context);
+        print('OTPCODE:$_otpCode');
+
+
+        if (otpVerificationResult != null && otpVerificationResult.status == 'success') {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
+              backgroundColor: Colors.green),);
+          var patientDetails = await apiService.verifyPatient(widget.phoneNumber);
           await prefs.setBool(ApiConstants.IS_LOGIN, true);
-          print("Patient verified successfully.Details: ${patientDetails.status}");
-          Navigator.push(context,MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
 
+          if (patientDetails != null) {
+            print("Patient verified successfully.Details: ${patientDetails.status}");
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
+          } else if (!isRegistered) {
+            // No patient found & not registered yet
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RegScreen(isFromOTP: true)));
+          } else {
+            // Already registered user (logged out and logging in again)
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage(initialIndex: 0)));
+          }
         } else {
-          //DialogHelper.showThankYouDialog(context);
-          //showThankYouDialog(context);
-          Navigator.push(context,MaterialPageRoute(builder: (context) => const RegScreen(isFromOTP:true)));
-
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('OTP not found for this mobile number.'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP not found for this mobile number.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        print("Please enter a valid OTP.");
       }
-    } else {
-      print("Please enter a valid OTP.");
     }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +242,8 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
                                     _otpCode = code ?? '';
                                     _errorText = null;
                                   });
-                                  FocusScope.of(context).requestFocus(FocusNode());
+                                  FocusScope.of(context).unfocus();
+                                  _verifyOTP1();
                                 }
                               },
                               onCodeSubmitted: (code) {

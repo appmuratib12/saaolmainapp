@@ -99,7 +99,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
       Navigator.pop(context); // Close loading dialog
       print('OTPCODE:$_otpCode');
 
-      if (otpVerificationResult != null && otpVerificationResult.success == true) {
+      if (otpVerificationResult != null && otpVerificationResult.status == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),

@@ -43,7 +43,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   String googleUserID = '';
   String googlePatientName = '';
   String googlePatientEmail = '';
-  bool _showVerifyButton = false;
+  bool showVerifyButton = false;
   File? _image;
   String? _networkImageUrl;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -53,12 +53,15 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   void _loadUserData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     String? loginMethod = sharedPreferences.getString('login_method');
+    String? appleLoginMethod = sharedPreferences.getString(ApiConstants.APPLE_LOGIN_METHOD);
     setState(() {
-      _showVerifyButton = (loginMethod == 'google');
+     /* showVerifyButton = (loginMethod == 'google');
+      showVerifyButton = (appleLoginMethod == 'apple');*/
+      showVerifyButton = (loginMethod == 'google' || appleLoginMethod == 'apple');
       getPatientID = sharedPreferences.getString('pmId') ?? '';
-      googleUserID = sharedPreferences.getString('GoogleUserID') ?? '';
-      googlePatientName = sharedPreferences.getString('GoogleUserName') ?? '';
-      googlePatientEmail = sharedPreferences.getString('GoogleUserEmail') ?? '';
+      googleUserID = sharedPreferences.getString('GoogleUserID') ?? sharedPreferences.getString(ApiConstants.IDENTIFIER_TOKEN) ?? '';
+      googlePatientName = sharedPreferences.getString('GoogleUserName') ?? sharedPreferences.getString(ApiConstants.APPLE_NAME) ?? '';
+      googlePatientEmail = sharedPreferences.getString('GoogleUserEmail') ?? sharedPreferences.getString(ApiConstants.APPLE_EMAIL) ?? '';
       print('GoogleID:$googleUserID');
 
       if (getPatientID.isNotEmpty) {
@@ -73,7 +76,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         patientLastName = (sharedPreferences.getString(ApiConstants.USER_LASTNAME) ?? '');
         patientMiddleName = (sharedPreferences.getString(ApiConstants.USER_MIDDLE_NAME) ?? '');
         userToken = (sharedPreferences.getString('UserToken') ?? '');
-
 
       }
     });
@@ -108,7 +110,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       await _googleSignIn.signOut();
       await _auth.signOut();
       await preferences.setBool(ApiConstants.IS_LOGIN, false);
-      await preferences.clear();
+      //await preferences.clear();
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const SignInScreen()),
@@ -317,14 +319,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                   right: 25, // Position it properly inside the card
                   child: GestureDetector(
                     onTap: () async {
-                      Navigator.push(
+                     /* Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                       ).then((result) {
                         if (result == true) {
                           _loadProfileImage();
                         }
-                      });
+                      });*/
+
+                      FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
                     },
                     child: Container(
                       decoration: BoxDecoration(
@@ -355,7 +359,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             ),
             Center(
               child: (googleUserID.isNotEmpty && getPatientID.isEmpty)
-                  ? Padding(padding: EdgeInsets.all(13),child:SizedBox(
+                  ? Padding(padding: const EdgeInsets.all(13),child:SizedBox(
                 height: 40,
                 width: MediaQuery.of(context).size.width,
                 child: ElevatedButton(
@@ -1360,7 +1364,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                       color: Colors.white),
                 ),
                 onPressed: () async {
-
                   await _logoutUser(context);
                 },
               ),

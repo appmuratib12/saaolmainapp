@@ -3,12 +3,14 @@ class RegisterRequestData {
   String? email;
   String? mobile;
   String? password;
+  String? country_code;
 
   RegisterRequestData({
     this.name,
     this.email,
     this.mobile,
     this.password,
+    this.country_code,
   });
 
   RegisterRequestData.fromJson(Map<String, dynamic> json) {
@@ -16,6 +18,7 @@ class RegisterRequestData {
     email = json['email'];
     mobile = json['mobile'];
     password = json['password'];
+    country_code = json['country_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -24,6 +27,7 @@ class RegisterRequestData {
     data['email'] = email;
     data['mobile'] = mobile;
     data['password'] = password;
+    data['country_code'] = country_code;
     return data;
   }
 }

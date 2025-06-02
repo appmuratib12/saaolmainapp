@@ -11,6 +11,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:provider/provider.dart';
 import 'package:saaolapp/data/network/ChangeNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../DialogHelper.dart';
 import '../common/app_colors.dart';
@@ -37,7 +38,7 @@ class _SignInScreenState extends State<SignInScreen> {
   String storeKey = '';
   String googleID = '';
   String? selectedCountryCode;
-
+  final String dummyImageUrl = "https://via.placeholder.com/150";
 
 
   TextEditingController userMobileController = TextEditingController();
@@ -52,14 +53,13 @@ class _SignInScreenState extends State<SignInScreen> {
     //String? registeredPhone = prefs.getString('registered_phone');
     //print('registeredPhone:$registeredPhone');
 
-   /* if (registeredPhone != null && phoneNumber != registeredPhone) {
+    /* if (registeredPhone != null && phoneNumber != registeredPhone) {
       _showSnackBar('The phone number does not match the registered number.', Colors.red);
       return;
     }*/
     if (phoneNumber.isNotEmpty) {
-        DialogHelper.showLoadingDialog(context); // Show
-
-        try {
+      DialogHelper.showLoadingDialog(context);
+      try {
 
         final otpResponse = await _apiService.sendOTP(phoneNumber, storeKey);
         Navigator.pop(context);
@@ -104,7 +104,7 @@ class _SignInScreenState extends State<SignInScreen> {
         Navigator.pop(context);
         Fluttertoast.showToast(msg: "An error occurred. Please try again.");
       }
-      } else {
+    } else {
       _showSnackBar('Please enter valid details.', Colors.red);
     }
   }
@@ -122,8 +122,6 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
     );
   }
-
-
   Future<void> checkForUpdates() async {
     try {
       final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
@@ -135,10 +133,11 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
+
   @override
   void initState() {
     super.initState();
-     checkForUpdates();
+    checkForUpdates();
     _printAppSignature();
     _loadCounter();
   }
@@ -150,6 +149,7 @@ class _SignInScreenState extends State<SignInScreen> {
     print('AppKey: $storeKey');
     print("App Signature: $appSignature");
   }
+
   _loadCounter() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -193,10 +193,21 @@ class _SignInScreenState extends State<SignInScreen> {
         );
 
         final response = provider.googleUserResponse;
-        if (response != null && response.message != null && response.status == '') {
-          ScaffoldMessenger.of(context).showSnackBar(
+        final response1 = provider.googleExistingUserResponse;
+        if (response != null && response.message != null && response.status == 'success') {
+          ScaffoldMessenger.of(context).
+          showSnackBar(
             SnackBar(
               content: Text(response.message.toString(),
+                  style:const TextStyle(fontWeight:FontWeight.w500,fontSize:15,color:Colors.white)),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }else if (response1 != null && response1.message != null && response1.status == 'success'){
+          ScaffoldMessenger.of(context).
+          showSnackBar(
+            SnackBar(
+              content: Text(response1.message.toString(),
                   style:const TextStyle(fontWeight:FontWeight.w500,fontSize:15,color:Colors.white)),
               backgroundColor: Colors.green,
             ),
@@ -206,8 +217,7 @@ class _SignInScreenState extends State<SignInScreen> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool(ApiConstants.IS_LOGIN, true);
         FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
-        Navigator.push(
-          context,
+        Navigator.push(context,
           MaterialPageRoute(
             builder: (context) => const ShareLocationScreen(),
           ),
@@ -223,7 +233,6 @@ class _SignInScreenState extends State<SignInScreen> {
       );
     }
   }
-
   Future<void> _saveUserData(User firebaseUser) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('is_logged_in', true);
@@ -232,49 +241,111 @@ class _SignInScreenState extends State<SignInScreen> {
     await prefs.setString('GoogleUserEmail', firebaseUser.email ?? '');
     await prefs.setString('GoogleUserID', firebaseUser.uid);
     await prefs.setString('GoogleUserProfile', firebaseUser.photoURL ?? '');
+  }
 
+  Future<void> _signInWithApple() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      await prefs.setString(ApiConstants.APPLE_LOGIN_METHOD,'apple');
+      await prefs.setString(ApiConstants.APPLE_NAME,credential.givenName?? '');
+      await prefs.setString(ApiConstants.APPLE_EMAIL,credential.email?? '');
+      await prefs.setString(ApiConstants.APPLE_IDENTIFIER_TOKEN,credential.identityToken?? '');
+      await prefs.setString(ApiConstants.IDENTIFIER_TOKEN,credential.userIdentifier?? '');
+
+      print('User ID: ${credential.userIdentifier}');
+      print('Email: ${credential.email}');
+      print('Full Name: ${credential.givenName} ${credential.familyName}');
+
+      final provider = Provider.of<DataClass>(context, listen: false);
+      await provider.sendGoogleUserData(
+        name: credential.givenName ?? ''.trim(),
+        email: credential.email ?? '',
+        googleId: credential.userIdentifier ?? '',
+        token: credential.identityToken ?? '',
+        image: dummyImageUrl,
+      );
+
+      final response = provider.googleUserResponse;
+      final response1 = provider.googleExistingUserResponse;
+      if (response != null && response.message != null && response.status == 'success') {
+        ScaffoldMessenger.of(context).
+        showSnackBar(SnackBar(
+            content: Text(response.message.toString(),
+                style:const TextStyle(fontWeight:FontWeight.w500,fontSize:15,color:Colors.white)),
+            backgroundColor: Colors.green,
+          ),);
+      }else if (response1 != null && response1.message != null && response1.status == 'success'){
+        ScaffoldMessenger.of(context).
+        showSnackBar(SnackBar(
+            content: Text(response1.message.toString(),
+                style:const TextStyle(fontWeight:FontWeight.w500,fontSize:15,color:Colors.white)),
+            backgroundColor: Colors.green,
+          ));
+      }
+      await prefs.setBool(ApiConstants.IS_LOGIN, true);
+      FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
+      Navigator.push(context,
+        MaterialPageRoute(
+          builder: (context) => const ShareLocationScreen(),
+        ),
+      );
+    } catch (e) {
+      print('Error during Apple Sign-In: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Apple Sign-In failed"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Stack(
+      body: Stack(
         children: [
           Container(
-          height: double.infinity,
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                colors: [AppColors.primaryColor, AppColors.primaryColor]),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.only(top: 60.0, left: 22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Text(
-                  'Sign In',
-                  style: TextStyle(
-                      fontSize:20,
-                      fontFamily: 'FontPoppins',
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  'Enter your mobile number to get started',
-                  style: TextStyle(
-                      fontFamily: 'FontPoppins',
-                      fontSize: 13,
-                      letterSpacing:0.2,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white),
-                ),
-              ],
+            height: double.infinity,
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  colors: [AppColors.primaryColor, AppColors.primaryColor]),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.only(top: 60.0, left: 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sign In',
+                    style: TextStyle(
+                        fontSize:20,
+                        fontFamily: 'FontPoppins',
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'Enter your mobile number to get started',
+                    style: TextStyle(
+                        fontFamily: 'FontPoppins',
+                        fontSize: 13,
+                        letterSpacing:0.2,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
           Padding(
             padding: const EdgeInsets.only(top: 150.0),
             child: Container(
@@ -487,8 +558,42 @@ class _SignInScreenState extends State<SignInScreen> {
                         ],
                       ),
                       const SizedBox(height: 30),
-
-                    ],
+                      if (Platform.isIOS)
+                        GestureDetector(
+                          onTap: () => _signInWithApple(),
+                          child: Container(
+                            height: 50,
+                            margin: const EdgeInsets.symmetric(horizontal: 20),
+                            decoration: BoxDecoration(
+                              color:AppColors.primaryColor,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow:const [
+                                BoxShadow(
+                                  color:AppColors.primaryColor,
+                                  offset: Offset(0, 4),
+                                  blurRadius:6,
+                                ),
+                              ],
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.apple, color: Colors.white, size: 24),
+                                SizedBox(width: 10),
+                                Text(
+                                  'Sign in with Apple',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontFamily:'FontPoppins',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                     ],
                   ),
                 ),
               ),

@@ -40,7 +40,8 @@ class _RegScreenState extends State<RegScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
   final ApiService apiService = ApiService();
-
+  late SharedPreferences sharedPreferences;
+  String saveUserID = '';
 
   @override
   void dispose() {
@@ -49,6 +50,16 @@ class _RegScreenState extends State<RegScreen> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultUserData();
+  }
+
+  Future<void> _loadDefaultUserData() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    saveUserID = sharedPreferences.getString(ApiConstants.USER_ID) ?? '';
+  }
 
   Future<void> _incrementCounter() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -57,6 +68,9 @@ class _RegScreenState extends State<RegScreen> {
     await prefs.setString(ApiConstants.USER_PASSWORD, userPasswordController.text.trim());
     await prefs.setString(ApiConstants.USER_MOBILE, mobileNumberController.text.trim());
     await prefs.setString(ApiConstants.USER_MOBILE_NUMBER, mobileNumberController.text.trim());
+    //await prefs.setBool(ApiConstants.EXISTING_REGISTERED, false);
+    await prefs.setBool('isRegistered', true);
+
   }
 
   Future<void> userRegistration() async {
@@ -114,6 +128,7 @@ class _RegScreenState extends State<RegScreen> {
       mobile: phone,
       email: email,
       password: password,
+      country_code:'+91'
     );
 
     var provider = Provider.of<DataClass>(context,listen: false);
@@ -160,6 +175,9 @@ class _RegScreenState extends State<RegScreen> {
       }
     }
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {

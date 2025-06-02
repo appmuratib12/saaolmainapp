@@ -24,10 +24,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       title: message.notification!.title!,
       body: message.notification!.body!,
       imageUrl: message.notification!.android!.imageUrl!,
-     // currentDate: formattedDate,
+      // currentDate: formattedDate,
     );
     print("***${notification}");
-     await NotificationDatabase.instance.insertNotification(notification);
+    await NotificationDatabase.instance.insertNotification(notification);
   }
 }
 
@@ -116,9 +116,9 @@ Future<void> initializeNotifications() async {
         print("SKNDNNSDNDKN$payloadParts");
         if (payloadParts != null && payloadParts.length == 3) {
           final notification = NotificationData(
-              title: payloadParts[0],
-              body: payloadParts[1],
-              imageUrl: payloadParts[2],
+            title: payloadParts[0],
+            body: payloadParts[1],
+            imageUrl: payloadParts[2],
 
           );
           await NotificationDatabase.instance.insertNotification(notification);
@@ -188,10 +188,12 @@ Future<void> setupFCM(BuildContext context) async {
         title: message.notification!.title ?? "",
         body: message.notification!.body ?? "",
         imageUrl: imageUrl,
-      //  currentDate: formattedDate,
+        isRead: false
+        //  currentDate: formattedDate,
       );
 
       await NotificationDatabase.instance.insertNotification(notification);
+
       await showNotification(
         title: message.notification?.title ?? "",
         body: message.notification?.body ?? "",
@@ -199,6 +201,7 @@ Future<void> setupFCM(BuildContext context) async {
       );
     }
   });
+
 
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   if (Platform.isIOS) {
@@ -230,14 +233,13 @@ class NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-
     _notifications = databaseHelper.fetchNotifications();
+    databaseHelper.markAllAsRead();
   }
 
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //setupFCM(context);
       initializeNotifications();
     });
     _notifications = databaseHelper.fetchNotifications();

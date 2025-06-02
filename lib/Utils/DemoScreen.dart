@@ -101,6 +101,7 @@ class _DemoScreenState extends State<DemoScreen> {
     setState(() {
       mobileNumber = (prefs.getString(ApiConstants.USER_MOBILE_NUMBER) ?? '');
       googleID = (prefs.getString('GoogleUserID') ?? '');
+      googleID = (prefs.getString(ApiConstants.IDENTIFIER_TOKEN) ?? '');
     });
   }
 

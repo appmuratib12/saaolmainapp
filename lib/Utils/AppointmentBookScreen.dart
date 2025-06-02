@@ -120,12 +120,15 @@ class _AppointmentBookScreenState extends State<AppointmentBookScreen> {
   List<Data> appointments = [];
   List<AppointmentDetails> appointments1 = [];
 
+
+
   @override
   void initState() {
     super.initState();
     _loadPatientID();
     _loadAppointments();
   }
+
 
   Future<void> _loadPatientID() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
@@ -206,6 +209,8 @@ class _AppointmentBookScreenState extends State<AppointmentBookScreen> {
       });
     }
   }
+
+
 
   Future<void> _loadAppointments() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -295,9 +300,9 @@ class _AppointmentBookScreenState extends State<AppointmentBookScreen> {
                 ),
               ),
             ),
-          );
-        },
-      )
+           );
+          },
+        )
           : appointments.isEmpty
           ? Center(
           child: Column(

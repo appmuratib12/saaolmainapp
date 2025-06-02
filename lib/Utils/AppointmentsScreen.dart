@@ -1,15 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:readmore/readmore.dart';
 import 'package:saaolapp/DialogHelper.dart';
 import 'package:saaolapp/Utils/AppointmentBookScreen.dart';
 import 'package:saaolapp/Utils/ChooseMemberScreen.dart';
-import 'package:saaolapp/Utils/WebinarScreen.dart';
+import 'package:saaolapp/data/model/requestmodel/OnlineAppointmentDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import '../common/app_colors.dart';
@@ -22,7 +22,7 @@ import '../data/model/apiresponsemodel/AvailableAppointmentDateResponse.dart';
 import '../data/network/ApiService.dart';
 import '../data/network/BaseApiService.dart';
 import 'AppointmentConfirmScreen.dart';
-import 'UploadPrescriptionScreen.dart';
+
 
 class MyAppointmentsScreen extends StatefulWidget {
   final int initialIndex;
@@ -67,6 +67,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   String? getCountryCode = "IN";
   String? location;
   String getUID = '';
+  String userID = '';
 
   Future<AppointmentCentersResponse>? _futureCenters;
   Future<AvailableAppointmentDateResponse>? _futureAppointments;
@@ -103,8 +104,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   void _loadUserData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     setState(() {
+      userID = sharedPreferences.getString(ApiConstants.USER_ID) ?? '';
       getPatientID = sharedPreferences.getString('pmId') ?? '';
       getUID = sharedPreferences.getString('GoogleUserID') ?? '';
+      getUID = sharedPreferences.getString(ApiConstants.IDENTIFIER_TOKEN) ?? '';
       print('GETUID:$getUID');
       if (getPatientID.isNotEmpty) {
         getName = sharedPreferences.getString('PatientFirstName') ?? '';
@@ -118,11 +121,25 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
         _nameController.text = fullName.toString();
         print('fullname:$fullName');
       } else {
-        String userName = sharedPreferences.getString('GoogleUserName') ?? sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+        String userName = sharedPreferences.getString(ApiConstants.APPLE_NAME) ??
+            sharedPreferences.getString('GoogleUserName') ??
+            sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+        String userEmail = sharedPreferences.getString(ApiConstants.APPLE_EMAIL) ??
+            sharedPreferences.getString('GoogleUserEmail') ??
+            sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
         getName = userName;
-        //getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
-        String userEmail = sharedPreferences.getString('GoogleUserEmail') ?? sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';;
         getEmail = userEmail;
+
+       /* String userName = sharedPreferences.getString('GoogleUserName') ?? sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+        String appleName = sharedPreferences.getString(ApiConstants.APPLE_NAME) ?? sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+        getName = userName;
+        getName = appleName;
+        //getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
+        String userEmail = sharedPreferences.getString('GoogleUserEmail') ?? sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
+        String appleEmail = sharedPreferences.getString(ApiConstants.APPLE_EMAIL) ?? sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
+        getEmail = userEmail;
+        getEmail = appleEmail;*/
+
         getPhone = sharedPreferences.getString(ApiConstants.USER_MOBILE_NUMBER) ?? '';
         _nameController.text = getName.toString();
         _emailController.text = getEmail.toString();
@@ -168,15 +185,33 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
       email: _emailController.text,
       name: _nameController.text,
     );
+
+    final response1 = await _apiService.patientAppointmentBookingOnline(
+      contactCountryCode: getCountryCode.toString(),
+      contactNo: _phoneController.text,
+      appointmentType: '0',
+      address: _addressController.text,
+      email: _emailController.text,
+      name: _nameController.text,
+      userID: int.parse(userID),
+    );
+
     Navigator.of(context).pop();
-    if (response != null && response.status == true) {
+    if (response != null && response.status == true && response1 != null && response1.status == 'success') {
       SharedPreferences prefs = await SharedPreferences.getInstance();
+      OnlineAppointmentDetails newAppointment = OnlineAppointmentDetails(
+        patientName:_nameController.text,
+        patientMobile:_phoneController.text,
+        appointmentType: '0',
+      );
+      List<String> storedList = prefs.getStringList('onlineAppointments') ?? [];
+      storedList.add(jsonEncode(newAppointment.toJson()));
+      await prefs.setStringList('onlineAppointments', storedList);
       await prefs.setString(ApiConstants.APPOINTMENT_TYPE_ONLINE, '0');
       await prefs.setString(ApiConstants.APPOINTMENT_NAME_ONLINE, _nameController.text);
       await prefs.setString(ApiConstants.APPOINTMENT_PHONE_ONLINE, _phoneController.text);
       _showSuccessDialog(context);
       print('response: ${response.message}');
-
 
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -324,6 +359,14 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
 
     if (location == null || location.toString().isEmpty) {
       _showError1("Location is required.");
+      return;
+    }
+    if (saveCityName == null || saveCityName.toString().isEmpty) {
+      _showError1("Center location is required.");
+      return;
+    }
+    if (saveCenterName == null || saveCenterName.toString().isEmpty) {
+      _showError1("Center name is required.");
       return;
     }
 
@@ -919,15 +962,27 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                                         ),
                                                       );
                                                     } else {
-                                                      return Center(child: Text('Error: $errorMessage'));
+                                                      return const Center(
+                                                        child: Column(
+                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                          children: [
+                                                            Icon(Icons.error_outline, color: Colors.red, size: 20),
+                                                            SizedBox(height:8),
+                                                            Text(('No available locations'),
+                                                              textAlign: TextAlign.center,
+                                                              style: TextStyle(fontWeight:FontWeight.w500,
+                                                                  fontSize:14,fontFamily:'FontPoppins',color:Colors.red),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
                                                     }
                                                   }
-                                                  return const Center(
-                                                      child:
-                                                      CircularProgressIndicator());
+                                                  return const Center(child: CircularProgressIndicator());
                                                 },
                                               ),
                                             ),
+
 
                                             const SizedBox(
                                               height: 15,
@@ -979,15 +1034,24 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                                     );
                                                   } else if (snapshot.hasError) {
                                                     print('Error fetching centers: ${snapshot.error}');
-                                                    return Center(
-                                                        child: Text(
-                                                            'Error: ${snapshot.error}'));
+                                                    return const Center(
+                                                      child: Column(
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Icon(Icons.error_outline, color: Colors.red, size: 20),
+                                                          SizedBox(height:8),
+                                                          Text(('No available center locations'),
+                                                            textAlign: TextAlign.center,
+                                                            style: TextStyle(fontWeight:FontWeight.w500,
+                                                                fontSize:14,fontFamily:'FontPoppins',color:Colors.red),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
                                                   } else if (!snapshot.hasData ||
                                                       snapshot.data!.data == null ||
                                                       snapshot.data!.data!.isEmpty) {
-                                                    return const Center(
-                                                        child: Text(
-                                                            'No Centers available.'));
+                                                    return const Center(child: Text('No Centers available.'));
                                                   } else {
                                                     final centers = snapshot.data!.data!;
                                                     if (isFirstCenterSelection) {

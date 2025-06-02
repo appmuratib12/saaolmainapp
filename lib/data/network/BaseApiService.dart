@@ -432,8 +432,33 @@ class BaseApiService {
     }
   }
 
-
   Future<AppointmentCentersResponse> getCenterLocation(String stateName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.crmBaseUrl}availability/location/offline/state/$stateName'),
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ApiConstants.crmAPIkEY, // Custom header for API-KEY
+        },
+      );
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return AppointmentCentersResponse.fromJson(result);
+      } else {
+        throw Exception('Failed to load data: ${response.statusCode}');
+      }
+    } on SocketException {
+      throw Exception('No internet connection. Please check your network.',);
+    } on HttpException {
+      throw Exception('Could not retrieve data. Please try again later.');
+    } on FormatException {
+      throw Exception('Invalid response format. Please contact support.');
+    } catch (e) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+ /* Future<AppointmentCentersResponse> getCenterLocation(String stateName) async {
     final response = await http.get(
       Uri.parse(
           '${ApiConstants.crmBaseUrl}availability/location/offline/state/$stateName'),
@@ -448,9 +473,7 @@ class BaseApiService {
     } else {
       throw Exception('Failed to load data');
     }
-  }
-
-
+  }*/
 
 
   Future<AvailableAppointmentDateResponse> getAvailableAppointmentDate(String id) async {

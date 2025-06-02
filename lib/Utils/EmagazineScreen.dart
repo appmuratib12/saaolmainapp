@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/EmagazineResponse.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/EmagazineYearResponse.dart';
 import 'package:saaolapp/data/network/BaseApiService.dart';

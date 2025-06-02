@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:saaolapp/DialogHelper.dart';
+import 'package:saaolapp/Utils/NotificationScreen.dart';
 import 'package:saaolapp/data/model/requestmodel/AppointmentDetails.dart';
 import 'package:saaolapp/data/network/ApiService.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,6 +43,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
   String? location;
   final ApiService apiService = ApiService();
   String phoneNumber = '';
+  String userID = '';
 
   @override
   void initState() {
@@ -52,9 +54,22 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
   _loadCounter() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      String userName = prefs.getString('GoogleUserName') ?? prefs.getString(ApiConstants.USER_NAME) ?? '';
+      userID = prefs.getString(ApiConstants.USER_ID) ?? '';
+     /* String userName = prefs.getString('GoogleUserName') ?? prefs.getString(ApiConstants.USER_NAME) ?? '';
+      String appleUserName = prefs.getString(ApiConstants.APPLE_NAME) ?? prefs.getString(ApiConstants.USER_NAME) ?? '';
       getUserName = userName;
+      getUserName = appleUserName;
       String userEmail = prefs.getString('GoogleUserEmail') ?? prefs.getString(ApiConstants.USER_EMAIL) ?? '';
+      String appleEmail = prefs.getString(ApiConstants.APPLE_EMAIL) ?? prefs.getString(ApiConstants.USER_EMAIL) ?? '';
+      getEmail = userEmail;*/
+
+      String userName = prefs.getString(ApiConstants.APPLE_NAME) ??
+          prefs.getString('GoogleUserName') ??
+          prefs.getString(ApiConstants.USER_NAME) ?? '';
+      String userEmail = prefs.getString(ApiConstants.APPLE_EMAIL) ??
+          prefs.getString('GoogleUserEmail') ??
+          prefs.getString(ApiConstants.USER_EMAIL) ?? '';
+      getUserName = userName;
       getEmail = userEmail;
       getMobileNumber = (prefs.getString(ApiConstants.USER_MOBILE_NUMBER) ?? '');
       getCountryCode = (prefs.getString('SelectedCountryCode') ?? '');
@@ -79,9 +94,21 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
       time: widget.saveTimeValue,
     );
 
+    final response1 = await apiService.patientOfflineAppointment(
+      contactCountryCode:widget.countryCode,
+      contactNo:widget.phone,
+      appointmentType: '1',
+      address: location.toString(),
+      email: getEmail,
+      name: getUserName,
+      date: widget.appointmentDate,
+      centerName: widget.centerID,
+      time: widget.saveTimeValue,
+      centerID:int.parse(widget.centerID),
+      userID:int.parse(userID),
+    );
     Navigator.of(context).pop();
-
-    if (response != null && response.status == true) {
+    if (response != null && response.status == true && response1 !=null && response1.status == 'success') {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       AppointmentDetails newAppointment = AppointmentDetails(
         patientName: getUserName,
@@ -92,6 +119,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
         appointmentTime: widget.saveTimeValue,
         appointmentLocation: widget.centerLocationName ?? '',
       );
+
 
       List<String> storedList = prefs.getStringList('appointments') ?? [];
       storedList.add(jsonEncode(newAppointment.toJson()));
@@ -106,6 +134,7 @@ class _AppointmentConfirmScreenState extends State<AppointmentConfirmScreen> {
       DialogHelper.showSuccessDialog(context);
       print('response: ${response.message}');
       print('StorePhone: ${widget.phone}');
+      FirebaseMessage('Appointment Request Submitted!', 'Your request has been successfully received. We will notify you once it is confirmed.');
     } else {
       _showError("Error: ${response?.message ?? 'Something went wrong'}");
     }

@@ -339,6 +339,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     await sharedPreferences.setString('PatientDob', updatedDob);
     await sharedPreferences.setString('GoogleUserName',updatedName);
     await sharedPreferences.setString('GoogleUserEmail',updatedEmail);
+    await sharedPreferences.setString(ApiConstants.APPLE_NAME,updatedName);
+    await sharedPreferences.setString(ApiConstants.APPLE_EMAIL,updatedEmail);
+
 
     await sharedPreferences.setString(ApiConstants.USER_NAME, updatedName);
     await sharedPreferences.setString(ApiConstants.USER_MOBILE, updatedPhone);
@@ -387,8 +390,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   }
   void _loadDefaultUserData() {
-    final googleName = sharedPreferences.getString('GoogleUserName') ?? '';
-    final googleEmail = sharedPreferences.getString('GoogleUserEmail') ?? '';
+    final googleName = sharedPreferences.getString('GoogleUserName') ?? sharedPreferences.getString(ApiConstants.APPLE_NAME)?? '';
+    final googleEmail = sharedPreferences.getString('GoogleUserEmail') ?? sharedPreferences.getString(ApiConstants.APPLE_EMAIL)?? '';
     getName = sharedPreferences.getString(ApiConstants.USER_NAME) ??  '';
     getPhone = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
     getEmail = sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
