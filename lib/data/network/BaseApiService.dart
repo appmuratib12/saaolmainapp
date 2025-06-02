@@ -412,7 +412,7 @@ class BaseApiService {
         Uri.parse('${ApiConstants.crmBaseUrl}availability/location/offline'),
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': ApiConstants.crmAPIkEY, // Custom header for API-KEY
+          'x-api-key': ApiConstants.crmAPIkEY,
         },
       );
       if (response.statusCode == 200) {
