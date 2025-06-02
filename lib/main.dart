@@ -17,9 +17,12 @@ void main() async {
   initializeNotifications();
   clearCache();
 
-  runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(create: (_) => DataClass()),
-  ], child: const MyApp()));
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => DataClass()),
+    ],
+    child: const MyApp(),
+  ));
 }
 
 Future<void> deleteDatabaseFile() async {
@@ -27,6 +30,7 @@ Future<void> deleteDatabaseFile() async {
   final path = join(dbPath, 'notifications.db');
   await deleteDatabase(path);
 }
+
 Future<void> clearCache() async {
   try {
     final cacheDir = await getTemporaryDirectory();
@@ -49,6 +53,7 @@ class MyApp extends StatelessWidget {
         setupFCM(context);
         initializeNotifications();
       });
+
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Saaol App',
