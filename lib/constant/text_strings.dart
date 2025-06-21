@@ -99,3 +99,10 @@ const String wellnessLoction_txt = "You can reach us by road, rail, or air. We a
 const String wellnessByRoad_txt = "By Road: Follow the 14.4 km highway and look for signs directing you to the SAAOL Institute. The drive typically takes about 43 minutes.";
 const String wellnessByRail_txt = "By Train: The nearest railway station is Dehradun, approximately 14.7 km from the institute, with a travel time of about 42 minutes.";
 const String wellnessByAir_txt = "By Air: The closest airport is Jolly Grant Airport, situated approximately 48.6 km away. The journey usually takes around 1 hour and 30 minutes.";
+const String accountDelete_Txt = 'Deleting account is a permanent action and cannot be reversed.In case you want to use Saaol App services again, you will need to crease'
+    'a new account which will have no previous order history.In order to proceed deleting your account,you can ';
+
+const String deleteAccountConfirm_Txt = 'In case you want to reactivate the account,please reach out to customer support at ';
+const String afterDelete_Txt1 = 'We hope we added value to your life while you were with us.We will look into the feedback you provided with upmost sincerity.';
+const String afterDelete_Txt2 = 'If you ever wish to use our services again, we are just a sign up away.';
+const String afterDelete_Txt3 = 'And as always,we hope your healthcare needs are always met.';

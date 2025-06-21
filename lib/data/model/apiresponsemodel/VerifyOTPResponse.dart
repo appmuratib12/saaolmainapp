@@ -6,6 +6,8 @@ class VerifyOTPResponse {
   int? id;
   String? name;
   String? image;
+  String? deviceId;
+  String? platformName;
 
   VerifyOTPResponse({
     this.status,
@@ -15,6 +17,8 @@ class VerifyOTPResponse {
     this.id,
     this.name,
     this.image,
+    this.deviceId,
+    this.platformName
   });
 
   VerifyOTPResponse.fromJson(Map<String, dynamic> json) {
@@ -25,6 +29,8 @@ class VerifyOTPResponse {
     id = json['id'];
     name = json['name']?.toString();
     image = json['image']?.toString();
+    deviceId = json['device_id'];
+    platformName = json['platform_name'];
   }
 
   Map<String, dynamic> toJson() {
@@ -36,6 +42,8 @@ class VerifyOTPResponse {
       'id': id,
       'name': name,
       'image': image,
+      'device_id': deviceId,
+      'platform_name':platformName,
     };
   }
 }

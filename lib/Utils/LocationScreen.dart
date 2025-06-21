@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
@@ -8,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../common/app_colors.dart';
 import 'MyHomePageScreen.dart';
 
-
 class ShareLocationScreen extends StatefulWidget {
   const ShareLocationScreen({super.key});
 
@@ -16,11 +17,8 @@ class ShareLocationScreen extends StatefulWidget {
   State<ShareLocationScreen> createState() => _ShareLocationScreenState();
 }
 
-
 class _ShareLocationScreenState extends State<ShareLocationScreen> {
-
   late SharedPreferences sharedPreferences;
-
   // void fetchLocation(BuildContext context) async {
   //   try {
   //     LocationPermission permission = await Geolocator.checkPermission();
@@ -75,12 +73,6 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
   //     showSnackbar(context, 'Error fetching location: $e');
   //   }
   // }
-
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,7 +80,8 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.only(top: 60, left: 15, right: 15, bottom: 20),
+            padding:
+                const EdgeInsets.only(top: 60, left: 15, right: 15, bottom: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.start,
@@ -159,6 +152,7 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
     );
   }
 }
+
 void showSnackbar(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -168,12 +162,15 @@ void showSnackbar(BuildContext context, String message) {
     ),
   );
 }
-Future<Position> _determinePosition() async {
+
+Future<Position> _determinePosition(BuildContext context) async {
   bool serviceEnabled;
   LocationPermission permission;
 
   serviceEnabled = await Geolocator.isLocationServiceEnabled();
   if (!serviceEnabled) {
+    Navigator.pop(context);
+    await Geolocator.openLocationSettings();
     return Future.error('Location services are disabled.');
   }
 
@@ -181,26 +178,95 @@ Future<Position> _determinePosition() async {
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
+      Navigator.pop(context);
+      await Geolocator.openLocationSettings();
       return Future.error('Location permissions are denied');
     }
   }
 
   if (permission == LocationPermission.deniedForever) {
-    openAppSettings();
-    // SmartDialog.dismiss();
+    Navigator.pop(context);
+    if (Platform.isIOS) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          title: const Row(
+            children: [
+              Icon(Icons.location_on, color: AppColors.primaryColor),
+              SizedBox(width: 4),
+              Text(
+                "Location Permission Needed",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  fontFamily: 'FontPoppins',
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            "We use your location to deliver personalized content and nearby services. Please enable location access in Settings to enjoy full app functionality.",
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              fontFamily: 'FontPoppins',
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "Maybe Later",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontFamily: 'FontPoppins',
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                openAppSettings();
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "Open Settings",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontFamily: 'FontPoppins',
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      openAppSettings();
+    }
     return Future.error('Location permissions are permanently denied.');
   }
 
   return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-      timeLimit: const Duration(seconds: 30));
+    desiredAccuracy: LocationAccuracy.high,
+  );
 }
+
 void fetchLocation(BuildContext context) async {
   try {
     showLoadingDialog(context);
 
-    Position position = await _determinePosition(); // ⬅️ Uses your permission-handling method
-
+    Position position = await _determinePosition(context);
     print('Latitude: ${position.latitude}, Longitude: ${position.longitude}');
     List<Placemark> placemarks = await placemarkFromCoordinates(
       position.latitude,
@@ -213,18 +279,21 @@ void fetchLocation(BuildContext context) async {
       String? subLocality = placemark.subLocality;
       String? pincode = placemark.postalCode;
 
-      SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+      SharedPreferences sharedPreferences =
+          await SharedPreferences.getInstance();
       sharedPreferences.setString(ApiConstants.PINCODE, pincode ?? 'Unknown');
       sharedPreferences.setString('locationName', locationName ?? 'Unknown');
       sharedPreferences.setString('subLocality', subLocality ?? 'Unknown');
       sharedPreferences.setString('lat', position.latitude.toStringAsFixed(6));
-      sharedPreferences.setString('long', position.longitude.toStringAsFixed(6));
+      sharedPreferences.setString(
+          'long', position.longitude.toStringAsFixed(6));
       print('PincodeStore: ${placemark.postalCode}');
       print('PincodeStoring: ${position.latitude},${position.longitude}');
 
       Navigator.pushReplacement(
         context,
-        CupertinoPageRoute(builder: (context) => const HomePage(initialIndex: 0)),
+        CupertinoPageRoute(
+            builder: (context) => const HomePage(initialIndex: 0)),
       );
     } else {
       showSnackbar(context, 'No placemarks found.');
@@ -234,6 +303,7 @@ void fetchLocation(BuildContext context) async {
     showSnackbar(context, 'Error fetching location: $e');
   }
 }
+
 void showLoadingDialog(BuildContext context) {
   showDialog(
     context: context,
@@ -253,16 +323,19 @@ void showLoadingDialog(BuildContext context) {
             child: const Column(
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
                 ),
                 SizedBox(height: 20),
                 Icon(Icons.navigation, size: 30, color: AppColors.primaryColor),
                 SizedBox(height: 10),
                 Text(
                   "Fetching your location...",
-                  style: TextStyle(fontSize:13,
-                      fontWeight: FontWeight.w500,fontFamily:'FontPoppins',
-                      color:Colors.black87),
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'FontPoppins',
+                      color: Colors.black87),
                 ),
               ],
             ),

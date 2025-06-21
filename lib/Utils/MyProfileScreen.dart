@@ -945,7 +945,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ),
                 elevation: 2,
                 child: Container(
-                  height:330,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,

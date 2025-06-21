@@ -5,3 +5,5 @@
 -keepclasseswithmembers class * {
   public void onPayment*(...);
 }
+-keep class com.google.firebase.analytics.** { *; }
+-dontwarn com.google.firebase.analytics.**

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:saaolapp/constant/text_strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -143,6 +144,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       },
     );
   }
+
+
   void _showTitlePickerDialog() {
     showDialog(
       context: context,
@@ -799,6 +802,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     TextFormField(
                                       controller:nameController,
                                       keyboardType:TextInputType.name,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                                      ],
                                       decoration: InputDecoration(
                                         hintText: 'First Name',
                                         hintStyle: const TextStyle(
@@ -843,6 +849,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     TextFormField(
                                       controller:lastNameController,
                                       keyboardType:TextInputType.name,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                                      ],
                                       decoration: InputDecoration(
                                         hintText: 'Last Name',
                                         hintStyle: const TextStyle(
@@ -883,9 +892,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
+
+
                                     TextFormField(
                                       controller:phoneController,
                                       keyboardType:TextInputType.phone,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(10),
+                                      ],
                                       decoration: InputDecoration(
                                         hintText: 'Mobile Number',
                                         hintStyle: const TextStyle(
@@ -926,9 +941,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
+
                                     TextFormField(
                                       controller:emailController,
                                       keyboardType:TextInputType.emailAddress,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                          RegExp(r'[a-zA-Z0-9@._\-+]'),
+                                        ),
+                                      ],
                                       decoration: InputDecoration(
                                         hintText: 'Email ID',
                                         hintStyle: const TextStyle(
@@ -1022,6 +1043,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     const SizedBox(
                                       height: 10,
                                     ),
+
                                     GestureDetector(
                                       onTap: _showGenderPickerDialog, // your custom dialog if needed
                                       child: AbsorbPointer(

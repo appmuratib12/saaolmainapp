@@ -1,4 +1,5 @@
 import 'package:dots_indicator/dots_indicator.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:saaolapp/constant/ApiConstants.dart';
@@ -77,13 +78,19 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             child: PrimaryButton(
               elevation: 0,
               onTap: () {
+
                 if (_currentIndex == onBoardinglist.length - 1) {
+                  FirebaseAnalytics.instance.logEvent(name: 'onboarding_completed');
                   Navigator.push(
                     context,
                     CupertinoPageRoute(
                         builder: (context) => const SignInScreen()),
                   );
                 } else {
+                  FirebaseAnalytics.instance.logEvent(
+                    name: 'onboarding_next_tapped',
+                    parameters: {'page_index': _currentIndex},
+                  );
                   _pageController1.nextPage(
                     duration: const Duration(milliseconds: 500),
                     curve: Curves.fastOutSlowIn,
@@ -220,6 +227,13 @@ class OnBoardingCard extends StatefulWidget {
 }
 
 class _OnBoardingCardState extends State<OnBoardingCard> {
+  @override
+  void initState() {
+    super.initState();
+    FirebaseAnalytics.instance.setCurrentScreen(screenName: 'OnBoardingScreen');
+    FirebaseAnalytics.instance.logEvent(name: 'onboarding_started');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(

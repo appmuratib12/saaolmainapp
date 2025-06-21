@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:in_app_update/in_app_update.dart';
@@ -40,7 +41,6 @@ class _SignInScreenState extends   State<SignInScreen> {
   String? selectedCountryCode;
   final String dummyImageUrl = "https://via.placeholder.com/150";
 
-
   TextEditingController userMobileController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
@@ -52,7 +52,6 @@ class _SignInScreenState extends   State<SignInScreen> {
     //SharedPreferences prefs = await SharedPreferences.getInstance();
     //String? registeredPhone = prefs.getString('registered_phone');
     //print('registeredPhone:$registeredPhone');
-
     /* if (registeredPhone != null && phoneNumber != registeredPhone) {
       _showSnackBar('The phone number does not match the registered number.', Colors.red);
       return;
@@ -60,9 +59,9 @@ class _SignInScreenState extends   State<SignInScreen> {
     if (phoneNumber.isNotEmpty) {
       DialogHelper.showLoadingDialog(context);
       try {
-
-        final otpResponse = await _apiService.sendOTP(phoneNumber,"/V67ByYTp3G");
+        final otpResponse = await _apiService.sendOTP(phoneNumber,storeKey);
         Navigator.pop(context);
+
         if (otpResponse != null && otpResponse.status == "success") {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setString('login_method', 'otp'); // Save login method
@@ -82,13 +81,16 @@ class _SignInScreenState extends   State<SignInScreen> {
             print('StoreselectedCountryCode:$selectedCountryCode');
           }
 
-        } else {
+        }
+         else {
+          final errorMessage = otpResponse?.message ?? 'Failed to send OTP. Try again.';
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to send OTP. Try again.'),
+            SnackBar(
+              content: Text(errorMessage),
               backgroundColor: Colors.red,
             ),
           );
+          print('OTP ERROR: $errorMessage');
         }
       } on SocketException {
         Navigator.pop(context); // Dismiss the loading dialog
@@ -108,6 +110,7 @@ class _SignInScreenState extends   State<SignInScreen> {
       _showSnackBar('Please enter valid details.', Colors.red);
     }
   }
+
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -122,6 +125,7 @@ class _SignInScreenState extends   State<SignInScreen> {
       ),
     );
   }
+
   Future<void> checkForUpdates() async {
     try {
       final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
@@ -162,6 +166,7 @@ class _SignInScreenState extends   State<SignInScreen> {
   );
   GoogleSignInAccount? _user;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
 
   Future<void> _handleSignIn() async {
     try {
@@ -242,7 +247,6 @@ class _SignInScreenState extends   State<SignInScreen> {
     await prefs.setString('GoogleUserID', firebaseUser.uid);
     await prefs.setString('GoogleUserProfile', firebaseUser.photoURL ?? '');
   }
-
   Future<void> _signInWithApple() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
@@ -305,7 +309,6 @@ class _SignInScreenState extends   State<SignInScreen> {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -385,6 +388,10 @@ class _SignInScreenState extends   State<SignInScreen> {
                               keyboardType: TextInputType.phone,
                               flagsButtonPadding: const EdgeInsets.all(8),
                               dropdownIconPosition: IconPosition.trailing,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
                               decoration: InputDecoration(
                                 hintText: 'Enter Mobile Number',
                                 hintStyle: const TextStyle(
@@ -559,40 +566,56 @@ class _SignInScreenState extends   State<SignInScreen> {
                       ),
                       const SizedBox(height: 30),
                       if (Platform.isIOS)
-                        GestureDetector(
-                          onTap: () => _signInWithApple(),
-                          child: Container(
-                            height: 50,
-                            margin: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: BoxDecoration(
-                              color:AppColors.primaryColor,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow:const [
-                                BoxShadow(
-                                  color:AppColors.primaryColor,
-                                  offset: Offset(0, 4),
-                                  blurRadius:6,
-                                ),
-                              ],
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.apple, color: Colors.white, size: 24),
-                                SizedBox(width: 10),
-                                Text(
-                                  'Sign in with Apple',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontFamily:'FontPoppins',
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                       Column(
+                         children: [
+                           const Center(
+                             child: Text(
+                               'Or',
+                               style: TextStyle(
+                                 fontSize: 14,
+                                 fontFamily: 'FontPoppins',
+                                 fontWeight: FontWeight.w600,
+                                 color: AppColors.primaryColor,
+                               ),
+                             ),
+                           ),
+                           const SizedBox(height: 30),
+                           GestureDetector(
+                             onTap: () => _signInWithApple(),
+                             child: Container(
+                               height: 50,
+                               margin: const EdgeInsets.symmetric(horizontal: 20),
+                               decoration: BoxDecoration(
+                                 color:AppColors.primaryColor,
+                                 borderRadius: BorderRadius.circular(12),
+                                 boxShadow:const [
+                                   BoxShadow(
+                                     color:AppColors.primaryColor,
+                                     offset: Offset(0, 4),
+                                     blurRadius:6,
+                                   ),
+                                 ],
+                               ),
+                               child: const Row(
+                                 mainAxisAlignment: MainAxisAlignment.center,
+                                 children: [
+                                   Icon(Icons.apple, color: Colors.white, size: 24),
+                                   SizedBox(width: 10),
+                                   Text(
+                                     'Sign in with Apple',
+                                     style: TextStyle(
+                                       color: Colors.white,
+                                       fontSize: 15,
+                                       fontFamily:'FontPoppins',
+                                       fontWeight: FontWeight.w600,
+                                     ),
+                                   ),
+                                 ],
+                               ),
+                             ),
+                           ),
+                         ],
+                       )
                      ],
                   ),
                 ),

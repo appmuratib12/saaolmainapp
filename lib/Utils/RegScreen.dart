@@ -42,6 +42,7 @@ class _RegScreenState extends State<RegScreen> {
   final ApiService apiService = ApiService();
   late SharedPreferences sharedPreferences;
   String saveUserID = '';
+  String getMobileNumber = '';
 
   @override
   void dispose() {
@@ -59,6 +60,8 @@ class _RegScreenState extends State<RegScreen> {
   Future<void> _loadDefaultUserData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     saveUserID = sharedPreferences.getString(ApiConstants.USER_ID) ?? '';
+    getMobileNumber = sharedPreferences.getString(ApiConstants.SINGIN_MOBILENUMBER) ?? '';
+    mobileNumberController.text = getMobileNumber.toString();
   }
 
   Future<void> _incrementCounter() async {
@@ -335,6 +338,10 @@ class _RegScreenState extends State<RegScreen> {
                             TextFormField(
                               keyboardType: TextInputType.name,
                               controller: userNameController,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                                LengthLimitingTextInputFormatter(50),
+                              ],
                               decoration: InputDecoration(
                                 hintText: 'Enter your name',
                                 hintStyle: const TextStyle(
@@ -360,6 +367,7 @@ class _RegScreenState extends State<RegScreen> {
                                   color: Colors.black),
                               validator: ValidationCons().validateName,
                             ),
+
                             const SizedBox(
                               height: 15,
                             ),
@@ -377,6 +385,11 @@ class _RegScreenState extends State<RegScreen> {
                             TextFormField(
                               keyboardType: TextInputType.emailAddress,
                               controller: userEmailController,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-Z0-9@._\-+]'),
+                                ),
+                              ],
                               decoration: InputDecoration(
                                 hintText: 'Enter your email',
                                 hintStyle: const TextStyle(
@@ -402,7 +415,6 @@ class _RegScreenState extends State<RegScreen> {
                                   color: Colors.black),
                               validator: ValidationCons().validateEmail,
                             ),
-
                             const SizedBox(
                               height: 15,
                             ),
@@ -420,15 +432,20 @@ class _RegScreenState extends State<RegScreen> {
                             TextFormField(
                               controller: mobileNumberController,
                               keyboardType: TextInputType.phone,
+                              readOnly: true,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10),
+                              ],
                               decoration: InputDecoration(
                                 hintText: 'Enter your mobile number',
                                 hintStyle: const TextStyle(
-                                    fontFamily: 'FontPoppins',
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black54),
-                                prefixIcon: const Icon(Icons.phone,
-                                    color: AppColors.primaryColor),
+                                  fontFamily: 'FontPoppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54,
+                                ),
+                                prefixIcon: const Icon(Icons.phone, color: AppColors.primaryColor),
                                 filled: true,
                                 fillColor: Colors.lightBlue[50],
                                 border: OutlineInputBorder(
@@ -440,10 +457,11 @@ class _RegScreenState extends State<RegScreen> {
                               ),
                               validator: ValidationCons().validateMobile,
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'FontPoppins',
-                                  fontSize: 16,
-                                  color: Colors.black),
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'FontPoppins',
+                                fontSize: 16,
+                                color: Colors.black,
+                              ),
                             ),
                             const SizedBox(
                               height: 15,

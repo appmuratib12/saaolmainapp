@@ -1,3 +1,4 @@
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,6 +14,17 @@ class WebinarScreen extends StatefulWidget {
 }
 
 class _WebinarScreenState extends State<WebinarScreen> {
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  void _logScreenView() async {
+    await _analytics.logEvent(
+      name: 'webinar_screen_viewed',
+      parameters: {
+        'screen_name': 'WebinarScreen',
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+    );
+  }
+
   void openWhatsApp() async {
     String phoneNumber = "+919318405344"; // Add country code (e.g., India: +91)
     String message = "Hello, I want to book webinar?";
@@ -22,6 +34,11 @@ class _WebinarScreenState extends State<WebinarScreen> {
     } else {
       print("Could not launch WhatsApp");
     }
+  }
+  @override
+  void initState() {
+    super.initState();
+    _logScreenView();
   }
 
   @override
@@ -99,7 +116,7 @@ class _WebinarScreenState extends State<WebinarScreen> {
                   } else if (!snapshot.hasData ||
                       snapshot.data!.data == null ||
                       snapshot.data!.data!.isEmpty) {
-                    return const  Center(
+                    return const Center(
                       child: Padding(
                         padding: EdgeInsets.all(16.0),
                         child: Column(
@@ -130,6 +147,14 @@ class _WebinarScreenState extends State<WebinarScreen> {
                       ),
                     );
                   } else {
+                    final webinars = snapshot.data!.data!;
+                    _analytics.logEvent(
+                      name: 'webinar_data_loaded',
+                      parameters: {
+                        'count': webinars.length,
+                        'titles': webinars.map((e) => e.title).toList(),
+                      },
+                    );
                     return ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),

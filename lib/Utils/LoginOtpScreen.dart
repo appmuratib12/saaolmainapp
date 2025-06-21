@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:country_code_picker/country_code_picker.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
+import 'package:saaolapp/data/model/requestmodel/RegisterRequestData.dart';
+import 'package:saaolapp/data/network/ChangeNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_autofill/sms_autofill.dart';
 import '../DialogHelper.dart';
@@ -11,6 +15,7 @@ import '../constant/ApiConstants.dart';
 import '../constant/ValidationCons.dart';
 import '../data/network/ApiService.dart';
 import 'LocationScreen.dart';
+import 'MyHomePageScreen.dart';
 
 class LoginOtpScreen extends StatefulWidget {
   final String phone;
@@ -92,26 +97,41 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
     }
   }
   Future<void> _verifyOTP1() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     if (_otpCode != null && _otpCode!.length == 6) {
       DialogHelper.showLoadingDialog(context); // Show
       ApiService apiService = ApiService();
-      var otpVerificationResult = await apiService.verifyOTP(widget.phone, _otpCode!,context);
-      Navigator.pop(context); // Close loading dialog
+      String platform = Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown';
+      String deviceId = await getDeviceId();
+      var otpVerificationResult = await apiService.verifyOTP(widget.phone, _otpCode!,platform,deviceId,context);
+      Navigator.pop(context);
       print('OTPCODE:$_otpCode');
 
       if (otpVerificationResult != null && otpVerificationResult.status == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
+          SnackBar(content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
               backgroundColor: Colors.green),);
         var patientDetails = await apiService.verifyPatient(widget.phone);
+        await prefs.setBool(ApiConstants.IS_LOGIN, true);
+
         if (patientDetails != null) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setBool(ApiConstants.IS_LOGIN, true);
           print("Patient verified successfully.Details: ${patientDetails.status}");
-          Navigator.push(context,MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
+          final patient = patientDetails.data!.first;
+          String patientName = patient.pmFirstName ?? '';
+          String patientEmail = patient.pmEmail ?? '';
+          String patientMobile = patient.pmContactNo ?? '';
+          RegisterRequestData requestData = RegisterRequestData(
+              name: patientName,
+              email: patientEmail,
+              mobile: patientMobile,
+              country_code:'+91',
+              password:'123456789'
+          );
+          var provider = Provider.of<DataClass>(context, listen: false);
+          await provider.postUserRegisterRequest(requestData);
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
         } else {
-          Navigator.push(context,MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage(initialIndex: 0)));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,13 +161,32 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
   }
 
 
+
   @override
   void initState() {
     super.initState();
+    getDeviceId();
     _printAppSignature();
     userMobileNumber.text = widget.phone;
   }
 
+  Future<String> getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await deviceInfo.androidInfo;
+        return androidInfo.id ?? 'android-unknown';
+      } else if (Platform.isIOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        return iosInfo.identifierForVendor ?? 'ios-unknown';
+      } else {
+        return 'unsupported-platform';
+      }
+    } catch (e) {
+      print('Error getting device ID: $e');
+      return 'error';
+    }
+  }
 
   Future<void> _printAppSignature() async {
     String? appSignature = await SmsAutoFill().getAppSignature;

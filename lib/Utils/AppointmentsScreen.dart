@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
@@ -1317,18 +1318,26 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                                 Icons.person,
                                                 _nameController,
                                                 "Enter your first name",
-                                                validator: ValidationCons()
-                                                    .validateName),
+                                                validator: ValidationCons().validateName,
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                                                LengthLimitingTextInputFormatter(50),
+                                              ],
+                                            ),
                                             const SizedBox(height: 12),
                                             buildTextField(
                                                 "Email ID",
-                                                Icons.email,
+                                                   Icons.email,
                                                 _emailController,
                                                 "Enter your email",
-                                                keyboardType:
-                                                    TextInputType.emailAddress,
-                                                validator: ValidationCons()
-                                                    .validateEmail),
+                                                keyboardType: TextInputType.emailAddress,
+                                                validator: ValidationCons().validateEmail,
+                                                inputFormatters: [
+                                                FilteringTextInputFormatter.allow(
+                                                  RegExp(r'[a-zA-Z0-9@._\-+]'),
+                                                ),
+                                              ],
+                                            ),
                                             const SizedBox(height: 12),
                                             const Text(
                                               'Mobile Number',
@@ -1343,6 +1352,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                             IntlPhoneField(
                                               readOnly:false,
                                               controller: _phoneController,
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter.digitsOnly,
+                                                LengthLimitingTextInputFormatter(10),
+                                              ],
                                               decoration: InputDecoration(
                                                 hintText: 'Enter mobile number',
                                                 hintStyle: const TextStyle(
@@ -1381,14 +1394,19 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                               },
                                             ),
                                             buildTextField(
-                                                "Address",
-                                                Icons.location_on,
-                                                _addressController,
-                                                "Enter your address",
-                                                keyboardType:
-                                                    TextInputType.streetAddress,
-                                                validator: ValidationCons()
-                                                    .validateMobile),
+                                              "Address",
+                                              Icons.location_on,
+                                              _addressController,
+                                              "Enter your address",
+                                              keyboardType: TextInputType.streetAddress,
+                                              validator: ValidationCons().validateAddress,
+                                              inputFormatters: [
+                                                FilteringTextInputFormatter.allow(
+                                                  RegExp(r'[a-zA-Z0-9\s,.\-/]'),
+                                                ),
+                                                LengthLimitingTextInputFormatter(100),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -1511,7 +1529,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
   Widget buildTextField(String label, IconData icon,
       TextEditingController controller, String hintText,
       {TextInputType keyboardType = TextInputType.text,
-      String? Function(String?)? validator}) {
+      String? Function(String?)? validator,
+        List<TextInputFormatter>? inputFormatters,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1531,6 +1551,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
           controller: controller,
           keyboardType: keyboardType,
           readOnly: false,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(

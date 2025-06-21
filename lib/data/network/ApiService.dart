@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:saaolapp/data/model/apiresponsemodel/AppointmentBookingResponse.dart';
+import 'package:saaolapp/data/model/apiresponsemodel/UserAccountDeleteResponse.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/offlineAppointmentRequestResponse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../constant/ApiConstants.dart';
@@ -17,12 +18,10 @@ import '../model/apiresponsemodel/VerifyOTPResponse.dart';
 class ApiService {
 
   Future<SendOTPResponse?> sendOTP(String phoneNumber, String deviceID) async {
-    final url =
-        Uri.parse('https://saaol.org/saaolnewapp/api/send-otps/$deviceID');
+    final url = Uri.parse('https://saaol.org/saaolnewapp/api/send-otps/$deviceID');
     final body = {
       'mobile': phoneNumber,
     };
-
     try {
       final response = await http.post(
         url,
@@ -32,13 +31,13 @@ class ApiService {
         },
         body: jsonEncode(body),
       );
+      final jsonResponse = jsonDecode(response.body);
+      print('Response body---> $jsonResponse');
+      print('Status code---> ${response.statusCode}');
       if (response.statusCode == 200) {
-        final jsonResponse = jsonDecode(response.body);
         return SendOTPResponse.fromJson(jsonResponse);
       } else {
-        print('Failed to send OTP: ${response.statusCode}');
-        print('Response body: ${response.body}'); // Add this to debug
-        return null;
+        return SendOTPResponse.fromJson(jsonResponse);
       }
     } catch (error) {
       print('Error sending OTP: $error');
@@ -46,12 +45,13 @@ class ApiService {
     }
   }
 
-
-  Future<VerifyOTPResponse?> verifyOTP(String mobile, String otp, BuildContext context) async {
+  Future<VerifyOTPResponse?> verifyOTP(String mobile, String otp, String device_id,String platform_name, BuildContext context) async {
     final url = Uri.parse('https://saaol.org/saaolnewapp/api/verify-otp');
     final body = {
       'mobile': mobile,
       'otp': otp,
+      'device_id':device_id,
+      'platform_name':platform_name
     };
 
     try {
@@ -63,7 +63,8 @@ class ApiService {
         },
         body: jsonEncode(body),
       );
-
+      print('Response Status OTP: ${response.statusCode}');
+      print('Response Body OTP: ${response.body}');
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final VerifyOTPResponse verifyOTPResponse = VerifyOTPResponse.fromJson(jsonResponse);
@@ -428,6 +429,52 @@ class ApiService {
     } on HttpException {
       print("Error: HTTP error occurred.");
     } on FormatException {
+      print("Error: Bad response format.");
+    } catch (e) {
+      print("Error: Something went wrong - $e");
+    }
+    return null;
+  }
+
+
+  Future<UserAccountDeleteResponse?> userAccountDelete({
+    required String reason,
+    required String userID,
+  }) async {
+    final String url = "https://saaol.org/saaolnewapp/api/delete-user/$userID";
+
+    final Map<String, dynamic> requestBody = {
+      "reason": reason,
+    };
+
+    try {
+      final http.Response response = await http.post(
+          Uri.parse(url),
+          headers: {
+            "Content-Type": "application/json",
+            'API-KEY': ApiConstants.apiKey,
+          },
+          body: jsonEncode(requestBody));
+
+      print("userAccountDelete → Status Code: ${response.statusCode}");
+      print("userAccountDelete → Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final UserAccountDeleteResponse deleteResponse =
+        UserAccountDeleteResponse.fromJson(jsonResponse);
+        print('UserAccountDeleteResponse: $deleteResponse');
+        return deleteResponse;
+      } else {
+        print("Unexpected status code: ${response.statusCode}");
+      }
+    } on TimeoutException catch (_) {
+      print("Error: Request timed out. Please try again.");
+    } on SocketException catch (_) {
+      print("Error: No internet connection.");
+    } on HttpException catch (_) {
+      print("Error: HTTP error occurred.");
+    } on FormatException catch (_) {
       print("Error: Bad response format.");
     } catch (e) {
       print("Error: Something went wrong - $e");

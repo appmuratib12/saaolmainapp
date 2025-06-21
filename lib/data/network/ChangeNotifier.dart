@@ -68,8 +68,10 @@ class DataClass extends ChangeNotifier {
 
     try {
       http.Response response = (await addFamilyMember(memberRequest))!;
+      print("API response: ${response.body}");
 
       if (response.statusCode == 201) {
+
         isBack = true;
       } else {
         errorMessage = 'Failed to save family member. Please try again later.';

@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:saaolapp/DialogHelper.dart';
-import 'package:saaolapp/constant/text_strings.dart';
+import 'package:saaolapp/constant/ValidationCons.dart';
 import 'package:saaolapp/data/model/FamilyMember.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../common/app_colors.dart';
@@ -12,7 +12,9 @@ import '../data/model/requestmodel/AddMemberRequest.dart';
 import '../data/network/ChangeNotifier.dart';
 
 class AddFamilyMemberScreen extends StatefulWidget {
-  const AddFamilyMemberScreen({super.key});
+  final Map<String, String>? memberToEdit;
+  final int? editIndex;
+  const AddFamilyMemberScreen({super.key,this.memberToEdit, this.editIndex});
 
   @override
   State<AddFamilyMemberScreen> createState() => _AddFamilyMemberScreenState();
@@ -23,8 +25,8 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
   List<String> relationOptions = [
     'Spouse',
     'Child',
+    'Brother',
     'Parent',
-    'Brother'
     'Grand Parent',
     'Sibling',
     'Friend',
@@ -33,14 +35,79 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
     'Colleague',
     'Others'
   ];
+  final List<String> genderOptions = ['Male', 'Female', 'Other'];
   TextEditingController nameController = TextEditingController();
+  TextEditingController dateController = TextEditingController();
   TextEditingController ageController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController emailController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
   String saveDate = '';
+  String? selectedGender;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.memberToEdit != null) {
+      Map<String, String> member = widget.memberToEdit!;
+      nameController.text = member['name'] ?? '';
+      selectedRelation = member['relation'] ?? 'Select Relation*';
+      selectedGender = member['gender'];
+      ageController.text = member['age'] ?? '';
+      phoneController.text = member['mobile_number'] ?? '';
+      emailController.text = member['email'] ?? '';
+      saveDate = member['dob'] ?? '';
+    }
+  }
 
-
+  void _showGenderPickerDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Select Gender',
+            style: TextStyle(
+              fontFamily: 'FontPoppins',
+              fontSize:16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primaryColor,
+            ),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: genderOptions.length,
+              itemBuilder: (BuildContext context, int index) {
+                return ListTile(
+                  title: Text(
+                    genderOptions[index],
+                    style: const TextStyle(
+                      fontFamily: 'FontPoppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      selectedGender = genderOptions[index];
+                      print('Select Gender:$selectedGender');
+                    });
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
   void _showRelationPickerDialog() {
     showDialog(
       context: context,
@@ -112,12 +179,20 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
 
   bool isMaleSelected = true;
 
-
-  Future<void> addMember() async {
+  Future<void> addMember2() async {
     String name = nameController.text.trim();
     String phone = phoneController.text.trim();
     String email = emailController.text.trim();
     String age = ageController.text.trim();
+
+    if (selectedRelation == 'Select Relation*') {
+      _showMessage('Please select a relation.');
+      return;
+    }
+    if (selectedGender == null) {
+      _showMessage('Please select a gender.');
+      return;
+    }
 
     DialogHelper.showAutoDismissAlert(context);
     AddMemberRequest addMemberRequest = AddMemberRequest(
@@ -127,30 +202,101 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
       member_relation: selectedRelation,
       dob: saveDate,
       age: age,
-      gender: isMaleSelected ? 'Male' : 'Female',
+      gender: selectedGender,
     );
 
     var provider = Provider.of<DataClass>(context, listen: false);
+
     try {
       await provider.addMemberData(addMemberRequest);
-      print("Member response: ${provider.isBack}");
-      Navigator.of(context).pop();
+      print("Member API response: ${provider.isBack}");
+
+      Navigator.of(context).pop(); // Dismiss loading dialog
+
       if (provider.isBack) {
         FamilyMember newMember = FamilyMember(
           name: name,
           relation: selectedRelation,
-          gender: isMaleSelected ? 'Male' : 'Female',
+          gender: selectedGender!,
           age: age,
         );
-        await saveMemberToPrefs(newMember);
-        Navigator.pop(context, newMember.toJson()); // Pass back for screen update
-        _showMessage('Member added successfully.');
 
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        List<String> memberList = prefs.getStringList('members') ?? [];
+
+        if (widget.editIndex != null) {
+          // Edit mode
+          memberList[widget.editIndex!] = jsonEncode(newMember.toJson());
+        } else {
+          // Add mode
+          memberList.add(jsonEncode(newMember.toJson()));
+        }
+
+        await prefs.setStringList('members', memberList);
+
+        Navigator.pop(context, {
+          'member': newMember.toJson(),
+          'index': widget.editIndex,
+        });
+
+        _showMessage(widget.editIndex != null
+            ? 'Member updated successfully.'
+            : 'Member added successfully.');
       } else {
         _showMessage('Failed to add member. Please try again.');
       }
     } catch (e) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(); // Dismiss loading dialog
+      _showMessage('An error occurred. Please try again later.');
+    }
+  }
+
+
+  Future<void> addMember() async {
+    String name = nameController.text.trim();
+    String phone = phoneController.text.trim();
+    String email = emailController.text.trim();
+    String age = ageController.text.trim();
+
+    if (selectedRelation == 'Select Relation*') {
+      _showMessage('Please select a relation.');
+      return;
+    }
+    if (selectedGender == null) {
+      _showMessage('Please select a gender.');
+      return;
+    }
+
+    DialogHelper.showAutoDismissAlert(context);
+
+    FamilyMember member = FamilyMember(
+      name: name,
+      relation: selectedRelation,
+      gender: selectedGender!,
+      age: age,
+    );
+
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String> memberList = prefs.getStringList('members') ?? [];
+
+      if (widget.editIndex != null) {
+        // Edit mode
+        memberList[widget.editIndex!] = jsonEncode(member.toJson());
+      } else {
+        // Add mode
+        memberList.add(jsonEncode(member.toJson()));
+      }
+
+      await prefs.setStringList('members', memberList);
+
+      Navigator.of(context).pop(); // close loading dialog
+      Navigator.pop(context, {
+        'member': member.toJson(),
+        'index': widget.editIndex,
+      });
+    } catch (e) {
+      Navigator.of(context).pop(); // close loading dialog
       _showMessage('An error occurred. Please try again later.');
     }
   }
@@ -166,19 +312,23 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(content: Text(message,style:const TextStyle(fontWeight:FontWeight.w500,fontSize:15,
+          color:Colors.white,fontFamily:'FontPoppins'))
+        ,backgroundColor:Colors.green,),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isEditMode = widget.memberToEdit != null;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.primaryColor,
-        title: const Text(
-          'Add Family Member',
-          style: TextStyle(
+        title: Text(
+          isEditMode ? 'Edit Family Member' : 'Add Family Member',
+          style: const TextStyle(
               fontFamily: 'FontPoppins',
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -192,12 +342,61 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
       ),
       body: SingleChildScrollView(
         child: Container(
-          margin: const EdgeInsets.all(10),
+          margin: const EdgeInsets.all(15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Container(
+             Form(
+               key:_formKey,
+               autovalidateMode: autovalidateMode,
+             child:Column(
+               crossAxisAlignment:CrossAxisAlignment.start,
+               mainAxisAlignment: MainAxisAlignment.start,
+               children: [
+                 const Text(
+                   'Title',
+                   style: TextStyle(
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black,
+                       fontFamily: 'FontPoppins'),
+                 ),
+                 const SizedBox(
+                   height:10,
+                 ),
+                 TextFormField(
+                   controller: nameController,
+                   keyboardType: TextInputType.name,
+                   inputFormatters: [
+                     FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                     LengthLimitingTextInputFormatter(50),
+                   ],
+                   decoration: InputDecoration(
+                     hintText:'Enter your name',
+                     hintStyle: const TextStyle(
+                         fontSize:14,
+                         fontWeight: FontWeight.w500,
+                         color: Colors.black54,
+                         fontFamily: 'FontPoppins'),
+                     prefixIcon: const Icon(Icons.contact_page,
+                         color: AppColors.primaryColor),
+                     border: OutlineInputBorder(
+                         borderRadius: BorderRadius.circular(10.0),
+                         borderSide: BorderSide.none),
+                     contentPadding:
+                     const EdgeInsets.symmetric(vertical:16.0, horizontal: 20.0),
+                     filled: true,
+                     fillColor: Colors.lightBlue[50],
+                   ),
+                   validator:ValidationCons().validateName,
+                   style: const TextStyle(
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       fontFamily: 'FontPoppins',
+                       color: Colors.black),
+                 ),
+                 /*Container(
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -207,22 +406,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                     const CupertinoTextField.borderless(
-                       readOnly: true,
-                      padding: EdgeInsets.only(
-                          left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(name,
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black54),
-                      ),
-                    ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey[300],
-                    ),
+
                     CupertinoTextField.borderless(
                       controller: nameController,
                       padding:
@@ -236,11 +420,77 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Container(
+              ),*/
+
+                 const SizedBox(
+                   height: 15,
+                 ),
+
+                 const Text(
+                   'Select Your Relation',
+                   style: TextStyle(
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black,
+                       fontFamily: 'FontPoppins'),
+                 ),
+                 const SizedBox(
+                   height: 15,
+                 ),
+                 GestureDetector(
+                   onTap: _showRelationPickerDialog,// your custom dialog if needed
+                   child: AbsorbPointer(
+                     child: SizedBox(
+                       child: DropdownButtonFormField<String>(
+                         value: relationOptions.contains(selectedRelation) ? selectedRelation : null,
+                         decoration: InputDecoration(
+                           hintText: 'Select Relation',
+                           hintStyle: const TextStyle(
+                             fontFamily: 'FontPoppins',
+                             fontSize:14,
+                             fontWeight: FontWeight.w500,
+                             color: Colors.black54,
+                           ),
+                           border: OutlineInputBorder(
+                             borderRadius: BorderRadius.circular(10.0),
+                             borderSide: BorderSide.none,
+                           ),
+                           contentPadding: const EdgeInsets.symmetric(
+                             vertical: 16.0,
+                             horizontal: 20.0,
+                           ),
+                           filled: true,
+                           fillColor: Colors.lightBlue[50],
+                         ),
+                         style: const TextStyle(
+                           color: Colors.black,
+                           fontSize: 15,
+                           fontFamily: 'FontPoppins',
+                           fontWeight: FontWeight.w600,
+                         ),
+                         validator: (value) {
+                           if (value == null || value.isEmpty) {
+                             return 'Please select a relation';
+                           }
+                           return null;
+                         },
+                         items: relationOptions.map((relation) {
+                           return DropdownMenuItem<String>(
+                             value: relation,
+                             child: Text(relation),
+                           );
+                         }).toList(),
+                         onChanged: (String? value) {
+                           setState(() {
+                             selectedRelation = value!;
+                           });
+                         },
+                       ),
+                     ),
+                   ),
+                 ),
+
+                 /* Container(
                 decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -250,23 +500,6 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CupertinoTextField.borderless(
-                      readOnly: true,
-                      padding: EdgeInsets.only(
-                          left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(
-                        'Member Relation*',
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black54),
-                      ),
-                    ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey[300],
-                    ),
                     GestureDetector(
                       onTap: _showRelationPickerDialog,
                       child: Container(
@@ -295,115 +528,280 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => _selectDate(context),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.5),
-                            width: 0.4,
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(date_of_birth,
-                              style: TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Divider(
-                              thickness: 1,
-                              color: Colors.grey[300],
-                            ),
-                            Text(
-                              _selectedDate != null
-                                  ? DateFormat('dd-MM-yyyy')
-                                      .format(_selectedDate!)
-                                  : 'DD-MM-YYYY',
-                              style: const TextStyle(
-                                fontFamily: 'FontPoppins',
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 15,
-                  ),
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Colors.grey.withOpacity(0.5),
-                          width: 0.4,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(age,
-                            style: TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          CupertinoTextField.borderless(
-                            controller: ageController,
-                            placeholder: 'Ex. - 5 years',
-                            placeholderStyle: const TextStyle(
-                              fontFamily: 'FontPoppins',
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              const Text(
-                gender,
-                style: TextStyle(
-                    fontFamily: 'FontPoppins',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87),
-              ),
-              const SizedBox(height: 10),
-              Row(
+              ),*/
+                /* const SizedBox(
+                   height:10,
+                 ),
+                 const Text(
+                   'Date of birth',
+                   style: TextStyle(
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black,
+                       fontFamily: 'FontPoppins'),
+                 ),
+                 const SizedBox(
+                   height:10,
+                 ),
+                 Row(
+                   children: [
+                     Expanded(child: TextFormField(
+                       readOnly:true,
+                       controller:dateController,
+                       onTap: (){
+                         FocusScope.of(context).requestFocus(FocusNode());
+                         _selectDate(context);
+                       },
+                       decoration: InputDecoration(
+                         hintText: 'Select Date',
+                         hintStyle: const TextStyle(
+                           fontFamily: 'FontPoppins',
+                           fontSize: 14,
+                           fontWeight: FontWeight.w500,
+                           color: Colors.black54,
+                         ),
+                         border: OutlineInputBorder(
+                           borderRadius:
+                           BorderRadius.circular(10.0),
+                           borderSide: BorderSide.none,
+                         ),
+                         contentPadding:
+                         const EdgeInsets.symmetric(
+                           vertical:17.0,
+                           horizontal: 20.0,
+                         ),
+                         filled: true,
+                         fillColor: Colors.lightBlue[50],
+                         suffixIcon:const Icon(
+                           Icons.calendar_month,
+                           color: AppColors.primaryColor,
+                         ),
+                       ),
+                       style: const TextStyle(
+                         color: Colors.black,
+                         fontSize: 15,
+                         fontFamily: 'FontPoppins',
+                         fontWeight: FontWeight.w600,
+                       ),
+                     ),
+                     ),
+                   ],
+                 ),*/
+                 const SizedBox(
+                   height:15,
+                 ),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           const Text(
+                             'Select Date',
+                             style: TextStyle(
+                               fontFamily: 'FontPoppins',
+                               fontSize: 13,
+                               fontWeight: FontWeight.w600,
+                               color: Colors.black,
+                             ),
+                           ),
+                           const SizedBox(height: 5),
+                          /* GestureDetector(
+                             onTap: () => _selectDate(context),
+                             child: Container(
+                               height:50,
+                               decoration: BoxDecoration(
+                                 color: Colors.blue[50],
+                                 borderRadius: BorderRadius.circular(10),
+                               ),
+                               padding: const EdgeInsets.all(15),
+                               child: Text(
+                                 _selectedDate != null
+                                     ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
+                                     : 'Select Date',
+                                 style: TextStyle(
+                                   fontFamily: 'FontPoppins',
+                                   fontSize: 15,
+                                   fontWeight: FontWeight.w500,
+                                   color:
+                                   _selectedDate != null ? Colors.black : Colors.black54,
+                                 ),
+                               ),
+                             ),
+                           ),*/
+
+                           FormField<DateTime>(
+                             validator: (value) {
+                               if (_selectedDate == null) {
+                                 return 'Please select a date';
+                               }
+                               return null;
+                             },
+                             builder: (FormFieldState<DateTime> state) {
+                               return Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                   GestureDetector(
+                                     onTap: () async {
+                                       await _selectDate(context); // sets _selectedDate
+                                       state.didChange(_selectedDate); // Notify FormField of change
+                                     },
+                                     child: Container(
+                                       height: 50,
+                                       decoration: BoxDecoration(
+                                         color: Colors.blue[50],
+                                         borderRadius: BorderRadius.circular(10),
+                                       ),
+                                       padding: const EdgeInsets.all(15),
+                                       child: Text(
+                                         _selectedDate != null
+                                             ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
+                                             : 'Select Date',
+                                         style: TextStyle(
+                                           fontFamily: 'FontPoppins',
+                                           fontSize: 15,
+                                           fontWeight: FontWeight.w500,
+                                           color: _selectedDate != null ? Colors.black : Colors.black54,
+                                         ),
+                                       ),
+                                     ),
+                                   ),
+                                   if (state.hasError)
+                                     Padding(
+                                       padding: const EdgeInsets.only(top: 5, left: 8),
+                                       child: Text(
+                                         state.errorText!,
+                                         style: const TextStyle(color: Colors.red, fontSize: 12),
+                                       ),
+                                     ),
+                                 ],
+                               );
+                             },
+                           ),
+
+                         ],
+                       ),
+                     ),
+                     const SizedBox(width:5),
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           const Text(
+                             'Enter Age',
+                             style: TextStyle(
+                               fontFamily: 'FontPoppins',
+                               fontSize: 13,
+                               fontWeight: FontWeight.w600,
+                               color: Colors.black,
+                             ),
+                           ),
+                           const SizedBox(height: 5),
+                           TextFormField(
+                             controller: ageController,
+                             keyboardType: TextInputType.number,
+                             inputFormatters: [
+                               FilteringTextInputFormatter.digitsOnly, // Only allows numbers
+                               LengthLimitingTextInputFormatter(2),    // Limit to 2 digits
+                             ],
+                             decoration: InputDecoration(
+                               hintText: 'Enter your age',
+                               hintStyle: const TextStyle(
+                                 fontFamily: 'FontPoppins',
+                                 fontSize: 13,
+                                 fontWeight: FontWeight.w500,
+                                 color: Colors.black54,
+                               ),
+                               border: OutlineInputBorder(
+                                 borderRadius: BorderRadius.circular(10.0),
+                                 borderSide: BorderSide.none,
+                               ),
+                               contentPadding: const EdgeInsets.symmetric(
+                                 vertical: 14.0,
+                                 horizontal: 20.0,
+                               ),
+                               filled: true,
+                               fillColor: Colors.lightBlue[50],
+                             ),
+                             validator: ValidationCons().validateAge,
+                             style: const TextStyle(
+                               color: Colors.black,
+                               fontSize: 14,
+                               fontFamily: 'FontPoppins',
+                               fontWeight: FontWeight.w600,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ],
+                 ),
+
+                 const SizedBox(
+                   height: 15,
+                 ),
+                 const Text('Gender',
+                   style: TextStyle(
+                       fontFamily: 'FontPoppins',
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black),
+                 ),
+                 const SizedBox(height: 10),
+                 GestureDetector(
+                   onTap: _showGenderPickerDialog, // your custom dialog if needed
+                   child: AbsorbPointer(
+                     child: SizedBox(
+                       child: DropdownButtonFormField<String>(
+                         value: genderOptions.contains(selectedGender) ? selectedGender : null,
+                         decoration: InputDecoration(
+                           hintText: 'Select Gender',
+                           hintStyle: const TextStyle(
+                             fontFamily: 'FontPoppins',
+                             fontSize:14,
+                             fontWeight: FontWeight.w500,
+                             color: Colors.black54,
+                           ),
+                           border: OutlineInputBorder(
+                             borderRadius: BorderRadius.circular(10.0),
+                             borderSide: BorderSide.none,
+                           ),
+                           contentPadding: const EdgeInsets.symmetric(
+                             vertical: 16.0,
+                             horizontal: 20.0,
+                           ),
+                           filled: true,
+                           fillColor: Colors.lightBlue[50],
+                         ),
+                         style: const TextStyle(
+                           color: Colors.black,
+                           fontSize: 15,
+                           fontFamily: 'FontPoppins',
+                           fontWeight: FontWeight.w600,
+                         ),
+                         validator: (value) {
+                           if (value == null || value.isEmpty) {
+                             return 'Please select a gender';
+                           }
+                           return null;
+                         },
+                         items: genderOptions.map((gender) {
+                           return DropdownMenuItem<String>(
+                             value: gender,
+                             child: Text(gender),
+                           );
+                         }).toList(),
+                         onChanged: (String? value) {
+                           setState(() {
+                             selectedGender = value;
+                             //print('Select Gender:$selectedGender');
+                           });
+                         },
+                       ),
+                     ),
+                   ),
+                 ),
+                 /* Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   GestureDetector(
@@ -502,102 +900,131 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: Colors.grey.withOpacity(0.5), width: 0.4)),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CupertinoTextField.borderless(
-                      readOnly: true,
-                      padding: EdgeInsets.only(
-                          left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(mobile_number,
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black54),
-                      ),
-                    ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey[300],
-                    ),
-                    CupertinoTextField.borderless(
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      padding:
-                          const EdgeInsets.only(top: 10, right: 6, bottom: 10),
-                      placeholder: 'Enter mobile number',
-                      placeholderStyle: const TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: Colors.grey.withOpacity(0.5), width: 0.4)),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CupertinoTextField.borderless(
-                      readOnly: true,
-                      padding: EdgeInsets.only(
-                          left: 65, top: 10, right: 6, bottom: 10),
-                      prefix: Text(email,
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black54),
-                      ),
-                    ),
-                    Divider(
-                      thickness: 1,
-                      color: Colors.grey[300],
-                    ),
-                    CupertinoTextField.borderless(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      padding:
-                          const EdgeInsets.only(top: 10, right: 6, bottom: 10),
-                      placeholder: 'Enter email id',
-                      placeholderStyle: const TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(
-                height: 15,
-              ),
+              ),*/
+                 const SizedBox(height:15),
+                 const Text('Mobile number',
+                   style: TextStyle(
+                       fontFamily: 'FontPoppins',
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black),
+                 ),
+                 const SizedBox(height:15),
+                 TextFormField(
+                   controller:phoneController,
+                   keyboardType: TextInputType.phone,
+                   inputFormatters: [
+                     FilteringTextInputFormatter.digitsOnly,
+                     LengthLimitingTextInputFormatter(10),
+                   ],
+                   decoration: InputDecoration(
+                     hintText: 'Enter your mobile number',
+                     hintStyle: const TextStyle(
+                       fontFamily: 'FontPoppins',
+                       fontSize: 14,
+                       fontWeight: FontWeight.w500,
+                       color: Colors.black54,
+                     ),
+                     prefixIcon: const Icon(Icons.phone, color: AppColors.primaryColor),
+                     filled: true,
+                     fillColor: Colors.lightBlue[50],
+                     border: OutlineInputBorder(
+                       borderRadius: BorderRadius.circular(15.0),
+                       borderSide: BorderSide.none,
+                     ),
+                     contentPadding: const EdgeInsets.symmetric(
+                         vertical: 15.0, horizontal: 20.0),
+                   ),
+                   validator: ValidationCons().validateMobile,
+                   style: const TextStyle(
+                     fontWeight: FontWeight.w600,
+                     fontFamily: 'FontPoppins',
+                     fontSize: 16,
+                     color: Colors.black,
+                   ),
+                 ),
+                 const SizedBox(height:15),
+                 const Text('Email ID',
+                   style: TextStyle(
+                       fontFamily: 'FontPoppins',
+                       fontSize:15,
+                       fontWeight: FontWeight.w600,
+                       color: Colors.black),
+                 ),
+                 const SizedBox(height:15),
+                 TextFormField(
+                   keyboardType: TextInputType.emailAddress,
+                   controller:emailController,
+                   inputFormatters: [
+                     FilteringTextInputFormatter.allow(
+                       RegExp(r'[a-zA-Z0-9@._\-+]'),
+                     ),
+                   ],
+                   decoration: InputDecoration(
+                     hintText: 'Enter your email',
+                     hintStyle: const TextStyle(
+                         fontFamily: 'FontPoppins',
+                         fontSize: 14,
+                         fontWeight: FontWeight.w500,
+                         color: Colors.black54),
+                     prefixIcon: const Icon(Icons.mail,
+                         color: AppColors.primaryColor),
+                     filled: true,
+                     fillColor: Colors.lightBlue[50],
+                     border: OutlineInputBorder(
+                       borderRadius: BorderRadius.circular(15.0),
+                       borderSide: BorderSide.none,
+                     ),
+                     contentPadding: const EdgeInsets.symmetric(
+                         vertical: 15.0, horizontal: 20.0),
+                   ),
+                   style: const TextStyle(
+                       fontWeight: FontWeight.w600,
+                       fontFamily: 'FontPoppins',
+                       fontSize: 16,
+                       color: Colors.black),
+                   validator: ValidationCons().validateEmail,
+                 ),
+                 /*  CupertinoTextField.borderless(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                padding:
+                const EdgeInsets.only(top: 10, right: 6, bottom: 10),
+                placeholder: 'Enter mobile number',
+                placeholderStyle: const TextStyle(
+                    fontFamily: 'FontPoppins',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey),
+              ),*/
+                 const SizedBox(
+                   height: 15,
+                 ),
+
+
+                 /*CupertinoTextField.borderless(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                padding:
+                const EdgeInsets.only(top: 10, right: 6, bottom: 10),
+                placeholder: 'Enter email id',
+                placeholderStyle: const TextStyle(
+                    fontFamily: 'FontPoppins',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey),
+              ),*/
+               ],
+             ),
+             ),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
+                        Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,
@@ -618,10 +1045,47 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                     ),
                   ),
                   const SizedBox(width: 16), // Space between buttons
+
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        addMember();
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                          //addMember1();
+                          addMember2();
+                        } else {
+                          setState(() {
+                            autovalidateMode = AutovalidateMode.always;
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryDark,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                        ),
+                        minimumSize: const Size(150, 40),
+                      ),
+                      child: Text(isEditMode ? 'Update Member' : 'Add Member',
+                          style: const TextStyle(
+                              fontFamily: 'FontPoppins',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white)),
+                    ),
+                  ),
+                 /* Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _formKey.currentState!.save();
+                                addMember();
+
+                        } else {
+                          setState(() {
+                            autovalidateMode = AutovalidateMode.always;
+                          });
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryDark,
@@ -640,7 +1104,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                             color: Colors.white),
                       ),
                     ),
-                  ),
+                  ),*/
                 ],
               ),
               const SizedBox(
