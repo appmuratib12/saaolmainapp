@@ -43,6 +43,7 @@ class _RegScreenState extends State<RegScreen> {
   late SharedPreferences sharedPreferences;
   String saveUserID = '';
   String getMobileNumber = '';
+  String? yourName;
 
   @override
   void dispose() {
@@ -129,8 +130,10 @@ class _RegScreenState extends State<RegScreen> {
     RegisterRequestData registerRequestData = RegisterRequestData(
       name: name,
       mobile: phone,
-      email: email,
-      password: password,
+        email:userEmailController.text.trim().isNotEmpty
+            ? userEmailController.text.trim()
+            : null,
+        password: password,
       country_code:'+91'
     );
 
@@ -276,6 +279,10 @@ class _RegScreenState extends State<RegScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
+
+
+
+
                   Text(
                     'Sign Up',
                     style: TextStyle(
@@ -382,6 +389,7 @@ class _RegScreenState extends State<RegScreen> {
                             const SizedBox(
                               height: 10,
                             ),
+
                             TextFormField(
                               keyboardType: TextInputType.emailAddress,
                               controller: userEmailController,
@@ -391,7 +399,7 @@ class _RegScreenState extends State<RegScreen> {
                                 ),
                               ],
                               decoration: InputDecoration(
-                                hintText: 'Enter your email',
+                                hintText: Platform.isIOS ? 'Enter your email (optional)' : 'Enter your email',
                                 hintStyle: const TextStyle(
                                     fontFamily: 'FontPoppins',
                                     fontSize: 14,
@@ -413,7 +421,18 @@ class _RegScreenState extends State<RegScreen> {
                                   fontFamily: 'FontPoppins',
                                   fontSize: 16,
                                   color: Colors.black),
-                              validator: ValidationCons().validateEmail,
+                              validator:  (value) {
+                                if (Platform.isIOS) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return null;
+                                  } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                    return 'Please enter a valid email address';
+                                  }
+                                  return null;
+                                } else {
+                                  return ValidationCons().validateEmail(value);
+                                }
+                              },
                             ),
                             const SizedBox(
                               height: 15,

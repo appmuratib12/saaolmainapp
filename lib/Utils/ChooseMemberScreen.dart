@@ -25,7 +25,7 @@ class _SelectMemberScreenState extends State<SelectMemberScreen> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> memberList = prefs.getStringList('members') ?? [];
     String? savedSelected = prefs.getString('selected_member_name');
-
+    print('Loaded member: $memberList');
     setState(() {
       members = memberList
           .map((e) => Map<String, String>.from(jsonDecode(e) as Map))
@@ -221,7 +221,6 @@ class _SelectMemberScreenState extends State<SelectMemberScreen> {
                   const SizedBox(width: 8),
                   Row(
                     children: [
-
                       IconButton(
                         icon: const Icon(Icons.edit,
                             color: AppColors.primaryDark),

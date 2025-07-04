@@ -173,12 +173,13 @@ class ApiService {
     }
   }
 
-  Future<bool> sendCallRequest({
+  Future<Map<String, dynamic>> sendCallRequest({
     required int userId,
     required String mobileNumber,
     required String emailId,
   }) async {
     const String apiUrl = "https://saaol.org/saaolnewapp/api/call-request/store";
+
     Map<String, dynamic> requestData = {
       "user_id": userId,
       "mobile_number": mobileNumber,
@@ -194,18 +195,32 @@ class ApiService {
         },
         body: jsonEncode(requestData),
       );
-      if (response.statusCode == 200) {
-        print("Success: ${response.body}");
-        return true; // Request was successful
+
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      print('CheckCallRequest: $responseData');
+
+      if (response.statusCode == 201 && responseData['success'] == true) {
+        return {
+          "success": true,
+          "message": responseData['message'] ?? "Request sent successfully!"
+        };
       } else {
-        print("Failed: ${response.statusCode} - ${response.body}");
-        return false; // Request failed
+        return {
+          "success": false,
+          "message": responseData['message'] ?? "Failed to send request."
+        };
       }
     } catch (error) {
       print("Error: $error");
-      return false;
+      return {
+        "success": false,
+        "message": "An error occurred. Please try again."
+      };
     }
   }
+
+
+
 
   Future<OnlineAppointmentRequestResponse?> sendLeadData({
     required String contactCountryCode,

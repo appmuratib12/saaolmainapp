@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
+import 'package:saaolapp/data/model/apiresponsemodel/BlogCategoriesResponse.dart';
+import 'package:saaolapp/data/model/apiresponsemodel/BlogsFilterResponseData.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/EmagazineGalleryResponse.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/EmagazineHeartVideoResponse.dart';
 import 'package:saaolapp/data/model/apiresponsemodel/EmagazineNewsCategoriesResponse.dart';
@@ -46,6 +49,10 @@ import '../model/apiresponsemodel/ZeroOilHealthyFoodResponseData.dart';
 import '../model/apiresponsemodel/ZeroOilRecipeResponseData.dart';
 import '../model/apiresponsemodel/overviewsResponse.dart';
 
+PatientAppointmentResponseData parseAppointmentData(String responseBody) {
+  final Map<String, dynamic> jsonMap = json.decode(responseBody);
+  return PatientAppointmentResponseData.fromJson(jsonMap);
+}
 
 class BaseApiService {
 
@@ -89,7 +96,6 @@ class BaseApiService {
       throw Exception('Something went wrong. Please try again.');
     }
   }
-
 
   Future<TreatmentsDetailResponseData> getTreatmentDetailsData(
       String id) async {
@@ -314,15 +320,44 @@ class BaseApiService {
     }
   }
 
-  Future<BlogsResponseData> blogsData(String category) async {
+  Future<BlogsFilterResponseData> blogsFilterData(String id) async {
     try {
       final response = await http.get(
-        Uri.parse('https://saaol.org/saaolapp/api/blogs/category/$category'),
+        Uri.parse('https://saaol.org/saaolnewapp/api/blogs-by-blog-id?blog_id=$id'),
         headers: {
           'Content-Type': 'application/json',
           'API-KEY': ApiConstants.apiKey,
         },
       );
+
+      print('Blogs Filter Response${response.body}');
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return BlogsFilterResponseData.fromJson(result);
+      } else {
+        throw Exception('Failed to load data: ${response.statusCode}');
+      }
+    } on SocketException {
+      throw Exception('No internet connection. Please check your network.',);
+    } on HttpException {
+      throw Exception('Could not retrieve data. Please try again later.');
+    } on FormatException {
+      throw Exception('Invalid response format. Please contact support.');
+    } catch (e) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  Future<BlogsResponseData> blogsAllData() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}active-newblogs'),
+        headers: {
+          'Content-Type': 'application/json',
+          'API-KEY': ApiConstants.apiKey,
+        },
+      );
+      print('Blogs Filter Response${response.body}');
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
         return BlogsResponseData.fromJson(result);
@@ -339,8 +374,31 @@ class BaseApiService {
       throw Exception('Something went wrong. Please try again.');
     }
   }
-
-
+  Future<BlogCategoriesResponse> blogCategoriesData() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}blogs_cat'),
+        headers: {
+          'Content-Type': 'application/json',
+          'API-KEY': ApiConstants.apiKey,
+        },
+      );
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return BlogCategoriesResponse.fromJson(result);
+      } else {
+        throw Exception('Failed to load data: ${response.statusCode}');
+      }
+    } on SocketException {
+      throw Exception('No internet connection. Please check your network.',);
+    } on HttpException {
+      throw Exception('Could not retrieve data. Please try again later.');
+    } on FormatException {
+      throw Exception('Invalid response format. Please contact support.');
+    } catch (e) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
 
   Future<WebinarResponseData> getWebinarData() async {
     try {
@@ -368,6 +426,7 @@ class BaseApiService {
     }
   }
 
+
   Future<PatientAppointmentResponseData> patientAppointmentRecord(String patientID) async {
     final response = await http.get(
       Uri.parse('${ApiConstants.crmBaseUrl}patient/appointment/$patientID'),
@@ -384,7 +443,21 @@ class BaseApiService {
     }
   }
 
-
+  Future<PatientAppointmentResponseData> patientAppointmentRecord1(String patientID) async {
+    final response = await http.get(
+      Uri.parse('${ApiConstants.crmBaseUrl}patient/appointment/$patientID'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ApiConstants.crmAPIkEY,
+      },
+    );
+    if (response.statusCode == 200) {
+      // Run JSON parsing in background isolate
+      return compute(parseAppointmentData, response.body);
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
 
   Future<CentersResponseData> getCentersRecord(String centerName) async {
     final String url = 'https://saaol.org/saaolapp/api/search-state?center_name=$centerName';
@@ -523,9 +596,6 @@ class BaseApiService {
       throw Exception('Failed to load data');
     }
   }
-
-
-
 
   Future<AccessRiskQuestionsResponse> getRiskQuestions() async {
     final response = await http.get(Uri.parse('${ApiConstants.baseUrl}accessriskquestions'), // Base URL + endpoint

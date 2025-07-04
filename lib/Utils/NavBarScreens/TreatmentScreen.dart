@@ -103,9 +103,89 @@ class _ExpandableListViewState extends State<ExpandableListView> {
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      _treatmentCarousel(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height:10),
+                      SizedBox(
+                        height:220,
+                        width: double.infinity,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: ourTreatmentArray.length,
+                          itemBuilder: (context, index) {
+                            final treatment = ourTreatmentArray[index];
+                            return GestureDetector(
+                              onTap: () {
+                                // Handle on tap
+                              },
+                              child: Container(
+                                width: 220,
+                                margin: const EdgeInsets.only(right: 16),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  gradient: LinearGradient(
+                                    colors: [Colors.white, Colors.blue.shade50],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.15),
+                                      blurRadius: 8,
+                                      spreadRadius: 3,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.blue.shade100.withOpacity(0.2),
+                                        ),
+                                        padding: const EdgeInsets.all(12),
+                                        child: const Image(
+                                          image: AssetImage('assets/icons/presentation.png'),
+                                          width: 50,
+                                          height: 50,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Text(
+                                        treatment,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w600,
+                                          fontSize:13,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Text(
+                                        'A non-invasive approach to heart treatment with modern medical advancements.',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontFamily: 'FontPoppins',
+                                          fontWeight: FontWeight.w500,
+                                          fontSize:11,
+                                          height: 1.4,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
+                      //_treatmentCarousel(),
+                      //const SizedBox(height: 20),
                     ],
                   ),
                 ),

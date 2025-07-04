@@ -177,7 +177,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                         'Transformative EECP Treatment Center${details.cityAddr}',
                                         style: const TextStyle(
                                           fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w600,
                                           fontSize: 15,
                                           color: Colors.black,
                                         ),
@@ -187,14 +187,13 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                       ),
                                        Text(
                                         aboutCenterTxt.trim(),
-                                        textAlign: TextAlign.justify,
                                         style: const TextStyle(
                                             fontFamily: 'FontPoppins',
                                             fontWeight: FontWeight.w500,
-                                            fontSize:13,
-                                            height: 1.5,
+                                            fontSize:12,
                                             letterSpacing:0.2,
                                             color: Colors.black),
+                                         softWrap:true,
                                       ),
                                       const Divider(
                                         height: 30,
@@ -213,7 +212,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                                   fontFamily: 'FontPoppins',
                                                   height: 1.5,
                                                   fontWeight: FontWeight.w500,
-                                                  fontSize: 13,
+                                                  fontSize:12,
                                                   letterSpacing:0.2,
                                                   color: Colors.black),
                                             ),
@@ -258,58 +257,8 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                               fontWeight: FontWeight.w600,
                                               fontSize: 14,
                                               color: Colors.black)),
-                                      ListView.builder(
-                                        itemCount: items.length,
-                                        shrinkWrap: true,
-                                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemBuilder: (context, index) {
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.white,
-                                                borderRadius: BorderRadius.circular(8.0),
-                                                boxShadow: const [
-                                                  BoxShadow(
-                                                    color: Colors.black12,
-                                                    blurRadius: 4.0,
-                                                    spreadRadius: 1.0,
-                                                    offset: Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: ExpansionTile(
-                                                title: Text(
-                                                  items[index]['title']!,
-                                                  style: const TextStyle(
-                                                    fontWeight: FontWeight.w600,
-                                                    fontFamily: 'FontPoppins',
-                                                    fontSize:13,
-                                                    color: Colors.black,
-                                                  ),
-                                                ),
-                                                children: <Widget>[
-                                                  Padding(
-                                                    padding: const EdgeInsets.all(16.0),
-                                                    child: Text(
-                                                      items[index]['description']!,
-                                                      style: const TextStyle(
-                                                          fontFamily: 'FontPoppins',
-                                                          fontWeight: FontWeight.w500,
-                                                          fontSize:12,
-                                                          color: Colors.black87),
-                                                      softWrap:true,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-
-                                     /* const Text(
+                                      SingleExpansionList(items: items),
+                                      /* const Text(
                                         'Location',
                                         style: TextStyle(
                                             fontFamily: 'FontPoppins',
@@ -317,7 +266,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                             fontSize: 14,
                                             color: Colors.black),
                                       ),*/
-                                     /* const SizedBox(
+                                      /* const SizedBox(
                                         height: 15,
                                       ),
                                       ClipRRect(
@@ -341,7 +290,6 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                       const SizedBox(
                                         height: 70,
                                       ),
-
                                     ],
                                   ),
                                 ),
@@ -368,7 +316,8 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                   border: Border(
                     top: BorderSide(
                         width: 0.4, color: Colors.grey.withOpacity(0.6)),
-                  )),
+                  ),
+              ),
               child: Padding(
                 padding: const EdgeInsets.only(top: 8, left: 20, right: 20),
                 child: Row(
@@ -463,7 +412,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
             Text(
               title.trim(),
               style: const TextStyle(
-                  fontSize:13,
+                  fontSize:12,
                   fontWeight: FontWeight.w500,
                   fontFamily: 'FontPoppins',
                   color: Colors.black),
@@ -471,6 +420,92 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
           ],
         ),
       ],
+    );
+  }
+}
+
+class SingleExpansionList extends StatefulWidget {
+  final List<Map<String, String>> items;
+  const SingleExpansionList({super.key, required this.items});
+  @override
+  _SingleExpansionListState createState() => _SingleExpansionListState();
+}
+
+class _SingleExpansionListState extends State<SingleExpansionList> {
+  int? _expandedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      itemCount: widget.items.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      clipBehavior: Clip.antiAliasWithSaveLayer,
+      itemBuilder: (context, index) {
+        final isExpanded = _expandedIndex == index;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8.0),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 4.0,
+                  spreadRadius: 1.0,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  title: Text(
+                    widget.items[index]['title']!,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'FontPoppins',
+                      fontSize: 13,
+                      color: Colors.black,
+                    ),
+                  ),
+                  trailing: Icon(
+                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: Colors.grey,
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _expandedIndex = isExpanded ? null : index;
+                    });
+                  },
+                ),
+                AnimatedCrossFade(
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      widget.items[index]['description']!,
+                      style: const TextStyle(
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                        color: Colors.black87,
+                      ),
+                      softWrap: true,
+                    ),
+                  ),
+                  crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 300),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

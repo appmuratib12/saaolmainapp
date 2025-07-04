@@ -1,10 +1,10 @@
-class BlogsResponseData {
+class BlogsFilterResponseData {
   String? status;
   List<Data>? data;
 
-  BlogsResponseData({this.status, this.data});
+  BlogsFilterResponseData({this.status, this.data});
 
-  BlogsResponseData.fromJson(Map<String, dynamic> json) {
+  BlogsFilterResponseData.fromJson(Map<String, dynamic> json) {
     status = json['status'];
     if (json['data'] != null) {
       data = <Data>[];

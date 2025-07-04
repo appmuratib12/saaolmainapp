@@ -465,7 +465,7 @@ class DeleteAccountScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           "By deleting your account, the following data will be permanently removed:",
                           style: TextStyle(
                             fontSize: 16,

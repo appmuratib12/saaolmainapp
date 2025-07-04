@@ -41,7 +41,7 @@ class _EmagazineScreenState extends State<EmagazineScreen> {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(15),
+        padding: const EdgeInsets.only(top:15),
         child: Column(crossAxisAlignment:CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -83,6 +83,7 @@ class _EmagazineScreenState extends State<EmagazineScreen> {
                     return ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: snapshot.data!.data!.length,
+                      padding:const EdgeInsets.symmetric(horizontal:10),
                       itemBuilder: (context, index) {
                         final item = snapshot.data!.data![index];
                         final isSelected = selectedIndex == index;
@@ -253,6 +254,7 @@ class _EmagazineScreenState extends State<EmagazineScreen> {
                     itemCount: snapshot.data!.emagzines!.length,
                     scrollDirection:Axis.vertical,
                     shrinkWrap: true,
+                    padding:const EdgeInsets.symmetric(horizontal:10),
                     physics: const BouncingScrollPhysics(),
                     itemBuilder: (context, index) {
                       final item = snapshot.data!.emagzines![index];
@@ -349,7 +351,7 @@ class _EmagazineScreenState extends State<EmagazineScreen> {
                   );
                 }
               },
-            ),
+             ),
             ),
           ],
         ),

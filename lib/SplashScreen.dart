@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
@@ -27,13 +29,43 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool(ApiConstants.IS_LOGIN) ?? false;
-    print("IS_LOGIN value: $isLoggedIn");
-    setState(() {
-      nextScreen = isLoggedIn
-          ? const HomePage(initialIndex: 0)
-          : const OnBoardingScreen();
-    });
+    bool isGuest = prefs.getBool(ApiConstants.IS_GUEST) ?? false;
+    print("IS_LOGIN: $isLoggedIn, IS_GUEST: $isGuest");
+    if (Platform.isIOS) {
+      if (isLoggedIn || isGuest) {
+        nextScreen = const HomePage(initialIndex: 0);
+      } else {
+        nextScreen = const OnBoardingScreen();
+      }
+    } else {
+      if (isLoggedIn) {
+        nextScreen = const HomePage(initialIndex: 0);
+      } else {
+        nextScreen = const OnBoardingScreen();
+      }
+    }
+    setState(() {});
   }
+
+  /*Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool isLoggedIn = prefs.getBool(ApiConstants.IS_LOGIN) ?? false;
+    bool isGuest = prefs.getBool(ApiConstants.IS_GUEST) ?? false;
+    print("IS_LOGIN: $isLoggedIn, IS_GUEST: $isGuest");
+    print("IS_LOGIN value: $isLoggedIn");
+
+    setState(() {
+      if (isLoggedIn || isGuest) {
+        nextScreen = const HomePage(initialIndex: 0);
+      } else {
+        nextScreen = const OnBoardingScreen();
+      }
+    });
+
+   *//* setState(() {
+      nextScreen = isLoggedIn ? const HomePage(initialIndex: 0) : const OnBoardingScreen();
+    });*//*
+  }*/
 
   @override
   Widget build(BuildContext context) {

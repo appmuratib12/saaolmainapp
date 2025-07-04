@@ -25,18 +25,34 @@ class ValidationCons {
     return null;
   }
 
-  String? validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
+
+
+  /*String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
       return 'Please enter your email id!';
     }
-    final RegExp regex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+    final RegExp gmailRegex = RegExp(
+        r"^[a-zA-Z0-9._%+-]+@gmail\.com$"
     );
-    if (!regex.hasMatch(value)) {
-      return 'Only Gmail addresses (e.g. user@gmail.com) are allowed';
+    if (!gmailRegex.hasMatch(value.trim())) {
+      return 'Only valid Gmail addresses (e.g. user@gmail.com) are allowed';
     }
+    return null;
+  }*/
 
+  String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter your email id!';
+    }
+    final RegExp allowedEmailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@(?:gmail\.com|saaol\.co\.in|yahoo\.com)$"
+    );
+    if (!allowedEmailRegex.hasMatch(value.trim())) {
+      return 'Only valid Gmail addresses (e.g. user@gmail.com,co.in,@yahoo.com)  are allowed';
+    }
     return null;
   }
+
+
 
   /*String? validateEmail(String? value) {
     String pattern =

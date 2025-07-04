@@ -49,6 +49,9 @@ class _TreatmentsOverviewScreenState extends State<TreatmentsOverviewScreen> {
       },
     ];
   }
+  final DraggableScrollableController sheetController =
+  DraggableScrollableController();
+  int? expandedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -118,7 +121,6 @@ class _TreatmentsOverviewScreenState extends State<TreatmentsOverviewScreen> {
 
                 return Stack(
                   children: [
-
                     SizedBox(
                       height:260,
                       width: MediaQuery.of(context).size.width,
@@ -145,90 +147,100 @@ class _TreatmentsOverviewScreenState extends State<TreatmentsOverviewScreen> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 240.0),
-                      child: Container(
-                          decoration:  BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
+                    DraggableScrollableSheet(
+                      initialChildSize: 0.7,
+                      minChildSize: 0.7,
+                      maxChildSize: 0.9,
+                      expand: true,
+                      controller: sheetController,
+                      builder: (BuildContext context, scrollController) {
+                        return Container(
+                          clipBehavior: Clip.hardEdge,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(25),
+                              topRight: Radius.circular(25),
                             ),
-                            color: Colors.grey[200],
                           ),
-                          height: double.infinity,
-                          width: double.infinity,
-                          child:SingleChildScrollView(
-                            physics: const ScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
+                          child: CustomScrollView(
+                            controller: scrollController,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child:SingleChildScrollView(
+                                  physics: const ScrollPhysics(),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        title.trim(),
-                                        style: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontSize:16,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primaryColor),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      Text(
-                                        description.trim(),
-                                        style: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontSize:13,
-                                            letterSpacing:0.2,
-                                            fontWeight: FontWeight.w500,
-                                            height:1.6,
-                                            color: Colors.black87),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Center(
-                                        child: Text(
-                                          title1.trim(),
-                                          style: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize:16,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.black),
+                                      Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+
+                                            Text(
+                                              title.trim(),
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontSize:16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.primaryColor),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text(
+                                              description.trim(),
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontSize:13,
+                                                  letterSpacing:0.2,
+                                                  fontWeight: FontWeight.w500,
+                                                  height:1.6,
+                                                  color: Colors.black87),
+                                            ),
+
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(
-                                        height: 10,
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
                                       ),
-                                      Text(
-                                        description1.trim(),
-                                        style: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontSize:13,
-                                            letterSpacing: 0.2,
-                                            height:1.6,
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
+                                      Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            Center(
+                                              child: Text(
+                                                title1.trim(),
+                                                style: const TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontSize:16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.black),
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text(
+                                              description1.trim(),
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontSize:13,
+                                                  letterSpacing: 0.2,
+                                                  height:1.6,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       FutureBuilder<List<Map<String, String>>>(
                                         future: fetchTreatmentList(),
@@ -245,13 +257,11 @@ class _TreatmentsOverviewScreenState extends State<TreatmentsOverviewScreen> {
                                               child: ListView.builder(
                                                 itemCount: listArray.length,
                                                 scrollDirection: Axis.horizontal,
+                                                padding:const EdgeInsets.symmetric(horizontal:10),
                                                 itemBuilder: (context, index) {
                                                   final item = listArray[index];
                                                   return Padding(
-                                                    padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8.0,
-                                                        vertical: 10),
+                                                    padding: const EdgeInsets.symmetric(horizontal:6.0, vertical: 10),
                                                     child: Container(
                                                       width: 320,
                                                       decoration: BoxDecoration(
@@ -260,7 +270,7 @@ class _TreatmentsOverviewScreenState extends State<TreatmentsOverviewScreen> {
                                                         BorderRadius.circular(16),
                                                         boxShadow: const [
                                                           BoxShadow(
-                                                            color: Colors.black12,
+                                                            color: Colors.black26,
                                                             blurRadius: 10,
                                                             offset: Offset(0, 4),
                                                           ),
@@ -356,94 +366,92 @@ class _TreatmentsOverviewScreenState extends State<TreatmentsOverviewScreen> {
                                           }
                                         },
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        disadvantageTitle,
-                                        style: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontSize:16,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(10),
-                                        child: const Image(
-                                          image: AssetImage(
-                                              'assets/icons/safety_circle.jpg'),
-                                          fit: BoxFit.fill,
-                                          width: double.infinity,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
                                       ),
                                       Padding(
-                                        padding: const EdgeInsets.all(10),
+                                        padding: const EdgeInsets.all(20),
                                         child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
                                           children: [
                                             Text(
-                                              disadvantageContent.trim(),
+                                              disadvantageTitle,
                                               style: const TextStyle(
                                                   fontFamily: 'FontPoppins',
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize:13,
-                                                  letterSpacing:0.2,
-                                                  height: 1.5,
-                                                  color: Colors.black87),
+                                                  fontSize:16,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black),
                                             ),
-
                                             const SizedBox(
-                                              height: 15,
+                                              height: 10,
+                                            ),
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(10),
+                                              child: const Image(
+                                                image: AssetImage(
+                                                    'assets/icons/safety_circle.jpg'),
+                                                fit: BoxFit.fill,
+                                                width: double.infinity,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
                                             ),
                                             Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                buildRiskIndicator(
-                                                  color: Colors.red,
-                                                  text: 'Red (means high risk)',
-                                                  icon: Icons.warning_amber_rounded,
+                                                Text(
+                                                  disadvantageContent.trim(),
+                                                  style: const TextStyle(
+                                                      fontFamily: 'FontPoppins',
+                                                      fontWeight: FontWeight.w500,
+                                                      fontSize:13,
+                                                      letterSpacing:0.2,
+                                                      height: 1.5,
+                                                      color: Colors.black87),
                                                 ),
-                                                buildRiskIndicator(
-                                                  color: Colors.yellow[800]!,
-                                                  text: 'Yellow (medium risk or prevention range)',
-                                                  icon: Icons.report_problem_rounded,
+
+                                                const SizedBox(
+                                                  height: 15,
                                                 ),
-                                                buildRiskIndicator(
-                                                  color: Colors.green,
-                                                  text: 'Green (lowest risk or reversal)',
-                                                  icon: Icons.check_circle_rounded,
+                                                Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    buildRiskIndicator(
+                                                      color: Colors.red,
+                                                      text: 'Red (means high risk)',
+                                                      icon: Icons.warning_amber_rounded,
+                                                    ),
+                                                    buildRiskIndicator(
+                                                      color: Colors.yellow[800]!,
+                                                      text: 'Yellow (medium risk or prevention range)',
+                                                      icon: Icons.report_problem_rounded,
+                                                    ),
+                                                    buildRiskIndicator(
+                                                      color: Colors.green,
+                                                      text: 'Green (lowest risk or reversal)',
+                                                      icon: Icons.check_circle_rounded,
+                                                    ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
                                           ],
                                         ),
                                       ),
+                                      const SizedBox(
+                                        height: 80,
+                                      )
                                     ],
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 80,
-                                )
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 );

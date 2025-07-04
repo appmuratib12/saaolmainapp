@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:saaolapp/DialogHelper.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
@@ -49,6 +50,9 @@ class _TreatmentDetailsPageScreenState
       "description": therapyTxt7,
     },
   ];
+  final DraggableScrollableController sheetController =
+  DraggableScrollableController();
+  int? expandedIndex;
 
   String extractDescription(String description) {
     List<String> paragraphs = description.split('\r\n');
@@ -91,11 +95,56 @@ class _TreatmentDetailsPageScreenState
     }
     return advantageList;
   }
+  String convertToHtml(String raw) {
+    List<String> lines = raw.split('\r\n');
+    StringBuffer buffer = StringBuffer();
+
+    bool firstHeadingAdded = false;
+    bool foundSubheading = false;
+
+    for (var line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      if (!firstHeadingAdded) {
+        buffer.writeln('<h2>$trimmed</h2>');
+        firstHeadingAdded = true;
+        continue;
+      }
+      if (!foundSubheading &&
+          trimmed.toLowerCase().contains('advantages') &&
+          trimmed.toLowerCase().contains('eecp')) {
+        buffer.writeln('<h3>$trimmed</h3>');
+        foundSubheading = true;
+        continue;
+      }
+      if (trimmed.contains('–')) {
+        final dashIndex = trimmed.indexOf('–');
+        if (dashIndex != -1) {
+          final title = trimmed.substring(0, dashIndex + 1);
+          final content = trimmed.substring(dashIndex + 1).trim();
+          buffer.writeln('<p><b>$title</b> $content</p>');
+        } else {
+          buffer.writeln('<p>$trimmed</p>');
+        }
+      }
+      else {
+        buffer.writeln('<p>$trimmed</p>');
+      }
+    }
+
+    return buffer.toString();
+  }
+  final ValueNotifier<int?> _expandedIndexNotifier = ValueNotifier<int?>(null);
+  @override
+  void dispose() {
+    _expandedIndexNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
           FutureBuilder<TreatmentsDetailResponseData>(
@@ -111,6 +160,7 @@ class _TreatmentDetailsPageScreenState
                 String fullDescription = snapshot.data!.data!.description ?? '';
                 String advantage = snapshot.data!.data!.advantage ?? '';
                 String disadvantage = snapshot.data!.data!.disadvantge ?? '';
+                final String htmlAdvantage = convertToHtml(advantage ?? '');
                 List<Map<String, String>> advantageList =
                     extractAdvantageDetails(advantage);
                 List<Map<String, String>> disadvantageList =
@@ -126,7 +176,6 @@ class _TreatmentDetailsPageScreenState
                     contents.add(sections[i]);
                   }
                 }
-
                 return Stack(
                   children: [
                     SizedBox(
@@ -154,301 +203,357 @@ class _TreatmentDetailsPageScreenState
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top:220.0),
-                      child: Container(
-                          decoration:  BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
+                    DraggableScrollableSheet(
+                      initialChildSize: 0.7,
+                      minChildSize: 0.7,
+                      maxChildSize: 0.9,
+                      expand: true,
+                      controller: sheetController,
+                      builder: (BuildContext context, scrollController) {
+                        return Container(
+                          clipBehavior: Clip.hardEdge,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(25),
+                              topRight: Radius.circular(25),
                             ),
-                            color: Colors.grey[200],
                           ),
-                          height: double.infinity,
-                          width: double.infinity,
-                          child: SingleChildScrollView(
-                            physics: const ScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
+                          child: CustomScrollView(
+                            controller: scrollController,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child:SingleChildScrollView(
+                                  physics: const ScrollPhysics(),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children:
-                                        List.generate(headings.length, (index) {
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            headings[index],
-                                            style: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize:16,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.primaryColor,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Text(
-                                            contents.length > index
-                                                ? contents[index].trim()
-                                                : '',
-                                            style: const TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontSize: 13,
-                                              letterSpacing:0.2,
-                                              height: 1.5,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.black87,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 20),
-                                          // Space between sections
-                                        ],
-                                      );
-                                    }),
-                                  ),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Key advantages of EECP treatment',
-                                        style: TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600,
-                                            fontSize:16,
-                                            color: Colors.black),
-                                      ),
-                                      const SizedBox(
-                                        height: 15,
-                                      ),
-                                      Column(
-                                        children:
-                                            advantageList.map((advantage) {
-                                          return _buildTimelineTile(
-                                            icon: Icons.check_circle,
-                                            title: advantage['title'] ?? '',
-                                            subTitle:
-                                                advantage['description'] ?? '',
-                                            isCompleted: true,
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'EECP Therapy: For Whom Does It Suit? Eligibility for EECP',
-                                        style: TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600,
-                                            fontSize:16,
-                                            color: Colors.black),
-                                      ),
-                                      const SizedBox(
-                                        height: 15,
-                                      ),
-                                      Column(
-                                        children:
-                                            disadvantageList.map((advantage) {
-                                          return _buildTimelineTile(
-                                            icon: Icons.check_circle,
-                                            title: advantage['title'] ?? '',
-                                            subTitle:
-                                                advantage['description'] ?? '',
-                                            isCompleted: true,
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      const Text(
-                                        'Revolutionizing Heart Health: EECP Treatment at SAAOL Heart Center',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600,
-                                            fontSize:16,
-                                            color: AppColors.primaryColor),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
-                                      const Text(
-                                        therapyTxt,
-                                        style: TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize:13,
-                                            letterSpacing:0.2,
-                                            height:1.5,
-                                            color: Colors.black87),
-                                      ),
-                                      ListView.builder(
-                                        itemCount: items.length,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        shrinkWrap:true,
-                                        clipBehavior:Clip.hardEdge,
-                                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                                        itemBuilder: (context, index) {
-                                          return Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 8.0),
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                  BorderRadius.circular(15),
-                                                  border: Border.all(
-                                                      color: Colors.grey
-                                                          .withOpacity(0.3),
-                                                      width: 0.3)),
-                                              child: ExpansionTile(
-                                                title: Text(
-                                                  items[index]['title']!,
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          children:
+                                          List.generate(headings.length, (index) {
+                                            return Column(
+                                              crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  headings[index],
                                                   style: const TextStyle(
-                                                    fontWeight: FontWeight.w600,
                                                     fontFamily: 'FontPoppins',
-                                                    fontSize: 14,
-                                                    color: Colors.black,
+                                                    fontSize:16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: AppColors.primaryColor,
                                                   ),
                                                 ),
-                                                children: <Widget>[
-                                                  Padding(
-                                                    padding:
-                                                    const EdgeInsets.all(
-                                                        16.0),
-                                                    child: Text(
-                                                      items[index]['description']!.trim(),
+                                                const SizedBox(height: 10),
+                                                Text(
+                                                  contents.length > index
+                                                      ? contents[index].trim()
+                                                      : '',
+                                                  style: const TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontSize: 13,
+                                                    letterSpacing:0.2,
+                                                    height: 1.5,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 20),
+                                                // Space between sections
+                                              ],
+                                            );
+                                          }),
+                                        ),
+                                      ),
+                                      const Divider(
+                                        height: 15,
+                                        thickness: 5,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          children: [
+                                           /* const Text(
+                                              'Key advantages of EECP treatment',
+                                              style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize:16,
+                                                  color: Colors.black),
+                                            ),
+                                            const SizedBox(
+                                              height: 15,
+                                            ),
+                                            Column(
+                                              children:
+                                              advantageList.map((advantage) {
+                                                return _buildTimelineTile(
+                                                  icon: Icons.check_circle,
+                                                  title: advantage['title'] ?? '',
+                                                  subTitle:
+                                                  advantage['description'] ?? '',
+                                                  isCompleted: true,
+                                                );
+                                              }).toList(),
+                                            ),
+                                            */
+                                            Html(
+                                              data: htmlAdvantage,
+                                              style: {
+                                                "h2": Style(
+                                                  fontSize: FontSize(16),
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black,
+                                                  fontFamily:'FontPoppins',
+                                                  margin: Margins.only(bottom: 12),
+                                                ),
+                                                "h3": Style(
+                                                  fontSize: FontSize(16),
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black,
+                                                  fontFamily:'FontPoppins',
+                                                  margin: Margins.only(top: 16, bottom: 8),
+                                                ),
+                                                "p": Style(
+                                                  fontSize: FontSize(12),
+                                                  color: Colors.black87,
+                                                  fontFamily:'FontPoppins',
+                                                  margin: Margins.only(bottom: 8),
+                                                ),
+                                                "b": Style(
+                                                  color: Colors.black,
+                                                  fontFamily:'FontPoppins',
+                                                  fontWeight:FontWeight.w600,
+                                                  fontSize:FontSize(13)
+                                                ),
+                                              },
+                                            )
+
+                                          ],
+                                        ),
+                                      ),
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'EECP Therapy: For Whom Does It Suit? Eligibility for EECP',
+                                              style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize:16,
+                                                  color: Colors.black),
+                                            ),
+                                            const SizedBox(
+                                              height: 15,
+                                            ),
+                                            Column(
+                                              children:
+                                              disadvantageList.map((advantage) {
+                                                return _buildTimelineTile(
+                                                  icon: Icons.check_circle,
+                                                  title: advantage['title'] ?? '',
+                                                  subTitle:
+                                                  advantage['description'] ?? '',
+                                                  isCompleted: true,
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Revolutionizing Heart Health: EECP Treatment at SAAOL Heart Center',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize:16,
+                                                  color: AppColors.primaryColor),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            const Text(
+                                              therapyTxt,
+                                              style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize:13,
+                                                  letterSpacing:0.2,
+                                                  height:1.5,
+                                                  color: Colors.black87),
+                                            ),
+                                            ListView.builder(
+                                              itemCount: items.length,
+                                              shrinkWrap: true,
+                                              physics: const NeverScrollableScrollPhysics(),
+                                              itemBuilder: (context, index) {
+                                                return Padding(
+                                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius: BorderRadius.circular(15),
+                                                      border: Border.all(
+                                                        color: Colors.grey.withOpacity(0.6),
+                                                        width: 0.3,
+                                                      ),
+                                                    ),
+                                                    child: ValueListenableBuilder<int?>(
+                                                      valueListenable: _expandedIndexNotifier,
+                                                      builder: (context, expandedIndex, _) {
+                                                        final bool isExpanded = expandedIndex == index;
+                                                        return ExpansionTile(
+                                                          key: Key('tile_$index$isExpanded'), // force rebuild
+                                                          title: Text(
+                                                            items[index]['title']!,
+                                                            style: const TextStyle(
+                                                              fontWeight: FontWeight.w600,
+                                                              fontFamily: 'FontPoppins',
+                                                              fontSize: 14,
+                                                              color: Colors.black,
+                                                            ),
+                                                          ),
+                                                          initiallyExpanded: isExpanded,
+                                                          onExpansionChanged: (bool expanded) {
+                                                            // Only allow one expanded at a time
+                                                            if (expanded) {
+                                                              _expandedIndexNotifier.value = index;
+                                                            } else if (_expandedIndexNotifier.value == index) {
+                                                              _expandedIndexNotifier.value = null;
+                                                            }
+                                                          },
+                                                          children: <Widget>[
+                                                            Padding(
+                                                              padding: const EdgeInsets.all(16.0),
+                                                              child: Text(
+                                                                items[index]['description']!.trim(),
+                                                                style: const TextStyle(
+                                                                  fontFamily: 'FontPoppins',
+                                                                  fontWeight: FontWeight.w500,
+                                                                  fontSize: 13,
+                                                                  letterSpacing: 0.2,
+                                                                  color: Colors.black87,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
+                                      ),
+                                      Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        color: Colors.white,
+                                        child: Column(
+                                            crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                            children: [
+                                              Padding(
+                                                padding: EdgeInsets.all(15),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                                  mainAxisAlignment:
+                                                  MainAxisAlignment.start,
+                                                  children: [
+                                                    const Text(
+                                                      'Preparing for EECP Therapy: A Journey Towards Heart Wellness',
+                                                      textAlign: TextAlign.start,
+                                                      style: TextStyle(
+                                                          fontFamily: 'FontPoppins',
+                                                          fontWeight: FontWeight.w600,
+                                                          fontSize:16,
+                                                          color:
+                                                          AppColors.primaryColor),
+                                                    ),
+                                                    const SizedBox(
+                                                      height: 10,
+                                                    ),
+                                                    Text(
+                                                      preparingEECPTxt.trim(),
                                                       style: const TextStyle(
-                                                          fontFamily:
-                                                          'FontPoppins',
-                                                          fontWeight:
-                                                          FontWeight.w500,
+                                                          fontFamily: 'FontPoppins',
+                                                          fontWeight: FontWeight.w500,
                                                           fontSize:13,
+                                                          height:1.5,
                                                           letterSpacing:0.2,
                                                           color: Colors.black87),
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        },
+                                              _buildSectionTitle(
+                                                  'Before EECP therapy: The Foundation for Best Heart Blockage Treatment'),
+                                              _buildParagraph(preparingEECPTxt1),
+                                              _buildParagraph(preparingEECPTxt2),
+                                              _buildSectionTitle(
+                                                  'During EECP Therapy: The Heart’s Renewal'),
+                                              _buildParagraph(preparingEECPTxt3),
+                                              _buildParagraph(preparingEECPTxt4),
+                                              _buildSectionTitle(
+                                                  'After EECP Therapy: Nurturing Heart Health Beyond the Sessions'),
+                                              _buildParagraph(preparingEECPTxt5),
+                                              _buildParagraph(preparingEECPTxt6),
+                                            ]),
+                                      ),
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
+                                      ),
+                                      const SizedBox(
+                                        height:40,
                                       )
                                     ],
                                   ),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor
-                                ),
-                                Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  color: Colors.white,
-                                  child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                         Padding(
-                                          padding: EdgeInsets.all(15),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                'Preparing for EECP Therapy: A Journey Towards Heart Wellness',
-                                                textAlign: TextAlign.start,
-                                                style: TextStyle(
-                                                    fontFamily: 'FontPoppins',
-                                                    fontWeight: FontWeight.w600,
-                                                    fontSize:16,
-                                                    color:
-                                                        AppColors.primaryColor),
-                                              ),
-                                              const SizedBox(
-                                                height: 10,
-                                              ),
-                                              Text(
-                                                preparingEECPTxt.trim(),
-                                                style: const TextStyle(
-                                                    fontFamily: 'FontPoppins',
-                                                    fontWeight: FontWeight.w500,
-                                                    fontSize:13,
-                                                    height:1.5,
-                                                    letterSpacing:0.2,
-                                                    color: Colors.black87),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        _buildSectionTitle(
-                                            'Before EECP therapy: The Foundation for Best Heart Blockage Treatment'),
-                                        _buildParagraph(preparingEECPTxt1),
-                                        _buildParagraph(preparingEECPTxt2),
-                                        _buildSectionTitle(
-                                            'During EECP Therapy: The Heart’s Renewal'),
-                                        _buildParagraph(preparingEECPTxt3),
-                                        _buildParagraph(preparingEECPTxt4),
-                                        _buildSectionTitle(
-                                            'After EECP Therapy: Nurturing Heart Health Beyond the Sessions'),
-                                        _buildParagraph(preparingEECPTxt5),
-                                        _buildParagraph(preparingEECPTxt6),
-                                      ]),
-                                ),
-                                const Divider(
-                                  height: 15,
-                                  thickness: 5,
-                                  color: AppColors.primaryColor
-                                ),
-                                const SizedBox(
-                                  height:40,
                                 )
-                              ],
-                            ),
-                          )),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 );

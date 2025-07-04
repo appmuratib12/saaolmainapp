@@ -110,6 +110,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       await _googleSignIn.signOut();
       await _auth.signOut();
       await preferences.setBool(ApiConstants.IS_LOGIN, false);
+      if(Platform.isIOS) {
+        await preferences.setBool(ApiConstants.IS_GUEST,false);
+      }
       //await preferences.clear();
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -1281,7 +1284,6 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             const SizedBox(
               height: 30,
             ),
-
           ],
         ),
       ),

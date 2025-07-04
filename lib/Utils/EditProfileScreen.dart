@@ -441,9 +441,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     var request = http.MultipartRequest('POST', uri);
     request.fields['name'] = name;
     request.fields['password'] = password;
-    request.fields['email'] = email;
+    //request.fields['email'] = email;
     request.fields['mobile'] = mobileNumber;
     request.fields['last_name'] = lastName;
+    if (email.isNotEmpty || !Platform.isIOS) {
+      request.fields['email'] = email;
+    }
 
     var multipartFile = http.MultipartFile(
       'image',
@@ -951,7 +954,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         ),
                                       ],
                                       decoration: InputDecoration(
-                                        hintText: 'Email ID',
+                                        hintText: Platform.isIOS ? 'Enter your email (optional)' : 'Enter your email',
                                         hintStyle: const TextStyle(
                                             fontFamily: 'FontPoppins',
                                             fontSize: 13,
@@ -969,7 +972,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         filled: true,
                                         fillColor: Colors.lightBlue[50],
                                       ),
-                                      validator: ValidationCons().validateEmail,
+                                      validator:(value) {
+                                        if (Platform.isIOS) {
+                                          if (value == null || value.trim().isEmpty) {
+                                            return null;
+                                          } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                            return 'Please enter a valid email address';
+                                          }
+                                          return null;
+                                        } else {
+                                          return ValidationCons().validateEmail(value);
+                                        }
+                                      },
                                       style: const TextStyle(
                                           color: Colors.black,
                                           fontSize: 14,

@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:saaolapp/Utils/MyHomePageScreen.dart';
 import 'package:saaolapp/constant/ApiConstants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../common/app_colors.dart';
 import '../constant/text_strings.dart';
 import 'SignInScreen.dart';
@@ -73,7 +76,7 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
             ),
           ),
           const SizedBox(height:30),
-          Padding(
+          /*Padding(
             padding: const EdgeInsets.only(left: 25, right: 23, bottom:70),
             child: PrimaryButton(
               elevation: 0,
@@ -106,6 +109,67 @@ class _OnBoardingScreenState extends State<OnBoardingScreen> {
               width: double.infinity,
               textColor: Colors.white,
               fontSize: 18,
+            ),
+
+          ),*/
+          Padding(
+            padding: const EdgeInsets.only(left: 25, right: 23, bottom: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                PrimaryButton(
+                  elevation: 0,
+                  onTap: () {
+                    if (_currentIndex == onBoardinglist.length - 1) {
+                      FirebaseAnalytics.instance.logEvent(name: 'onboarding_completed');
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                            builder: (context) => const SignInScreen()),
+                      );
+                    } else {
+                      FirebaseAnalytics.instance.logEvent(
+                        name: 'onboarding_next_tapped',
+                        parameters: {'page_index': _currentIndex},
+                      );
+                      _pageController1.nextPage(
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.fastOutSlowIn,
+                      );
+                    }
+                  },
+                  text: _currentIndex == onBoardinglist.length - 1
+                      ? 'Get Started'
+                      : 'Next',
+                  bgColor: AppColors.primaryColor,
+                  borderRadius: 30,
+                  height: 46,
+                  width: double.infinity,
+                  textColor: Colors.white,
+                  fontSize: 18,
+                ),
+                const SizedBox(height: 16),
+                if (Platform.isIOS && _currentIndex == onBoardinglist.length - 1)
+                  TextButton(
+                    onPressed: () async {
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool(ApiConstants.IS_GUEST, true);
+                      Navigator.pushReplacement(
+                        context,
+                        CupertinoPageRoute(builder: (_) => const HomePage(initialIndex: 0)),
+                      );
+                    },
+                    child: const Text(
+                      "Continue as Guest",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'FontPoppins',
+                        color: AppColors.primaryColor,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

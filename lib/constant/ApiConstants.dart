@@ -6,6 +6,7 @@ class ApiConstants {
   static const String apiKey = 'EJLbNkxpHPX8AzUwJ4xMLv7E0e7bNaSNFW2Q4BhJmQRDhafSJQhS3my1BkOU74Oh'; // API Key stored here
   static const String crmAPIkEY = 'jitmVvGDZaVfCNBX9POHbJOQQyZY5qD8'; // API Key stored here
   static const IS_LOGIN = 'User Login';
+  static const IS_GUEST = 'GUEST USER';
   static const USER_MOBILE_NUMBER = 'Mobile Number';
   static const USER_NAME = 'NAME';
   static const USER_MIDDLE_NAME = 'MIDDLE NAME';

@@ -217,7 +217,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                   Text(
                     'Sign In With Safety Circle*',
                     style: TextStyle(
-                        fontSize: 26,
+                        fontSize:18,
                         fontFamily: 'FontPoppins',
                         color: Colors.white,
                         fontWeight: FontWeight.w600),
@@ -226,7 +226,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                     'Enter your details to get started!',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
-                        fontSize: 15,
+                        fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: Colors.white),
                   )
@@ -267,7 +267,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                             'Verification Code',
                             style: TextStyle(
                                 fontFamily: 'FontPoppins',
-                                fontSize: 20,
+                                fontSize:14,
                                 letterSpacing:0.3,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primaryColor),
@@ -279,7 +279,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                             'We have sent the code verification to your mobile number:',
                             style: TextStyle(
                                 fontFamily: 'FontPoppins',
-                                fontSize: 15,
+                                fontSize:14,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.black87),
                           ),
@@ -289,7 +289,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                           Text(widget.phone.toString(),
                             style: const TextStyle(
                                 fontFamily: 'FontPoppins',
-                                fontSize: 16,
+                                fontSize:14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.black),
                           ),
@@ -299,7 +299,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                           const Text(
                             'Enter the verification code here',
                             style: TextStyle(
-                                fontSize: 15,
+                                fontSize:14,
                                 fontFamily: 'FontPoppins',
                                 fontWeight: FontWeight.w500,
                                 color: Colors.black87),
@@ -337,7 +337,7 @@ class _LoginOtpScreenState extends State<LoginOtpScreen> {
                                     radius: const Radius.circular(8.0),
                                     strokeWidth: 2.0,
                                     textStyle: const TextStyle(
-                                      fontSize: 20,
+                                      fontSize:14,
                                       fontFamily: 'FontPoppins',
                                       fontWeight: FontWeight.w600,
                                       color: Colors.black,

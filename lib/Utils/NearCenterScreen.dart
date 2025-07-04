@@ -452,7 +452,7 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
                     ),
                     Row(
                       children: [
-                        GestureDetector(
+                       /* GestureDetector(
                           onTap: () {
                             DialogHelper.makingPhoneCall(snapshot
                                 .data!.centers![index].phoneNo
@@ -485,25 +485,135 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
                               ],
                             ),
                           ),
+                        ),*/
+                        GestureDetector(
+                          onTap: () {
+                            final rawNumbers =
+                                snapshot.data!.centers![index].phoneNo ?? "";
+                            final phoneNumbers = rawNumbers
+                                .split(',')
+                                .map((e) => e.trim())
+                                .toList();
+
+                            if (phoneNumbers.length == 1) {
+                              DialogHelper.makingPhoneCall(phoneNumbers.first);
+                            } else if (phoneNumbers.isNotEmpty) {
+                              showModalBottomSheet(
+                                context: context,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(20)),
+                                ),
+                                builder: (context) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: const BoxDecoration(
+                                      borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(20)),
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.phone_android,
+                                            size: 30,
+                                            color: AppColors.primaryDark),
+                                        const SizedBox(height: 10),
+                                        const Text(
+                                          'Choose a number to call',
+                                          style: TextStyle(
+                                            fontFamily: 'FontPoppins',
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const Divider(height: 20),
+                                        ...phoneNumbers.map((number) {
+                                          return Card(
+                                            color: Colors.grey[200],
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                              BorderRadius.circular(12),
+                                            ),
+                                            child: ListTile(
+                                              leading: const Icon(Icons.call,
+                                                  color: AppColors.primaryDark),
+                                              title: Text(
+                                                number.trim(),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                              trailing: const Icon(
+                                                  Icons.chevron_right),
+                                              onTap: () {
+                                                Navigator.pop(context);
+                                                DialogHelper.makingPhoneCall(
+                                                    number);
+                                              },
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: 120,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlue[100],
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.2),
+                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.phone,
+                                    color: AppColors.primaryDark, size: 15),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Call now',
+                                  style: TextStyle(
+                                    fontFamily: 'FontPoppins',
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                         Expanded(child: Container()),
                         GestureDetector(
                           onTap: () async {
                             if (getLatitude.isEmpty && getLongitude.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text(
-                                        'Unable to get current location.')),
+                                const SnackBar(content: Text('Unable to get current location.')),
                               );
                               return;
                             }
-
                             String location = snapshot
                                 .data!.centers![index].hmPincodeCoordinates
                                 .toString();
                             String locationUrl =
                                 "https://www.google.com/maps/dir/$getLatitude,$getLongitude/$location";
                             openUrl(openingUrl: locationUrl);
+
                           },
                           child: Container(
                             width: 120,

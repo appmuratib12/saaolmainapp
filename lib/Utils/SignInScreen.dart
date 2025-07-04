@@ -24,14 +24,12 @@ import 'OTPVerifyScreen.dart';
 import 'RegScreen.dart';
 
 
-
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
 }
-
 class _SignInScreenState extends   State<SignInScreen> {
   bool value = false;
   bool checkedValue = true;
@@ -45,7 +43,6 @@ class _SignInScreenState extends   State<SignInScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
   final ApiService _apiService = ApiService();
-
 
   Future<void> _sendOTP() async {
     final phoneNumber = userMobileController.text;
@@ -80,7 +77,6 @@ class _SignInScreenState extends   State<SignInScreen> {
             await prefs.setString('SelectedCountryCode', selectedCountryCode!);
             print('StoreselectedCountryCode:$selectedCountryCode');
           }
-
         }
          else {
           final errorMessage = otpResponse?.message ?? 'Failed to send OTP. Try again.';
@@ -110,7 +106,6 @@ class _SignInScreenState extends   State<SignInScreen> {
       _showSnackBar('Please enter valid details.', Colors.red);
     }
   }
-
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -125,7 +120,6 @@ class _SignInScreenState extends   State<SignInScreen> {
       ),
     );
   }
-
   Future<void> checkForUpdates() async {
     try {
       final AppUpdateInfo updateInfo = await InAppUpdate.checkForUpdate();
@@ -145,7 +139,6 @@ class _SignInScreenState extends   State<SignInScreen> {
     _printAppSignature();
     _loadCounter();
   }
-
 
   Future<void> _printAppSignature() async {
     String? appSignature = await SmsAutoFill().getAppSignature;

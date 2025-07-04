@@ -144,18 +144,29 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
   final TextEditingController _searchController = TextEditingController();
   String selectedCategory = 'Heart';
   final ApiService _apiService = ApiService();
-  void _sendRequest() async {
-    bool success = await _apiService.sendCallRequest(
-      userId:int.tryParse(getUserID!) ?? 0,
-      mobileNumber:getMobileNumber.toString(),
-      emailId: getEmailID.toString()
+
+  void _sendRequest(BuildContext dialogContext) async {
+    final result = await _apiService.sendCallRequest(
+      userId: int.tryParse(getUserID!) ?? 0,
+      mobileNumber: getMobileNumber.toString(),
+      emailId: getEmailID.toString(),
     );
+    Navigator.of(dialogContext).pop();
+    final bool success = result['success'];
+    final String message = result['message'];
+
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(success ? "Request sent successfully!" : "Failed to send request."),
+        content: Text(message,style:const TextStyle(fontWeight:FontWeight.w500,
+            fontSize:14,fontFamily:'FontPoppins')),
+        backgroundColor: success ? Colors.green : Colors.red,
       ),
     );
   }
+
+
+
   List<String> savedAddresses = [];
   void _loadSavedAddresses() async {
     final prefs = await SharedPreferences.getInstance();
@@ -388,11 +399,12 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     },
                                   );
                                 },
-                                child:const Row(
+                                child:Row(
                                   children: [
                                     Expanded(
-                                      child: Text('New Delhi,110025',
-                                        style: TextStyle(
+                                      child: Text((savedLocation.isNotEmpty) ? savedLocation :
+                                      (getCity.isNotEmpty && getPinCode.isNotEmpty) ? '$getCity, $getPinCode' : 'Select Location',
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontFamily: 'FontPoppins',
                                           fontSize: 14,
@@ -401,8 +413,8 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                    SizedBox(width: 3),
-                                    Icon(
+                                    const SizedBox(width: 3),
+                                    const Icon(
                                       Icons.arrow_drop_down,
                                       size: 18,
                                       color: Colors.white,
@@ -567,14 +579,14 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
             physics: const ScrollPhysics(),
             child: Container(
               margin: const EdgeInsets.only(top: 16),
-              padding: const EdgeInsets.only(left: 15, right: 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
+                    child: Padding(padding:const EdgeInsets.only(left:15,right:15),
+                      child:Row(
                       children: [
                         buildClickableServiceCard(
                           'assets/images/online_appointment.jpg',
@@ -612,6 +624,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         ),
                       ],
                     ),
+                    ),
                   ),
                   const SizedBox(
                     height: 20,
@@ -624,21 +637,31 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             builder: (context) => const MyAppointmentsScreen()),
                       );
                     },
-                    child: ClipRRect(
+                    child: Padding(padding:const EdgeInsets.only(left:15,right:15),
+                        child:ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: const Image(
                         image: AssetImage('assets/images/bannner_image1.png'),
                         fit: BoxFit.cover,
                         width: double.infinity,
                       ),
+                    )
                     ),
                   ),
                   const SizedBox(
                     height: 15,
                   ),
-                  Row(
+                  const Padding(padding: EdgeInsets.only(left:15),child:Text(
+                    'Our Treatments',
+                    style: TextStyle(
+                        fontFamily: 'FontPoppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black),
+                  )),
+                  /*const Row(
                     children: [
-                      const Text(
+                      Text(
                         'Our Treatments',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
@@ -646,16 +669,16 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             fontWeight: FontWeight.w600,
                             color: Colors.black),
                       ),
-                      Expanded(child: Container()),
+                    *//*  Expanded(child: Container()),
                       const Text(viwe_all,
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize:13,
                             fontWeight: FontWeight.w500,
                             color: AppColors.primaryColor),
-                      )
+                      )*//*
                     ],
-                  ),
+                  ),*/
                   const SizedBox(
                     height: 15,
                   ),
@@ -742,6 +765,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             shrinkWrap: true,
                             itemCount: snapshot.data!.data!.length,
                             scrollDirection: Axis.horizontal,
+                            padding:const EdgeInsets.symmetric(horizontal:10),
                             itemBuilder: (context, index) {
                               return InkWell(
                                 onTap: () {
@@ -787,7 +811,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   }
                                 },
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                                  padding: const EdgeInsets.symmetric(horizontal:7),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -858,19 +882,21 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                       },
                     ),
                   ),
+
+
                   Divider(
                     height: 40,
                     thickness: 5,
                     color: Colors.lightBlue[50],
                   ),
-                  const Text(
+                  const Padding(padding:EdgeInsets.only(left:15),child:Text(
                     'Diseases We treat',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
                         fontSize:16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black),
-                  ),
+                  )),
                   FutureBuilder<DiseaseResponseData>(
                     future: BaseApiService().getDiseaseData(),
                     builder: (context, snapshot) {
@@ -879,7 +905,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                           shrinkWrap: true,
                           physics:const NeverScrollableScrollPhysics(),
                           clipBehavior: Clip.hardEdge,
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(15.0),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount:3,
                             crossAxisSpacing:6,
@@ -1183,7 +1209,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(16),
                       child: Column(crossAxisAlignment:CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
@@ -1249,7 +1275,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                     onPressed: () {
                                       DialogHelper.showCallDialog(context, () {
                                         DialogHelper.showRequestDialog(context);
-                                        _sendRequest();
+                                        _sendRequest(context);
                                       });
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -1303,7 +1329,6 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     height: 15,
                   ),
 
-
                   Visibility(
                     visible:getPatientID.isNotEmpty && patientUniqueID.isNotEmpty,
                     child:GestureDetector(
@@ -1317,7 +1342,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                       },
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(15.0),
                         decoration: BoxDecoration(
                           color: Colors.lightBlue[50],
                           borderRadius: BorderRadius.circular(10),
@@ -1379,11 +1404,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     ),
                   ),
 
-
-                  const SizedBox(
-                    height:10,
-                  ),
-                  const Text(
+                  const Padding(padding:EdgeInsets.only(left:15),child:Text(
                     'Diet Plan',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
@@ -1391,11 +1412,12 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         fontWeight: FontWeight.w600,
                         color: Colors.black),
                   ),
+                  ),
                   const SizedBox(
                     height: 10,
                   ),
 
-                  Container(
+                  Padding(padding:const EdgeInsets.only(left:15,right:15),child:Container(
                     height: 160,
                     width: MediaQuery.of(context).size.width,
                     decoration: BoxDecoration(
@@ -1471,8 +1493,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         ],
                       ),
                     ),
-                  ),
-
+                  )),
                   const SizedBox(
                     height: 15,
                   ),
@@ -1555,6 +1576,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   const SizedBox(
                     height: 10,
                   ),
+
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -1564,7 +1586,9 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             const MyAppointmentsScreen()),
                       );
                     },
-                    child:Container(
+                    child:Padding(padding:const
+                    EdgeInsets.only(left:15,right:15),
+                        child:Container(
                       height: 60,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
@@ -1615,12 +1639,12 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             Icons.arrow_forward_ios_rounded,
                             size: 15,
                             color: Colors.white,
-                          )
+                          ),
                         ],
                       ),
+                     ),
                     ),
                   ),
-
                   (getPatientID.isNotEmpty && patientUniqueID.isNotEmpty)
                       ? Column(
                     children: [
@@ -1686,14 +1710,14 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     thickness: 5,
                     color: Colors.lightBlue[50],
                   ),
-                  const Text(
+                  const Padding(padding:EdgeInsets.only(left:15),child:Text(
                     'Health Benefits of Living in the Hills',
                     style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontFamily: 'FontPoppins',
                         fontSize:16,
                         color: Colors.black),
-                  ),
+                  )),
                   const SizedBox(
                     height: 15,
                   ),
@@ -1784,6 +1808,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             shrinkWrap: true,
                             itemCount: wellnessData.length,
                             scrollDirection: Axis.horizontal,
+                            padding:const EdgeInsets.symmetric(horizontal:10),
                             itemBuilder: (context, index) {
                               final item = wellnessData[index];
                               return InkWell(
@@ -1795,7 +1820,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   );
                                 },
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 7),
+                                  padding: const EdgeInsets.symmetric(horizontal:7),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -1980,7 +2005,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     thickness: 5,
                     color: Colors.lightBlue[50],
                   ),
-                  Row(
+                  Padding(padding:const EdgeInsets.only(left:15,right:15),child:Row(
                     children: [
                       const Text(
                         'Articles for you',
@@ -2008,15 +2033,15 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         ),
                       ),
                     ],
-                  ),
+                  )),
                   const SizedBox(
-                    height: 15,
+                    height:10,
                   ),
 
                   SizedBox(
                     height:270, // Adjusted height
                     child: FutureBuilder<BlogsResponseData>(
-                      future: BaseApiService().blogsData(selectedCategory),
+                      future: BaseApiService().blogsAllData(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
@@ -2060,7 +2085,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                           } else {
                             return Center(child: Text('Error: $errorMessage'));
                           }
-                        } else if (!snapshot.hasData || snapshot.data!.blogs == null || snapshot.data!.blogs!.isEmpty) {
+                        } else if (!snapshot.hasData || snapshot.data!.data == null || snapshot.data!.data!.isEmpty) {
                           return const Center(
                             child: Padding(
                               padding: EdgeInsets.all(16.0),
@@ -2094,19 +2119,22 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         } else {
                           return ListView.builder(
                             shrinkWrap: true,
-                            itemCount: snapshot.data!.blogs!.length,
+                            itemCount: snapshot.data!.data!.length,
                             scrollDirection: Axis.horizontal,
+                            padding:const EdgeInsets.symmetric(horizontal:10),
                             itemBuilder: (context, index) {
                               return InkWell(
                                 onTap: () {
-                                  Navigator.of(context, rootNavigator: true)
+                                  Navigator.of(context,
+                                      rootNavigator: true)
                                       .push(CupertinoPageRoute(
-                                    builder: (context) => BlogDetailPageScreen(
-                                        blogs: snapshot.data!.blogs![index]),
+                                    builder: (context) =>
+                                        BlogDetailPageScreen(content:snapshot.data!.data![index].content.toString(),
+                                            image:snapshot.data!.data![index].image.toString()),
                                   ));
                                 },
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                  margin: const EdgeInsets.symmetric(horizontal:7, vertical: 5),
                                   padding: const EdgeInsets.all(10),
                                   width: 270,
                                   decoration: BoxDecoration(
@@ -2128,7 +2156,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       ClipRRect(
                                         borderRadius: BorderRadius.circular(10),
                                         child: Image.network(
-                                          snapshot.data!.blogs![index].image.toString(),
+                                          snapshot.data!.data![index].image.toString(),
                                           height: 130,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
@@ -2137,7 +2165,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       const SizedBox(height: 10),
                                       Flexible( // Ensures dynamic height for large text
                                         child: Text(
-                                          snapshot.data!.blogs![index].title.toString(),
+                                          snapshot.data!.data![index].title.toString(),
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w500,
                                             fontSize:13,
@@ -2150,12 +2178,15 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       ),
                                       const SizedBox(height: 8),
                                      Align(alignment:Alignment.centerRight,child:GestureDetector(
-                                  onTap: () {
-                                    Navigator.of(context, rootNavigator: true)
-                                        .push(CupertinoPageRoute(
-                                      builder: (context) => BlogDetailPageScreen(
-                                          blogs: snapshot.data!.blogs![index]),
-                                    ));
+                                         onTap: () {
+                                           Navigator.of(context,
+                                               rootNavigator: true)
+                                               .push(CupertinoPageRoute(
+                                             builder: (context) =>
+                                                 BlogDetailPageScreen(content:snapshot.data!.data![index].content.toString(),
+                                                     image:snapshot.data!.data![index].image.toString()),
+                                           ));
+
                                   },
                                   child: Container(
                                     height: 30,
@@ -2176,7 +2207,8 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                       ),
                                     ),
                                   ),
-                                ),),
+                                ),
+                                     ),
                                     ],
                                   ),
                                 ),
@@ -2197,7 +2229,8 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                     thickness: 5,
                     color: Colors.lightBlue[50],
                   ),
-                  Row(
+                  Padding(padding:const EdgeInsets.only(left:15,right:15),
+                      child:Row(
                     children: [
                       const Text(
                         'Our Youtube Channel Videos',
@@ -2229,7 +2262,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                         ),
                       ),
                     ],
-                  ),
+                  )),
                   const SizedBox(
                     height: 10,
                   ),
@@ -2319,6 +2352,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                           return ListView.builder(
                             scrollDirection: Axis.horizontal,
                             itemCount: videos.length,
+                            padding:EdgeInsets.symmetric(horizontal:8),
                             itemBuilder: (context, index) {
                               final video = videos[index];
                               final uri = Uri.parse(video.videoId.toString());
@@ -2335,7 +2369,7 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                                   );
                                 },
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal:6),
                                   child: Card(
                                     elevation: 4,
                                     shape: RoundedRectangleBorder(
@@ -2419,66 +2453,72 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                   const SizedBox(
                     height: 15,
                   ),
-                  const Text(
-                    'Google reviews & ratings',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'FontPoppins',
-                        fontSize:16,
-                        color: Colors.black),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Row(
-                    children: [
+                   Padding(padding:const EdgeInsets.only(left:15,right:15),
+                     child:Column(crossAxisAlignment:CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                     children: [
                       const Text(
-                        '4.6',
+                        'Google reviews & ratings',
                         style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 27,
                             fontWeight: FontWeight.w600,
+                            fontFamily: 'FontPoppins',
+                            fontSize:16,
                             color: Colors.black),
                       ),
                       const SizedBox(
-                        width: 10,
+                        height: 10,
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
+                      Row(
                         children: [
-                          RatingBar.builder(
-                            initialRating: 5,
-                            minRating: 1,
-                            direction: Axis.horizontal,
-                            allowHalfRating: true,
-                            itemCount: 5,
-                            itemSize: 17,
-                            itemBuilder: (context, _) => const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 10,
-                            ),
-                            onRatingUpdate: (rating) {},
-                          ),
-                          const SizedBox(height: 3),
                           const Text(
-                            '2000 rating',
+                            '4.6',
                             style: TextStyle(
                                 fontFamily: 'FontPoppins',
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.black87),
+                                fontSize: 27,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              RatingBar.builder(
+                                initialRating: 5,
+                                minRating: 1,
+                                direction: Axis.horizontal,
+                                allowHalfRating: true,
+                                itemCount: 5,
+                                itemSize: 17,
+                                itemBuilder: (context, _) => const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 10,
+                                ),
+                                onRatingUpdate: (rating) {},
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                '2000 rating',
+                                style: TextStyle(
+                                    fontFamily: 'FontPoppins',
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      const SizedBox(
+                        height: 15,
+                      ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 15,
                   ),
-
-                  SizedBox(
+                   SizedBox(
                     height: 190,
                     child:FutureBuilder<ReviewRatingResponse>(
                       future: BaseApiService().getReviewRatingData(),
@@ -2562,9 +2602,10 @@ class _HomPageScreen1State extends State<HomPageScreen1> {
                             shrinkWrap: true,
                             itemCount: snapshot.data!.data!.length,
                             scrollDirection: Axis.horizontal,
+                            padding:const EdgeInsets.symmetric(horizontal:10),
                             itemBuilder: (context, index) {
                               return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal:5),
+                                padding: const EdgeInsets.symmetric(horizontal:7),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.start,

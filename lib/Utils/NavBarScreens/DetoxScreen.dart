@@ -28,6 +28,9 @@ class _DetoxScreenState extends State<DetoxScreen> {
     description =
         parts.length > 1 ? parts.sublist(1).join('\n') : 'No Description';
   }
+  final DraggableScrollableController sheetController =
+  DraggableScrollableController();
+  int? expandedIndex;
 
 
   @override
@@ -90,66 +93,81 @@ class _DetoxScreenState extends State<DetoxScreen> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top:240.0),
-                      child: Container(
+                    DraggableScrollableSheet(
+                      initialChildSize: 0.7,
+                      minChildSize: 0.7,
+                      maxChildSize: 0.9,
+                      expand: true,
+                      controller:sheetController,
+                      builder: (BuildContext context, scrollController) {
+                        return Container(
+                          clipBehavior: Clip.hardEdge,
                           decoration: const BoxDecoration(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
-                            ),
                             color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(25),
+                              topRight: Radius.circular(25),
+                            ),
                           ),
-                          height: double.infinity,
-                          width: double.infinity,
-                          child:SingleChildScrollView(
-                            physics: const ScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                          child: CustomScrollView(
+                            controller: scrollController,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child:SingleChildScrollView(
+                                  physics: const ScrollPhysics(),
+                                  child:Column(
+                                    crossAxisAlignment:CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        heading,
-                                        style: const TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontSize:16,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 10,
-                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
 
-                                      Text(
-                                        description.trim(),
-                                        style: const TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontSize: 13,
-                                          letterSpacing:0.2,
-                                          height:1.6,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87,
+
+                                            Text(
+                                              heading,
+                                              style: const TextStyle(
+                                                fontFamily: 'FontPoppins',
+                                                fontSize:16,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppColors.primaryColor,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text(
+                                              description.trim(),
+                                              style: const TextStyle(
+                                                fontFamily: 'FontPoppins',
+                                                fontSize: 13,
+                                                letterSpacing:0.2,
+                                                height:1.6,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          )
-                      ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 );
               }
-              return const Center(child: Text("No data found"));
+              return const Center(child: Text("No data found",
+                style:TextStyle(fontWeight:FontWeight.w600,
+                    fontSize:15,fontFamily:'FontPoppins',color:AppColors.primaryColor),));
             },
           ),
           Positioned(

@@ -13,6 +13,7 @@ import '../common/app_colors.dart';
 import '../constant/ApiConstants.dart';
 import '../data/network/ApiService.dart';
 import 'LocationScreen.dart';
+import 'NotificationScreen.dart';
 import 'RegScreen.dart';
 
 class OTPPage extends StatefulWidget {
@@ -50,6 +51,7 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
     });
     print("Code received: $_otpCode"); // Debug statement
   }*/
+
 
   @override
   void initState() {
@@ -142,7 +144,6 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
       Navigator.pop(context);
       print('OPCODE:$_otpCode');
 
-
       if (otpVerificationResult != null && otpVerificationResult.status == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(otpVerificationResult.message ?? 'OTP verified successfully.'),
@@ -166,6 +167,7 @@ class _OTPPageState extends State<OTPPage> with CodeAutoFill {
           var provider = Provider.of<DataClass>(context, listen: false);
           await provider.postUserRegisterRequest(requestData);
           Navigator.push(context, MaterialPageRoute(builder: (context) => const ShareLocationScreen()));
+          FirebaseMessage("Welcome to SAAOL - Science and Art of Living!","Let's start your Health journey.");
         } else if (!isRegistered) {
           // No patient found & not registered yet
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RegScreen(isFromOTP: true)));

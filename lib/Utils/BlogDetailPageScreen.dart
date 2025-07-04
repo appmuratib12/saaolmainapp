@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../constant/text_strings.dart';
-import '../data/model/apiresponsemodel/BlogsResponseData.dart';
+import 'package:flutter_html/flutter_html.dart';
+import 'package:saaolapp/common/app_colors.dart';
 
 class BlogDetailPageScreen extends StatefulWidget {
-  final Blogs blogs;
-
-  const BlogDetailPageScreen({super.key, required this.blogs});
+  final String image;
+  final String content;
+  const BlogDetailPageScreen({super.key, required this.image,required this.content});
 
   @override
   State<BlogDetailPageScreen> createState() => _BlogDetailPageScreenState();
@@ -21,9 +21,10 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
           SizedBox(
             width: MediaQuery.of(context).size.width,
             child: Image.network(
-              widget.blogs.image.toString(),
+              widget.image.toString(),
               width: double.infinity,
               fit: BoxFit.fill,
+              height:250,
             ),
           ),
           Positioned(
@@ -54,12 +55,16 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 250.0),
+            padding:  const EdgeInsets.only(top:240.0),
             child: Container(
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
+              decoration:  BoxDecoration(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
+                ),
+                border: Border.all(
+                  color:Colors.grey.withOpacity(0.4),  // Border color
+                  width:1,          // Border width
                 ),
                 color: Colors.white,
               ),
@@ -69,51 +74,59 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
                   padding: const EdgeInsets.all(15),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      // Blog Title
-                      Text(
-                        widget.blogs.title.toString(),
-                        style: const TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
+                      Html(
+                        data: widget.content,
+                        style: {
+                          "p": Style(
+                            fontSize: FontSize(13.0),
+                            fontFamily:'FontPoppins',
+                            fontWeight:FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                          "h2": Style(
+                            fontSize: FontSize(16.0),
+                            color: AppColors.primaryColor,
+                            fontFamily:'FontPoppins',
+                            fontWeight:FontWeight.w600,
+                            margin: Margins.only(bottom: 10),
+                          ),
+                          "h3": Style(
+                            fontSize: FontSize(16.0),
+                            color:AppColors.primaryColor,
+                            fontFamily:'FontPoppins',
+                            fontWeight:FontWeight.w600,
+                          ),
+                          "ul": Style(
+                            padding: HtmlPaddings.only(left: 20),
+                          ),
+                          "li": Style(
+                            fontSize: FontSize(13),
+                            color: Colors.black87,
+                            fontFamily:'FontPoppins',
+                            fontWeight:FontWeight.w500,
+                          ),
+                          "strong": Style(
+                            fontWeight: FontWeight.bold,
+                          ),
+                          "a": Style(
+                            color:AppColors.primaryDark,
+                            textDecoration: TextDecoration.underline,
+                          ),
+                        },
                       ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        blogTxt1,
+                      /*Text(
+                        widget.blogs.content.toString().trim(),
                         textAlign: TextAlign.justify,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'FontPoppins',
                           fontSize: 12,
                           letterSpacing:0.2,
                           fontWeight: FontWeight.w500,
                           color: Colors.black87,
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Understanding Heart Blockages and Coronary Artery Disease',
-                        style: TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 15,
-                          color: Colors.black,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Text(
-                        widget.blogs.description.toString().trim(),
-                        textAlign: TextAlign.justify,
-                        style: const TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 12,
-                          letterSpacing:0.2,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
+                      ),*/
                       const SizedBox(height: 15),
                     ],
                   ),

@@ -69,14 +69,23 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
-            'Select Gender',
-            style: TextStyle(
-              fontFamily: 'FontPoppins',
-              fontSize:16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryColor,
-            ),
+          title:Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Select Gender',
+                style: TextStyle(
+                  fontFamily: 'FontPoppins',
+                  fontSize:16,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.grey),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
           content: SizedBox(
             width: double.maxFinite,
@@ -116,17 +125,26 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
-            'Select Relation',
-            style: TextStyle(
-              fontFamily: 'FontPoppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppColors
-                  .primaryColor, // Replace with AppColors.primaryColor if needed
+          title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Select Relation',
+              style: TextStyle(
+                fontFamily: 'FontPoppins',
+                fontSize:18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryColor,
+              ),
             ),
-          ),
-          content: SizedBox(
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.grey),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+
+        content: SizedBox(
             width: double.maxFinite,
             child: ListView.builder(
               shrinkWrap: true,
@@ -162,20 +180,45 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(), // Set the current date as the initial date
-      firstDate: DateTime(1900), // Set the earliest date for selection
-      lastDate: DateTime.now(), // Set the latest date for selection
+      initialDate: DateTime(1995, 1, 1),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryColor, // Header background color
+              onPrimary: Colors.white, // Header text color
+              onSurface: Colors.black, // Body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor:AppColors.primaryColor, // Button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
-
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        int age = DateTime.now().year - picked.year;
+        // ✅ Save formatted DOB (for backend or display)
+        saveDate = DateFormat('dd-MM-yyyy').format(picked);
+
+        // ✅ Calculate accurate age based on year, month, day
+        DateTime today = DateTime.now();
+        int age = today.year - picked.year;
+        if (today.month < picked.month || (today.month == picked.month && today.day < picked.day)) {
+          age--;
+        }
+
         ageController.text = age.toString();
-        saveDate = age.toString();
       });
     }
   }
+
 
   bool isMaleSelected = true;
 
@@ -219,8 +262,13 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
           relation: selectedRelation,
           gender: selectedGender!,
           age: age,
+          emailID:email,
+          mobileNumber:phone,
+          dateOfBirth:saveDate ?? '',
         );
 
+        print('CheckFamilyMember:${newMember.mobileNumber}');
+        print('Saved JSON: ${jsonEncode(newMember.toJson())}');
         SharedPreferences prefs = await SharedPreferences.getInstance();
         List<String> memberList = prefs.getStringList('members') ?? [];
 
@@ -243,7 +291,12 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
             ? 'Member updated successfully.'
             : 'Member added successfully.');
       } else {
-        _showMessage('Failed to add member. Please try again.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to add member.Please try again.',
+              style:TextStyle(fontWeight:FontWeight.w500,fontSize:15,
+              color:Colors.white,fontFamily:'FontPoppins'))
+            ,backgroundColor:Colors.red,),
+        );
       }
     } catch (e) {
       Navigator.of(context).pop(); // Dismiss loading dialog
@@ -252,7 +305,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
   }
 
 
-  Future<void> addMember() async {
+  /*Future<void> addMember() async {
     String name = nameController.text.trim();
     String phone = phoneController.text.trim();
     String email = emailController.text.trim();
@@ -274,6 +327,9 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
       relation: selectedRelation,
       gender: selectedGender!,
       age: age,
+      emailID:'',
+        mobileNumber:phoneController.text.toString(),
+        dateOfBirth:_selectedDate.toString()
     );
 
     try {
@@ -299,7 +355,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
       Navigator.of(context).pop(); // close loading dialog
       _showMessage('An error occurred. Please try again later.');
     }
-  }
+  }*/
 
 
   Future<void> saveMemberToPrefs(FamilyMember member) async {
@@ -318,10 +374,11 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     bool isEditMode = widget.memberToEdit != null;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -355,7 +412,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                mainAxisAlignment: MainAxisAlignment.start,
                children: [
                  const Text(
-                   'Title',
+                   'Name',
                    style: TextStyle(
                        fontSize:15,
                        fontWeight: FontWeight.w600,
@@ -370,7 +427,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                    keyboardType: TextInputType.name,
                    inputFormatters: [
                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
-                     LengthLimitingTextInputFormatter(50),
+                     LengthLimitingTextInputFormatter(30),
                    ],
                    decoration: InputDecoration(
                      hintText:'Enter your name',
@@ -421,11 +478,9 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                   ],
                 ),
               ),*/
-
                  const SizedBox(
-                   height: 15,
+                   height: 10,
                  ),
-
                  const Text(
                    'Select Your Relation',
                    style: TextStyle(
@@ -645,8 +700,10 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                                      onTap: () async {
                                        await _selectDate(context); // sets _selectedDate
                                        state.didChange(_selectedDate); // Notify FormField of change
+                                       print('Select Date:$_selectedDate');
                                      },
                                      child: Container(
+                                       width:155,
                                        height: 50,
                                        decoration: BoxDecoration(
                                          color: Colors.blue[50],
@@ -654,14 +711,12 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                                        ),
                                        padding: const EdgeInsets.all(15),
                                        child: Text(
-                                         _selectedDate != null
-                                             ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
-                                             : 'Select Date',
+                                         (saveDate == null || saveDate.isEmpty) ? 'Select Date' : saveDate,
                                          style: TextStyle(
                                            fontFamily: 'FontPoppins',
                                            fontSize: 15,
                                            fontWeight: FontWeight.w500,
-                                           color: _selectedDate != null ? Colors.black : Colors.black54,
+                                           color: (saveDate == null || saveDate.isEmpty) ? Colors.black54 : Colors.black,
                                          ),
                                        ),
                                      ),
@@ -678,7 +733,6 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                                );
                              },
                            ),
-
                          ],
                        ),
                      ),
@@ -699,6 +753,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                            const SizedBox(height: 5),
                            TextFormField(
                              controller: ageController,
+                             readOnly: true,
                              keyboardType: TextInputType.number,
                              inputFormatters: [
                                FilteringTextInputFormatter.digitsOnly, // Only allows numbers
@@ -956,6 +1011,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                    keyboardType: TextInputType.emailAddress,
                    controller:emailController,
                    inputFormatters: [
+                     LengthLimitingTextInputFormatter(30),
                      FilteringTextInputFormatter.allow(
                        RegExp(r'[a-zA-Z0-9@._\-+]'),
                      ),
@@ -1066,7 +1122,7 @@ class _AddFamilyMemberScreenState extends State<AddFamilyMemberScreen> {
                         ),
                         minimumSize: const Size(150, 40),
                       ),
-                      child: Text(isEditMode ? 'Update Member' : 'Add Member',
+                      child: Text(isEditMode ? 'Update' : 'Add Member',
                           style: const TextStyle(
                               fontFamily: 'FontPoppins',
                               fontSize: 14,

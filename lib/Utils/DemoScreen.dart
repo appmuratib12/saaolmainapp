@@ -28,6 +28,8 @@ class _DemoScreenState extends State<DemoScreen> {
   AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
   final ApiService _apiService = ApiService();
 
+
+
   Future<void> _sendOTP() async {
     final phoneNumber = userMobileController.text;
     _showLoadingDialog();
@@ -126,16 +128,17 @@ class _DemoScreenState extends State<DemoScreen> {
                   Text(
                     'Verify User*',
                     style: TextStyle(
-                        fontSize: 26,
+                        fontSize:16,
                         fontFamily: 'FontPoppins',
                         color: Colors.white,
                         fontWeight: FontWeight.w600),
                   ),
+                  SizedBox(height:5),
                   Text(
                     'Enter your mobile number to get started!',
                     style: TextStyle(
                         fontFamily: 'FontPoppins',
-                        fontSize: 15,
+                        fontSize:14,
                         fontWeight: FontWeight.w500,
                         color: Colors.white),
                   )
@@ -144,7 +147,7 @@ class _DemoScreenState extends State<DemoScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 200.0),
+            padding: const EdgeInsets.only(top:170.0),
             child: Container(
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.only(
@@ -165,7 +168,7 @@ class _DemoScreenState extends State<DemoScreen> {
                         'Phone Number',
                         style: TextStyle(
                             fontFamily: 'FontPoppins',
-                            fontSize: 16,
+                            fontSize:14,
                             fontWeight: FontWeight.w600,
                             color: Colors.black),
                       ),
@@ -188,7 +191,7 @@ class _DemoScreenState extends State<DemoScreen> {
                                 hintText: 'Phone Number',
                                 hintStyle: const TextStyle(
                                     fontFamily: 'FontPoppins',
-                                    fontSize: 16,
+                                    fontSize:15,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.black54),
                                 filled: true,
@@ -246,8 +249,8 @@ class _DemoScreenState extends State<DemoScreen> {
                             'Get verification code',
                             style: TextStyle(
                                 fontFamily: 'FontPoppins',
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
+                                fontSize:16,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.white),
                           ),
                         ),

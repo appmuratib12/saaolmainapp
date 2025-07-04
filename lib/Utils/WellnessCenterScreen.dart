@@ -81,9 +81,9 @@ class _PropertyScreenState extends State<PropertyScreen> {
             ),
           ),
           DraggableScrollableSheet(
-            initialChildSize: 0.3,
-            minChildSize: 0.3,
-            maxChildSize: 0.8,
+            initialChildSize: 0.4,
+            minChildSize: 0.4,
+            maxChildSize: 0.9,
             expand: true,
             controller: sheetController,
             builder: (BuildContext context, scrollController) {

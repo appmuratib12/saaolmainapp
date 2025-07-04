@@ -15,6 +15,7 @@ class AboutDrBimalChhajerScreen extends StatefulWidget {
 class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
   int initialLabelIndex = 0;
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,6 +50,7 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
                 height: 210,
                 fit: BoxFit.cover,
               ),
+
               const SizedBox(
                 height: 10,
               ),

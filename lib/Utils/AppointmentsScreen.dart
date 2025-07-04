@@ -1321,7 +1321,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen> {
                                                 validator: ValidationCons().validateName,
                                               inputFormatters: [
                                                 FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
-                                                LengthLimitingTextInputFormatter(50),
+                                                LengthLimitingTextInputFormatter(30),
                                               ],
                                             ),
                                             const SizedBox(height: 12),

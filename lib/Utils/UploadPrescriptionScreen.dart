@@ -385,7 +385,14 @@ class _UploadPrescriptionScreenState extends State<UploadPrescriptionScreen> {
                      );
                      uploadFile(context);  // Pass context here to dismiss the dialog
                    } else {
-                     Fluttertoast.showToast(msg: 'Please select an image or PDF to upload');
+                     ScaffoldMessenger.of(context).
+                     showSnackBar(
+                       const SnackBar(
+                         content: Text('Please select an image or PDF to upload',
+                             style:TextStyle(fontWeight:FontWeight.w500,fontSize:15,color:Colors.white)),
+                         backgroundColor: Colors.red,
+                       ),
+                     );
                    }
                  },
                  style: ElevatedButton.styleFrom(

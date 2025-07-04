@@ -213,89 +213,91 @@ class _SupportAndHelpScreenState extends State<SupportAndHelpScreen> {
                 ),
               ),
               const SizedBox(height:15),
-              googleUserID.isNotEmpty && getPatientID.isEmpty && userID.isEmpty
-                  ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child:Column(
-                  children: [
-                    SizedBox(
-                      height: 40,
-                      width: MediaQuery.of(context).size.width,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(6)),
-                            side: BorderSide(
-                              color: Colors.grey,
-                              width: 0.1,
-                            ),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const DemoScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Please verify patient',
-                          style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              )
-                  : InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ConfirmDeleteAccountScreen(),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'If you want to delete your account',
-                          style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 18),
-                    ],
-                  ),
-                ),
-              ),
+              buildDeleteButton(context)
             ],
           ),
         ),
       ),
     );
   }
-
+  Widget buildDeleteButton(BuildContext context) {
+    return Platform.isIOS
+        ? InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ConfirmDeleteAccountScreen(),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                'If you want to delete your account',
+                style: TextStyle(
+                  fontFamily: 'FontPoppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 18),
+          ],
+        ),
+      ),
+    )
+        : Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 40,
+            width: MediaQuery.of(context).size.width,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryColor,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(6)),
+                  side: BorderSide(
+                    color: Colors.grey,
+                    width: 0.1,
+                  ),
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DemoScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                'Please verify patient',
+                style: TextStyle(
+                  fontFamily: 'FontPoppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildExpandedContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

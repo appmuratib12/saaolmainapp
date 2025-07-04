@@ -47,6 +47,9 @@ class _LifeStylePageScreenState extends State<LifeStylePageScreen> {
   final List<bool> isCompleted = [
     true, true, false, false, false, false,
   ];
+  final DraggableScrollableController sheetController =
+  DraggableScrollableController();
+  int? expandedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -107,127 +110,138 @@ class _LifeStylePageScreenState extends State<LifeStylePageScreen> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 220.0),
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            topRight: Radius.circular(30),
+                    DraggableScrollableSheet(
+                      initialChildSize: 0.7,
+                      minChildSize: 0.7,
+                      maxChildSize: 0.9,
+                      expand: true,
+                      controller: sheetController,
+                      builder: (BuildContext context, scrollController) {
+                        return Container(
+                          clipBehavior: Clip.hardEdge,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(25),
+                              topRight: Radius.circular(25),
+                            ),
                           ),
-                          color: Colors.white,
-                        ),
-                        height: double.infinity,
-                        width: double.infinity,
-                        child: SingleChildScrollView(
-                          physics: const ScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const SizedBox(
-                                height: 10,
-                              ),
-                               Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Embrace Heart Wellness',
-                                      textAlign: TextAlign.start,
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: AppColors.primaryColor),
-                                    ),
-                                    const Text(
-                                      'Heart Yoga and a Healthy Lifestyle for Your Heart',
-                                      style: TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black),
-                                    ),
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                    Text(
-                                      lifeStyle.description.toString().trim(),
-                                      style: const TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontSize: 13,
-                                          letterSpacing:0.2,
-                                          height:1.5,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Divider(
-                                height: 15,
-                                thickness: 5,
-                                color: AppColors.primaryColor
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Center(
-                                      child: Text(
-                                        'Our Main Treatment',
-                                        style: TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                            color: AppColors.primaryColor),
+                          child: CustomScrollView(
+                            controller: scrollController,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child:SingleChildScrollView(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(
+                                        height: 10,
                                       ),
-                                    ),
-                                    const SizedBox(
-                                      height: 10,
-                                    ),
-                                     Text(lifeStyle.advantage.toString().trim(),
-                                      textAlign: TextAlign.justify,
-                                      style: const TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontSize: 13,
-                                          letterSpacing:0.2,
-                                          height:1.5,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.black87),
-                                    ),
-                                    const SizedBox(
-                                      height: 15,
-                                    ),
-                                    ListView.builder(
-                                      itemCount: titles.length,
-                                      physics:const NeverScrollableScrollPhysics(),
-                                      shrinkWrap: true,
-                                      clipBehavior:Clip.hardEdge,
-                                      itemBuilder: (context, index) {
-                                        return _buildTimelineTile(
-                                          icon: icons[index],
-                                          title: titles[index],
-                                          subTitle: subtitles[index],
-                                          isCompleted: isCompleted[index],
-                                          isLast: index == titles.length - 1,
-                                        );
-                                      },
-                                    ),
-                                    const SizedBox(
-                                      height: 40,
-                                    ),
-                                  ],
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Embrace Heart Wellness',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16,
+                                                  color: AppColors.primaryColor),
+                                            ),
+                                            const Text(
+                                              'Heart Yoga and a Healthy Lifestyle for Your Heart',
+                                              style: TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Colors.black),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text(
+                                              lifeStyle.description.toString().trim(),
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontSize: 13,
+                                                  letterSpacing:0.2,
+                                                  height:1.5,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Divider(
+                                          height: 15,
+                                          thickness: 5,
+                                          color: AppColors.primaryColor
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Center(
+                                              child: Text(
+                                                'Our Main Treatment',
+                                                style: TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 16,
+                                                    color: AppColors.primaryColor),
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            Text(lifeStyle.advantage.toString().trim(),
+                                              textAlign: TextAlign.justify,
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontSize: 13,
+                                                  letterSpacing:0.2,
+                                                  height:1.5,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.black87),
+                                            ),
+                                            const SizedBox(
+                                              height: 15,
+                                            ),
+                                            ListView.builder(
+                                              itemCount: titles.length,
+                                              physics:const NeverScrollableScrollPhysics(),
+                                              shrinkWrap: true,
+                                              clipBehavior:Clip.hardEdge,
+                                              itemBuilder: (context, index) {
+                                                return _buildTimelineTile(
+                                                  icon: icons[index],
+                                                  title: titles[index],
+                                                  subTitle: subtitles[index],
+                                                  isCompleted: isCompleted[index],
+                                                  isLast: index == titles.length - 1,
+                                                );
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 40,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 );
@@ -235,7 +249,6 @@ class _LifeStylePageScreenState extends State<LifeStylePageScreen> {
               return const Center(child: Text("No data found"));
             },
           ),
-
           Positioned(
             bottom: 0,
             left: 0,
@@ -287,6 +300,8 @@ class _LifeStylePageScreenState extends State<LifeStylePageScreen> {
               ),
             ),
           ),
+
+
           Positioned(
             bottom: 100,
             right: 20,

@@ -1,10 +1,8 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:saaolapp/constant/ApiConstants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../common/app_colors.dart';
@@ -163,7 +161,98 @@ void showSnackbar(BuildContext context, String message) {
   );
 }
 
-Future<Position> _determinePosition(BuildContext context) async {
+Future<Position?> _determinePosition(BuildContext context) async {
+  bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    Navigator.pop(context);
+    return null;
+  }
+
+  LocationPermission permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      Navigator.pop(context);
+      return null;
+    }
+  }
+
+  if (permission == LocationPermission.deniedForever) {
+    Navigator.pop(context);
+    if (Platform.isIOS) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          title: const Row(
+            children: [
+              Icon(Icons.location_on, color: AppColors.primaryColor),
+              SizedBox(width: 4),
+              Text(
+                "Location Permission Needed",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  fontFamily: 'FontPoppins',
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            "We use your location to deliver personalized content and nearby services. Please enable location access in Settings to enjoy full app functionality.",
+            style: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+              fontFamily: 'FontPoppins',
+              color: Colors.black87,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "Continue without",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontFamily: 'FontPoppins',
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Geolocator.openAppSettings();
+                Navigator.pop(context);
+              },
+              child: const Text(
+                "Open Settings",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontFamily: 'FontPoppins',
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return null;
+  }
+
+  return await Geolocator.getCurrentPosition(
+    desiredAccuracy: LocationAccuracy.high,
+  );
+}
+
+/*Future<Position> _determinePosition(BuildContext context) async {
   bool serviceEnabled;
   LocationPermission permission;
 
@@ -260,9 +349,9 @@ Future<Position> _determinePosition(BuildContext context) async {
   return await Geolocator.getCurrentPosition(
     desiredAccuracy: LocationAccuracy.high,
   );
-}
+}*/
 
-void fetchLocation(BuildContext context) async {
+/*void fetchLocation(BuildContext context) async {
   try {
     showLoadingDialog(context);
 
@@ -302,8 +391,54 @@ void fetchLocation(BuildContext context) async {
     print("${e}");
     showSnackbar(context, 'Error fetching location: $e');
   }
-}
+}*/
 
+void fetchLocation(BuildContext context) async {
+  try {
+    showLoadingDialog(context);
+    Position? position;
+    if (Platform.isIOS) {
+      try {
+        position = await _determinePosition(context);
+      } catch (e) {
+        print("iOS Location not granted: $e");
+      }
+    } else {
+      position = await _determinePosition(context);
+      print('Latitude: ${position!.latitude}, Longitude: ${position.longitude}');
+    }
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    if (position != null) {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark placemark = placemarks.first;
+        sharedPreferences.setString(ApiConstants.PINCODE, placemark.postalCode ?? 'Unknown');
+        sharedPreferences.setString('locationName', placemark.locality ?? 'Unknown');
+        sharedPreferences.setString('subLocality', placemark.subLocality ?? 'Unknown');
+        sharedPreferences.setString('lat', position.latitude.toStringAsFixed(6));
+        sharedPreferences.setString('long', position.longitude.toStringAsFixed(6));
+      }
+    } else if (Platform.isIOS) {
+      // iOS fallback values
+      sharedPreferences.setString(ApiConstants.PINCODE, 'Unknown');
+      sharedPreferences.setString('locationName', 'Location not granted');
+      sharedPreferences.setString('subLocality', 'Unknown');
+      sharedPreferences.setString('lat', '');
+      sharedPreferences.setString('long', '');
+    }
+    Navigator.pushReplacement(
+      context,
+      CupertinoPageRoute(builder: (_) => const HomePage(initialIndex: 0)),
+    );
+  } catch (e) {
+    Navigator.pop(context); // close loading
+    showSnackbar(context, 'Error fetching location: $e');
+  }
+}
 void showLoadingDialog(BuildContext context) {
   showDialog(
     context: context,
