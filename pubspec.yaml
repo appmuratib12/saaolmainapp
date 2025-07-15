@@ -99,7 +99,6 @@ dependencies:
   sign_in_with_apple: ^7.0.1
   device_info_plus: ^10.1.2
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

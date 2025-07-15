@@ -13,6 +13,9 @@ class PatientInstructionScreen extends StatefulWidget {
 }
 
 class _PatientInstructionScreenState extends State<PatientInstructionScreen> {
+  int? _expandedTileIndex;
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,6 +157,12 @@ class _PatientInstructionScreenState extends State<PatientInstructionScreen> {
                           horizontal: 16,
                           vertical: 10,
                         ),
+                        onExpansionChanged: (isExpanded) {
+                          setState(() {
+                            _expandedTileIndex = isExpanded ? index : null;
+                          });
+                        },
+                        initiallyExpanded: _expandedTileIndex == index,
                         children: [
                           Text(
                             instruction.content.toString(),

@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:saaolapp/constant/ApiConstants.dart';
+import 'package:saaolapp/constant/ValidationCons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../common/app_colors.dart';
 import '../../data/model/apiresponsemodel/AccessRiskQuestionsResponse.dart';
@@ -27,7 +31,10 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
   String? getEmail;
   String? getMobile;
   late SharedPreferences sharedPreferences;
-
+  TextEditingController firstNameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController mobileController = TextEditingController();
+  AutovalidateMode autovalidateMode = AutovalidateMode.disabled;
   @override
   void initState() {
     super.initState();
@@ -47,7 +54,10 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
       getName = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
       getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
       getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
-
+      firstNameController.text = getName ?? '';
+      emailController.text = getEmail ?? '';
+      mobileController.text = getMobile ?? '';
+      print('getName: $getName');
     });
   }
 
@@ -144,6 +154,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
           children: [
             Form(
               key: _formKey,
+              autovalidateMode:autovalidateMode,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -157,7 +168,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'First Name',
+                    'Name',
                     style: TextStyle(
                         fontSize:14,
                         fontFamily: 'FontPoppins',
@@ -167,36 +178,40 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                   const SizedBox(
                     height: 10,
                   ),
-                  SizedBox(
-                    height:50,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        hintText: 'First Name',
-                        hintStyle: const TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black54),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15.0),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: const Icon(
-                          Icons.person,
-                          color: AppColors.primaryDark,
-                          size: 20,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 15.0, horizontal: 20.0),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
+                  TextFormField(
+                    controller:firstNameController,
+                    keyboardType:TextInputType.name,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
+                      LengthLimitingTextInputFormatter(50),
+                    ],
+                    decoration: InputDecoration(
+                      hintText: 'Name',
+                      hintStyle: const TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w600),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black54),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIcon: const Icon(
+                        Icons.person,
+                        color: AppColors.primaryDark,
+                        size: 20,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15.0, horizontal: 20.0),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
+                    style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w600),
+                    validator: ValidationCons().validateName,
                   ),
                   const SizedBox(
                     height: 10,
@@ -212,36 +227,52 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                   const SizedBox(
                     height: 10,
                   ),
-                  SizedBox(
-                    height: 50,
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        hintText: 'Email ID',
-                        hintStyle: const TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black54),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15.0),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: const Icon(
-                          Icons.email,
-                          color: AppColors.primaryDark,
-                          size: 20,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 15.0, horizontal: 20.0),
-                        filled: true,
-                        fillColor: Colors.white,
+                  TextFormField(
+                    controller:emailController,
+                    keyboardType:TextInputType.emailAddress,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9@._\-+]'),
                       ),
-                      style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
+                    ],
+                    decoration: InputDecoration(
+                      hintText: 'Email ID',
+                      hintStyle: const TextStyle(
                           fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w600),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black54),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIcon: const Icon(
+                        Icons.email,
+                        color: AppColors.primaryDark,
+                        size: 20,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15.0, horizontal: 20.0),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
+                    style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w600),
+                    validator:  (value) {
+                      if (Platform.isIOS) {
+                        if (value == null || value.trim().isEmpty) {
+                          return null;
+                        } else if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
+                      } else {
+                        return ValidationCons().validateEmail(value);
+                      }
+                    },
                   ),
                   const SizedBox(
                     height: 10,
@@ -257,10 +288,15 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                   const SizedBox(
                     height: 10,
                   ),
-                  SizedBox(
-                    height: 50,
-                    child: TextFormField(
-                      decoration: InputDecoration(
+                  TextFormField(
+                    keyboardType:TextInputType.phone,
+                    controller: mobileController,
+                    readOnly: true,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    decoration: InputDecoration(
                         hintText: 'Mobile Number',
                         hintStyle: const TextStyle(
                             fontFamily: 'FontPoppins',
@@ -280,13 +316,13 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                             vertical: 15.0, horizontal: 20.0),
                         filled: true,
                         fillColor: Colors.white
-                      ),
-                      style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 14,
-                          fontFamily: 'FontPoppins',
-                          fontWeight: FontWeight.w600),
                     ),
+                    style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        fontFamily: 'FontPoppins',
+                        fontWeight: FontWeight.w600),
+                    validator: ValidationCons().validateMobile,
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -349,8 +385,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                                         child: Row(
                                           children: [
                                             Radio<String>(
-                                              activeColor:
-                                                  AppColors.primaryDark,
+                                              activeColor:Colors.red,
                                               value: 'yes',
                                               groupValue: answers[question],
                                               onChanged: (value) {
@@ -378,7 +413,7 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
                                         child: Row(
                                           children: [
                                             Radio<String>(
-                                              activeColor: Colors.red,
+                                              activeColor: Colors.green,
                                               value: 'no',
                                               groupValue: answers[question],
                                               onChanged: (value) {
@@ -420,10 +455,17 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  if (storeID.isNotEmpty && answers.containsKey(question1)) {
-                    addRiskAnswer(storeID, answers[question1]!);
+                  if (_formKey.currentState!.validate()) {
+                    _formKey.currentState!.save();
+                    if (storeID.isNotEmpty && answers.containsKey(question1)) {
+                      addRiskAnswer(storeID, answers[question1]!);
+                    } else {
+                      Fluttertoast.showToast(msg: 'Please select answers.');
+                    }
                   } else {
-                    Fluttertoast.showToast(msg: 'Please select answers.');
+                    setState(() {
+                      autovalidateMode = AutovalidateMode.always;
+                    });
                   }
                 },
                 style: ElevatedButton.styleFrom(

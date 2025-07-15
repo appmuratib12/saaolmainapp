@@ -102,7 +102,7 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'We need your location to offer you the best services tailored to your area.',
+                  'This app uses your location to provide local features and content near you.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -131,7 +131,7 @@ class _ShareLocationScreenState extends State<ShareLocationScreen> {
                       color: Colors.white,
                     ),
                     label: const Text(
-                      'Enable device location',
+                      'Continue',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -167,7 +167,6 @@ Future<Position?> _determinePosition(BuildContext context) async {
     Navigator.pop(context);
     return null;
   }
-
   LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
@@ -246,7 +245,6 @@ Future<Position?> _determinePosition(BuildContext context) async {
 
     return null;
   }
-
   return await Geolocator.getCurrentPosition(
     desiredAccuracy: LocationAccuracy.high,
   );

@@ -13,14 +13,12 @@ class PrivacyPoliciesScreen extends StatefulWidget {
 class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
   late Future<PrivacyPoliciesResponse> _privacyFuture;
   final Map<int, bool> _expandedItems = {}; // Track expanded state
-
+  int? _expandedIndex;
   @override
   void initState() {
     super.initState();
     _privacyFuture = BaseApiService().getPrivacyPolicy();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +58,7 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
                       snapshot.data!.data!.isEmpty) {
                     return _buildEmptyUI();
                   }
-
                   final privacy = snapshot.data!.data!; // List of FAQ data
-
                   return ListView.builder(
                     padding: const EdgeInsets.all(15),
                     itemCount: privacy.length,
@@ -76,43 +72,43 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
                 },
               ),
               const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.all(15),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        backgroundColor: AppColors.primaryColor),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      "Agree & Continue",
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'FontPoppins',
-                          color: Colors.white),
-                    ),
-                  ),
-                ),
-              )
             ],
           ),
-        ));
+        ),
+       bottomNavigationBar:Padding(
+         padding: const EdgeInsets.all(15),
+         child: SizedBox(
+           width: double.infinity,
+           child: ElevatedButton(
+             style: ElevatedButton.styleFrom(
+                 padding: const EdgeInsets.symmetric(vertical: 14),
+                 shape: RoundedRectangleBorder(
+                   borderRadius: BorderRadius.circular(10),
+                 ),
+                 backgroundColor: AppColors.primaryColor),
+             onPressed: () {
+               Navigator.pop(context);
+             },
+             child: const Text(
+               "Agree & Continue",
+               style: TextStyle(
+                   fontSize: 16,
+                   fontWeight: FontWeight.w600,
+                   fontFamily: 'FontPoppins',
+                   color: Colors.white),
+             ),
+           ),
+         ),
+       ),
+    );
   }
 
   Widget _buildPrivacyItem(Data privacy, int index) {
-    bool isExpanded = _expandedItems[index] ?? false;
-
+    bool isExpanded = _expandedIndex == index;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _expandedItems[index] = !isExpanded;
+          _expandedIndex = isExpanded ? null : index;
         });
       },
       child: AnimatedContainer(
@@ -164,7 +160,6 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
               secondChild: Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
-                  textAlign: TextAlign.justify,
                   privacy.description ?? "No description available",
                   style: const TextStyle(
                       fontSize: 12,
@@ -183,8 +178,6 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
       ),
     );
   }
-
-  /// UI when API fails
   Widget _buildErrorUI() {
     return Center(
       child: Padding(
@@ -213,8 +206,6 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
       ),
     );
   }
-
-  /// UI when no FAQs are available
   Widget _buildEmptyUI() {
     return const Center(
       child: Text(
@@ -223,7 +214,6 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
       ),
     );
   }
-
   Widget buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -238,7 +228,6 @@ class _PrivacyPoliciesScreenState extends State<PrivacyPoliciesScreen> {
       ),
     );
   }
-
   Widget buildBodyText(String text) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),

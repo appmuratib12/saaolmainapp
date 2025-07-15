@@ -13,7 +13,7 @@ class UserFormScreen extends StatefulWidget {
 class _UserFormScreenState extends State<UserFormScreen> {
   late Future<FaqsResponse> _faqsFuture;
   final Map<int, bool> _expandedItems = {}; // Track expanded state
-
+  int? _expandedIndex;
   @override
   void initState() {
     super.initState();
@@ -67,16 +67,15 @@ class _UserFormScreenState extends State<UserFormScreen> {
   }
 
   Widget _buildFaqItem(Data faq, int index) {
-    bool isExpanded = _expandedItems[index] ?? false;
-
+    bool isExpanded = _expandedIndex == index;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _expandedItems[index] = !isExpanded;
+          _expandedIndex = isExpanded ? null : index;
         });
       },
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300), // Smooth transition
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(12),
@@ -104,29 +103,36 @@ class _UserFormScreenState extends State<UserFormScreen> {
                     faq.title ?? "No title",
                     style: const TextStyle(
                       fontSize: 14,
-                      fontFamily:'FontPoppins',
+                      fontFamily: 'FontPoppins',
                       fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
                   ),
                 ),
                 AnimatedRotation(
-                  turns: isExpanded ? 0.5 : 0.0, // Smooth icon rotation
+                  turns: isExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 300),
                   child: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
                 ),
               ],
             ),
             AnimatedCrossFade(
-              firstChild: const SizedBox.shrink(), // Empty space when collapsed
+              firstChild: const SizedBox.shrink(),
               secondChild: Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
                   faq.description ?? "No description available",
-                  style:  const TextStyle(fontSize: 13, color: Colors.black87,fontWeight:FontWeight.w500,fontFamily:'FontPoppins'),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'FontPoppins',
+                  ),
                 ),
               ),
-              crossFadeState: isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              crossFadeState: isExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
               duration: const Duration(milliseconds: 300),
             ),
           ],

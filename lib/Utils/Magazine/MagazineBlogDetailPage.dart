@@ -137,6 +137,7 @@ class _MagazineBlogDetailPageState extends State<MagazineBlogDetailPage> {
                     final gallery = snapshot.data!.gallery!;
                     return GestureDetector(
                       onTap: (){
+                        print('Year:${widget.year},${widget.month}');
                         Navigator.of(context, rootNavigator: true)
                             .push(MaterialPageRoute(
                           builder: (context) => MagazineDetailsPageScreen(

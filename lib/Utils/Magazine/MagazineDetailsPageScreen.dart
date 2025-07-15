@@ -94,7 +94,8 @@ class _MagazineDetailsPageScreenState extends State<MagazineDetailsPageScreen> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      Html(
+
+                     /* Html(
                         data: widget.gallery.content,
                         style: {
                           "p": Style(
@@ -112,9 +113,50 @@ class _MagazineDetailsPageScreenState extends State<MagazineDetailsPageScreen> {
                             color: AppColors.primaryColor,
                             margin: Margins.only(top: 20, bottom: 10),
                           ),
+
                           "strong": Style(
                             fontWeight: FontWeight.w600,
                             fontSize:FontSize(13.0),fontFamily:'FontPoppins',color:Colors.black
+                          ),
+                        },
+                      ),*/
+
+                      Html(
+                        data:widget.gallery.content,
+                        style: {
+                          "h1": Style(
+                            fontSize: FontSize(15),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                            fontFamily: 'FontPoppins',
+                            margin: Margins.only(bottom: 10),
+                          ),
+                          "h2": Style(
+                            fontSize: FontSize(18),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black,
+                            fontFamily: 'FontPoppins',
+                            margin: Margins.only(bottom: 8),
+                          ),
+                          "p": Style(
+                            fontSize: FontSize(12),
+                            color: Colors.black87,
+                            fontFamily: 'FontPoppins',
+                            fontWeight: FontWeight.w500,
+                            margin: Margins.only(bottom: 10),
+                          ),
+                          "li": Style(
+                            fontSize: FontSize(12),
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'FontPoppins',
+                            padding: HtmlPaddings.only(left: 6),
+                          ),
+                          "strong": Style(
+                            fontWeight: FontWeight.w600,
+                            fontSize:FontSize(14),
+                            fontFamily: 'FontPoppins',
+                            color: Colors.black,
                           ),
                         },
                       ),

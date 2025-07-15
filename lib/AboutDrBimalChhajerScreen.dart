@@ -14,6 +14,7 @@ class AboutDrBimalChhajerScreen extends StatefulWidget {
 
 class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
   int initialLabelIndex = 0;
+  final String? imagePath = 'assets/images/bimal_sir.jpg'; // or null
 
 
   @override
@@ -44,13 +45,20 @@ class _AboutDrBimalChhajerScreenState extends State<AboutDrBimalChhajerScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Image(
-                image: AssetImage('assets/images/bimal_sir.jpg'),
+              imagePath != null && imagePath!.isNotEmpty
+                  ? Image.asset(imagePath!,
                 width: double.infinity,
                 height: 210,
                 fit: BoxFit.cover,
+              )
+                  : Container(
+                width: double.infinity,
+                height: 210,
+                color: Colors.grey[300],
+                child: const Center(
+                  child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                ),
               ),
-
               const SizedBox(
                 height: 10,
               ),

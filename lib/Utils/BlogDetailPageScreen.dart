@@ -12,6 +12,10 @@ class BlogDetailPageScreen extends StatefulWidget {
 }
 
 class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
+  final DraggableScrollableController sheetController =
+  DraggableScrollableController();
+  int? expandedIndex;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,85 +58,95 @@ class _BlogDetailPageScreenState extends State<BlogDetailPageScreen> {
               ),
             ),
           ),
-          Padding(
-            padding:  const EdgeInsets.only(top:240.0),
-            child: Container(
-              decoration:  BoxDecoration(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                border: Border.all(
-                  color:Colors.grey.withOpacity(0.4),  // Border color
-                  width:1,          // Border width
-                ),
-                color: Colors.white,
-              ),
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Html(
-                        data: widget.content,
-                        style: {
-                          "p": Style(
-                            fontSize: FontSize(13.0),
-                            fontFamily:'FontPoppins',
-                            fontWeight:FontWeight.w500,
-                            color: Colors.black87,
-                          ),
-                          "h2": Style(
-                            fontSize: FontSize(16.0),
-                            color: AppColors.primaryColor,
-                            fontFamily:'FontPoppins',
-                            fontWeight:FontWeight.w600,
-                            margin: Margins.only(bottom: 10),
-                          ),
-                          "h3": Style(
-                            fontSize: FontSize(16.0),
-                            color:AppColors.primaryColor,
-                            fontFamily:'FontPoppins',
-                            fontWeight:FontWeight.w600,
-                          ),
-                          "ul": Style(
-                            padding: HtmlPaddings.only(left: 20),
-                          ),
-                          "li": Style(
-                            fontSize: FontSize(13),
-                            color: Colors.black87,
-                            fontFamily:'FontPoppins',
-                            fontWeight:FontWeight.w500,
-                          ),
-                          "strong": Style(
-                            fontWeight: FontWeight.bold,
-                          ),
-                          "a": Style(
-                            color:AppColors.primaryDark,
-                            textDecoration: TextDecoration.underline,
-                          ),
-                        },
-                      ),
-                      /*Text(
-                        widget.blogs.content.toString().trim(),
-                        textAlign: TextAlign.justify,
-                        style: const TextStyle(
-                          fontFamily: 'FontPoppins',
-                          fontSize: 12,
-                          letterSpacing:0.2,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),*/
-                      const SizedBox(height: 15),
-                    ],
+          DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            minChildSize: 0.7,
+            maxChildSize: 0.9,
+            expand: true,
+            controller: sheetController,
+            builder: (BuildContext context, scrollController) {
+              return Container(
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(25),
+                    topRight: Radius.circular(25),
                   ),
                 ),
-              ),
-            ),
+                child: CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: SingleChildScrollView(
+                        physics:const BouncingScrollPhysics(),
+                        child: Container(
+                          padding:const EdgeInsets.only(top:10,left:15,right:15),
+                            decoration:  BoxDecoration(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(25),
+                                topRight: Radius.circular(25),
+                              ),
+                              border: Border.all(
+                                color:Colors.grey.withOpacity(0.4),  // Border color
+                                width:1,          // Border width
+                              ),
+                              color: Colors.white,
+                            ),
+                            child:Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Html(
+                                  data: widget.content,
+                                  style: {
+                                    "p": Style(
+                                      fontSize: FontSize(13.0),
+                                      fontFamily:'FontPoppins',
+                                      fontWeight:FontWeight.w500,
+                                      color: Colors.black87,
+                                    ),
+                                    "h2": Style(
+                                      fontSize: FontSize(16.0),
+                                      color: AppColors.primaryColor,
+                                      fontFamily:'FontPoppins',
+                                      fontWeight:FontWeight.w600,
+                                      margin: Margins.only(bottom: 10),
+                                    ),
+                                    "h3": Style(
+                                      fontSize: FontSize(16.0),
+                                      color:AppColors.primaryColor,
+                                      fontFamily:'FontPoppins',
+                                      fontWeight:FontWeight.w600,
+                                    ),
+                                    "ul": Style(
+                                      padding: HtmlPaddings.only(left: 20),
+                                    ),
+                                    "li": Style(
+                                      fontSize: FontSize(13),
+                                      color: Colors.black87,
+                                      fontFamily:'FontPoppins',
+                                      fontWeight:FontWeight.w500,
+                                    ),
+                                    "strong": Style(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    "a": Style(
+                                      color:AppColors.primaryDark,
+                                      textDecoration: TextDecoration.underline,
+                                    ),
+                                  },
+                                ),
+                                const SizedBox(height: 15),
+                              ],
+                            ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),

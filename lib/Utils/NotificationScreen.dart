@@ -8,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:saaolapp/data/model/NotificationData.dart';
+import 'package:saaolapp/data/network/get_server_key.dart';
 import 'package:saaolapp/responsemodel/NotificationDatabase.dart';
 import '../common/app_colors.dart';
 
@@ -33,7 +34,63 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> FirebaseMessage(String title, String subtitle) async {
   print('hghghghgh$title');
   String? deviceToken = await FirebaseMessaging.instance.getToken();
+  try {
+    final body = {
+      "message": {
+        "token": deviceToken,
+        "notification": {
+          "title": title,
+          "body": subtitle,
+          "image":
+          "https://saaol.com/assets/images/home/dr-bimal-img.jpg"
+          // URL of the image
+        },
+        "android": {
+          "notification": {
+// "screen": "second",
+            "sound": "muratibtone",
+            "channel_id": "custom_channel_id",
+            "image": "https://saaol.com/assets/images/home/dr-bimal-img.jpg"
+          }
+        },
+        "apns": {
+          "payload": {
+            "aps": {"sound": "muratibtone.mp3", "mutable-content": 1}
+          },
+          "fcm_options": {
+            "image": "https://saaol.com/assets/images/home/dr-bimal-img.jpg"
+          }
+        },
+        "data": {
+          "screen": "second",
+          "title": title,
+          "body": subtitle,
+          "image":
+          "https://saaol.com/assets/images/home/dr-bimal-img.jpg"
+        },
+      }
+    };
 
+    const projectID = 'saaolapp-4918b';
+    final get = get_server_key();
+    String token22222 = await get.server_token();
+    log('bearerToken: $token22222');
+    if (token22222 == null) return;
+
+    var res = await http.post(
+      Uri.parse('https://fcm.googleapis.com/v1/projects/$projectID/messages:send'),
+      headers: {
+        HttpHeaders.contentTypeHeader: 'application/json',
+        HttpHeaders.authorizationHeader: 'Bearer $token22222'
+      },
+      body: jsonEncode(body),
+    );
+
+    log('Response status: ${res.statusCode}');
+    log('Response body: ${res.body}');
+  } catch (e) {
+    log('\nsendPushNotificationE: $e');
+  }
 }
 
 Future<void> initializeNotifications() async {

@@ -57,10 +57,10 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
         isFiltering = true; // Switch to filtered view
         filteredHospitals = hospitals
             .where((hospital) =>
-                hospital.centerName!
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                hospital.address1!.toLowerCase().contains(query.toLowerCase()))
+        hospital.centerName!
+            .toLowerCase()
+            .contains(query.toLowerCase()) ||
+            hospital.address1!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -131,137 +131,159 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: Padding(
-        padding: const EdgeInsets.only(
-          left: 15,
-          right: 15,
-          top: 50,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-
-            GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back_ios,
-                    color: Colors.black,
-                    size: 16,
-                  ),
-                  Text(
-                    'Back',
-                    style: TextStyle(
-                        fontFamily: 'FontPoppins',
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            Container(
-              height: 50,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Container(
-                height: 45.0,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(6),
+        backgroundColor: Colors.grey[200],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          title: GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+            },
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.black,
+                  size: 16,
                 ),
-                child: TextField(
-                  controller: widget.searchController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Find Our nearest centers...',
-                    hintStyle: const TextStyle(
+                SizedBox(width:5),
+                Text(
+                  'Back',
+                  style: TextStyle(
                       fontFamily: 'FontPoppins',
+                      fontSize: 15,
                       fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                      color: Colors.black38,
+                      color: Colors.black),
+                ),
+              ],
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          child:Padding(
+            padding: const EdgeInsets.only(
+              left: 15,
+              right: 15,
+              top:20,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                /*GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black,
+                      size: 16,
                     ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppColors.primaryColor,
-                      size: 25,
+                    Text(
+                      'Back',
+                      style: TextStyle(
+                          fontFamily: 'FontPoppins',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 13.0),
-                    border: InputBorder.none,
-                    suffixIcon: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Show clear icon only when there's input
-                        if (widget.searchController.text.isNotEmpty)
-                          IconButton(
-                            icon: const Icon(
-                              Icons.clear,
-                              size: 20,
-                              color: Colors.grey,
-                            ),
-                            onPressed: () {
-                              widget.searchController.clear();
-                              filterHospitals('');
-                              setState(() {}); // Refresh to hide the icon
-                            },
-                          ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.my_location,
-                            color: AppColors.primaryDark,
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                  builder: (context) => const MapScreen2()),
-                            );
-                          },
+                  ],
+                ),
+              ),*/
+                /*const SizedBox(
+                height: 30,
+              ),*/
+                Container(
+                  height: 50,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    height: 45.0,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: TextField(
+                      controller: widget.searchController,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: 'Find Our nearest centers...',
+                        hintStyle: const TextStyle(
+                          fontFamily: 'FontPoppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Colors.black38,
                         ),
-                      ],
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: AppColors.primaryColor,
+                          size: 25,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 13.0),
+                        border: InputBorder.none,
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Show clear icon only when there's input
+                            if (widget.searchController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  size: 20,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  widget.searchController.clear();
+                                  filterHospitals('');
+                                  setState(() {}); // Refresh to hide the icon
+                                },
+                              ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.my_location,
+                                color: AppColors.primaryDark,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  CupertinoPageRoute(
+                                      builder: (context) => const MapScreen2()),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      onChanged: (value) {
+                        filterHospitals(value);
+                      },
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                        fontFamily: 'FontPoppins',
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
-                  onChanged: (value) {
-                    filterHospitals(value);
-                  },
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 15,
-                    fontFamily: 'FontPoppins',
-                    color: Colors.black87,
-                  ),
                 ),
-              ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            Expanded(
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                const SizedBox(
+                  height: 30,
                 ),
-                elevation: 3,
-                child: Container(
+                Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -271,12 +293,10 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
                       ? buildFilteredListView()
                       : buildNearestCenterListView(),
                 ),
-              ),
+              ],
             ),
-
-          ],
-        ),
-      ),
+          ),
+        )
     );
   }
 
@@ -356,6 +376,8 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
           final centers = snapshot.data!.centers!;
           return ListView.builder(
             itemCount: centers.length,
+            shrinkWrap: true,
+            physics:const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             itemBuilder: (context, index) {
               final center = centers[index];
@@ -452,7 +474,7 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
                     ),
                     Row(
                       children: [
-                       /* GestureDetector(
+                        /* GestureDetector(
                           onTap: () {
                             DialogHelper.makingPhoneCall(snapshot
                                 .data!.centers![index].phoneNo
@@ -734,6 +756,8 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
           final centers = snapshot.data!.data!;
           return ListView.builder(
             itemCount: centers.length,
+            shrinkWrap: true,
+            physics:NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             itemBuilder: (context, index) {
               final center = centers[index];
@@ -881,7 +905,7 @@ class _NearCenterScreenState extends State<NearCenterScreen> {
                                             elevation: 2,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(12),
+                                              BorderRadius.circular(12),
                                             ),
                                             child: ListTile(
                                               leading: const Icon(Icons.call,
@@ -1015,21 +1039,22 @@ class FadeRoute1 extends PageRouteBuilder {
 
   FadeRoute1({required this.page})
       : super(
-          pageBuilder: (
-            BuildContext context,
-            Animation<double> animation,
-            Animation<double> secondaryAnimation,
-          ) =>
-              page,
-          transitionsBuilder: (
-            BuildContext context,
-            Animation<double> animation,
-            Animation<double> secondaryAnimation,
-            Widget child,
-          ) =>
-              FadeTransition(
-            opacity: animation,
-            child: child,
-          ),
-        );
+    pageBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+        ) =>
+    page,
+    transitionsBuilder: (
+        BuildContext context,
+        Animation<double> animation,
+        Animation<double> secondaryAnimation,
+        Widget child,
+        ) =>
+        FadeTransition(
+          opacity: animation,
+          child: child,
+        ),
+  );
 }
+

@@ -11,11 +11,10 @@ class TermConditionScreen extends StatefulWidget {
   State<TermConditionScreen> createState() => _TermConditionScreenState();
 }
 
-
 class _TermConditionScreenState extends State<TermConditionScreen> {
   late Future<TermsAndConditionResponse> _termsFuture;
   final Map<int, bool> _expandedItems = {}; // Track expanded state
-
+  int? _expandedIndex;
   @override
   void initState() {
     super.initState();
@@ -70,12 +69,11 @@ class _TermConditionScreenState extends State<TermConditionScreen> {
 
 
   Widget _buildFaqItem(Data faq, int index) {
-    bool isExpanded = _expandedItems[index] ?? false;
-
+    bool isExpanded = _expandedIndex == index;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _expandedItems[index] = !isExpanded;
+          _expandedIndex = isExpanded ? null : index;
         });
       },
       child: AnimatedContainer(

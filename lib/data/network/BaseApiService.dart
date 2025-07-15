@@ -1176,6 +1176,7 @@ class BaseApiService {
           'API-KEY': ApiConstants.apiKey
         },
       );
+
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
         return EmagazineGalleryResponse.fromJson(result);

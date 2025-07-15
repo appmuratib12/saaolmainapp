@@ -718,7 +718,7 @@ class _OurCenterScreenState extends State<OurCenterScreen> {
           ),
 
 
-              const Row(
+          /*    const Row(
                 children: [
                   Expanded(
                     child: Divider(
@@ -796,7 +796,7 @@ class _OurCenterScreenState extends State<OurCenterScreen> {
                   ],
                 ),
               ),
-
+*/
             ],
           ),
         ),

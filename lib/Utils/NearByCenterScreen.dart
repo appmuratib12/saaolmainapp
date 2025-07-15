@@ -372,9 +372,78 @@ class _NearByCenterScreenState extends State<NearByCenterScreen> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         onPressed: () {
-                                          DialogHelper.makingPhoneCall(
-                                            snapshot.data!.centers![index].phoneNo.toString(),
+                                          final rawNumbers =
+                                              snapshot.data!.centers![index].phoneNo ?? "";
+                                          final phoneNumbers = rawNumbers
+                                              .split(',')
+                                              .map((e) => e.trim())
+                                              .toList();
+                                          showModalBottomSheet(
+                                            context: context,
+                                            shape: const RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.vertical(
+                                                  top: Radius.circular(20)),
+                                            ),
+                                            builder: (context) {
+                                              return Container(
+                                                padding: const EdgeInsets.all(16),
+                                                decoration: const BoxDecoration(
+                                                  borderRadius: BorderRadius.vertical(
+                                                      top: Radius.circular(20)),
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(Icons.phone_android,
+                                                        size: 30,
+                                                        color: AppColors.primaryDark),
+                                                    const SizedBox(height: 10),
+                                                    const Text(
+                                                      'Choose a number to call',
+                                                      style: TextStyle(
+                                                        fontFamily: 'FontPoppins',
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const Divider(height: 20),
+                                                    ...phoneNumbers.map((number) {
+                                                      return Card(
+                                                        color: Colors.grey[200],
+                                                        elevation: 2,
+                                                        shape: RoundedRectangleBorder(
+                                                          borderRadius:
+                                                          BorderRadius.circular(12),
+                                                        ),
+                                                        child: ListTile(
+                                                          leading: const Icon(Icons.call,
+                                                              color: AppColors.primaryDark),
+                                                          title: Text(
+                                                            number.trim(),
+                                                            style: const TextStyle(
+                                                              fontSize: 14,
+                                                              fontFamily: 'FontPoppins',
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                          trailing: const Icon(
+                                                              Icons.chevron_right),
+                                                          onTap: () {
+                                                            Navigator.pop(context);
+                                                            DialogHelper.makingPhoneCall(
+                                                                number);
+                                                          },
+                                                        ),
+                                                      );
+                                                    }).toList(),
+                                                  ],
+                                                ),
+                                              );
+                                            },
                                           );
+                                        /*  DialogHelper.makingPhoneCall(
+                                            snapshot.data!.centers![index].phoneNo.toString(),
+                                          );*/
                                         },
                                         icon: const Icon(Icons.call, color: AppColors.primaryDark),
                                         label: const Text(
