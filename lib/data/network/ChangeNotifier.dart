@@ -36,9 +36,6 @@ class DataClass extends ChangeNotifier {
       if (response.statusCode == 200) {
         final ProfileUpdateResponse profileUpdateResponse =
             ProfileUpdateResponse.fromJson(jsonDecode(response.body));
-        //SharedPreferences preferences = await SharedPreferences.getInstance();
-        //await preferences.setString(ApiConstants.USER_ID,profileUpdateResponse.data!.id.toString());
-        //await preferences.setString('isRegistered',profileUpdateResponse.status.toString());
         print('Status:${profileUpdateResponse.status},Message:${profileUpdateResponse.message}');
         isBack = true;
       } else {

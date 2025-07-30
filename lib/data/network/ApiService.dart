@@ -13,12 +13,13 @@ import '../model/apiresponsemodel/PatientDetailsResponse.dart';
 import '../model/apiresponsemodel/SendOTPResponse.dart';
 import '../model/apiresponsemodel/VerifyOTPResponse.dart';
 
-
-
 class ApiService {
 
   Future<SendOTPResponse?> sendOTP(String phoneNumber, String deviceID) async {
-    final url = Uri.parse('https://saaol.org/saaolnewapp/api/send-otps/$deviceID');
+    //final url = Uri.parse('https://saaol.org/saaolnewapp/api/send-otps/hello');
+    final url = Platform.isAndroid
+        ? Uri.parse('${ApiConstants.baseUrl}send-otps/$deviceID')
+        : Uri.parse('${ApiConstants.baseUrl}send-otps/hello');
     final body = {
       'mobile': phoneNumber,
     };

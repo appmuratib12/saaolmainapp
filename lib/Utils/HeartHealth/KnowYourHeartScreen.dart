@@ -90,12 +90,13 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                       ),
                        Text(
                         aboutHearAttackTxt.trim(),
-                        textAlign: TextAlign.justify,
                         style: const TextStyle(
                             fontFamily: 'FontPoppins',
                             fontSize: 12,
+                            letterSpacing:0.2,
                             fontWeight: FontWeight.w500,
                             color: Colors.black87),
+                         softWrap:true,
                       ),
                       const SizedBox(
                         height: 15,
@@ -173,14 +174,14 @@ class _KnowYourHeartScreenState extends State<KnowYourHeartScreen> {
                           children: [
                             Text(
                               _contentList[initialLabelIndex],
-                              textAlign: TextAlign.justify,
-                              // Content changes based on the selected index
                               style: const TextStyle(
                                 fontSize: 12,
+                                letterSpacing:0.2,
                                 fontFamily: 'FontPoppins',
                                 fontWeight: FontWeight.w500,
                                 color: Colors.black54,
                               ),
+                              softWrap: true,
                             ),
                           ],
                         ),

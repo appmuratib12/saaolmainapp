@@ -65,8 +65,7 @@ Future<void> FirebaseMessage(String title, String subtitle) async {
           "screen": "second",
           "title": title,
           "body": subtitle,
-          "image":
-          "https://saaol.com/assets/images/home/dr-bimal-img.jpg"
+          "image": "https://saaol.com/assets/images/home/dr-bimal-img.jpg"
         },
       }
     };
@@ -96,12 +95,12 @@ Future<void> FirebaseMessage(String title, String subtitle) async {
 Future<void> initializeNotifications() async {
   const AndroidInitializationSettings androidSettings =
   AndroidInitializationSettings('@mipmap/ic_launcher');
-
   const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
     requestAlertPermission: true,
     requestBadgePermission: true,
     requestSoundPermission: true,
   );
+
 
   const InitializationSettings initializationSettings = InitializationSettings(
     android: androidSettings,

@@ -152,6 +152,7 @@ class _EmagazineScreenState extends State<EmagazineScreen> {
                 },
               ),
             ),
+
             Expanded(child:FutureBuilder<EmagazineResponse>(
               future: BaseApiService().getEmagazine(selectedItem.toString()),
               builder: (context, snapshot) {

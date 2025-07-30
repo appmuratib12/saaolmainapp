@@ -693,8 +693,6 @@ class BaseApiService {
     }
   }
 
-
-
   Future<CenterDetailsResponse> centerDetailsData(String centerName) async {
     final response = await http.get(Uri.parse('${ApiConstants.baseUrl}city-details/$centerName'), // Base URL + endpoint
       headers: {

@@ -79,80 +79,88 @@ class _CausesHealthScreenScreenState extends State<CausesHealthScreen> {
               child: SingleChildScrollView(
                 physics: const ScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 20, left: 15, right: 15),
+                  padding: const EdgeInsets.only(top: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Heart Health Causes',
-                        style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryColor),
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                       Text(
-                        causesTxt.trim(),
-                        textAlign: TextAlign.justify,
-                        style: const TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87),
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Padding(padding:const EdgeInsets.all(16),
+                        child:Column(crossAxisAlignment:CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          _buildHealthPoint('Diabetes', isBold: true, textColor: Colors.black87),
-                          _buildHealthPoint('Overweight and obesity',isBold: true, textColor: Colors.black87),
-                          _buildHealthPoint('Unhealthy diet',isBold: true, textColor: Colors.black87),
-                          _buildHealthPoint('Physical inactivity',isBold: true, textColor: Colors.black87),
+                          const Text(
+                            'Heart Health Causes',
+                            style: TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryColor),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Text(
+                            causesTxt.trim(),
+                            style: const TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 12,
+                                letterSpacing:0.2,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildHealthPoint('Diabetes', isBold: true, textColor: Colors.black87),
+                              _buildHealthPoint('Overweight and obesity',isBold: true, textColor: Colors.black87),
+                              _buildHealthPoint('Unhealthy diet',isBold: true, textColor: Colors.black87),
+                              _buildHealthPoint('Physical inactivity',isBold: true, textColor: Colors.black87),
+                            ],
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                          const Text('Causes Treatment',
+                              style: TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryColor,
+                              )),
+                          const SizedBox(
+                            height: 10,
+                          ),
+                          Text(
+                            causesTxt2.trim(),
+                            style: const TextStyle(
+                                fontFamily: 'FontPoppins',
+                                fontSize: 12,
+                                letterSpacing:0.2,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87),
+                          ),
+                          const SizedBox(
+                            height: 15,
+                          ),
                         ],
-                      ),
-                      const SizedBox(
-                        height: 15,
-                      ),
-                      const Text('Causes Treatment',
-                          style: TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryColor,
-                          )),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                       Text(
-                        causesTxt2.trim(),
-                        textAlign: TextAlign.justify,
-                        style: const TextStyle(
-                            fontFamily: 'FontPoppins',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87),
-                      ),
-                      const SizedBox(
-                        height: 15,
+                       ),
                       ),
                       SizedBox(
                         height: 270,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: causesTreatmentArray.length,
+                          padding:const EdgeInsets.symmetric(horizontal: 10),
                           itemBuilder: (context, index) {
                             return InkWell(
                               onTap: () {
                                 // Handle tap
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                padding: const EdgeInsets.symmetric(horizontal:8.0),
                                 child: Container(
                                   width: 250,
                                   decoration: BoxDecoration(

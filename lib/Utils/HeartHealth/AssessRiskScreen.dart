@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -48,8 +47,8 @@ class _HeartHealthAssessmentFormState extends State<HeartHealthAssessmentForm> {
   void _loadUserData() async {
     sharedPreferences = await SharedPreferences.getInstance();
     setState(() {
-      getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? '';
-      getEmail = sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? '';
+      getName = sharedPreferences.getString(ApiConstants.USER_NAME) ?? sharedPreferences.getString('GoogleUserName') ?? sharedPreferences.getString(ApiConstants.APPLE_NAME) ?? '';
+      getEmail = sharedPreferences.getString(ApiConstants.USER_EMAIL) ?? sharedPreferences.getString('GoogleUserEmail') ?? sharedPreferences.getString(ApiConstants.APPLE_EMAIL) ??'';
       getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
       getName = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';
       getMobile = sharedPreferences.getString(ApiConstants.USER_MOBILE) ?? '';

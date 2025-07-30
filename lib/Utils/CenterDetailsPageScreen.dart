@@ -50,7 +50,6 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
       "description": benefit5,
     },
   ];
-
   late GoogleMapController mapController;
 
   @override
@@ -58,7 +57,6 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
     super.initState();
     _loadPatientData();
   }
-
 
   Future<void> _loadPatientData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -96,12 +94,14 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
       throw "Could not launch $url";
     }
   }
-
+  final DraggableScrollableController sheetController =
+  DraggableScrollableController();
+  int? expandedIndex;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[200],
       body: Stack(
         children: [
           FutureBuilder<CenterDetailsResponse>(
@@ -149,116 +149,125 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top:240.0),
-                      child: Container(
-                          decoration:  BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(30),
-                              topRight: Radius.circular(30),
+
+                    DraggableScrollableSheet(
+                      initialChildSize: 0.7,
+                      minChildSize: 0.7,
+                      maxChildSize: 0.9,
+                      expand: true,
+                      controller: sheetController,
+                      builder: (BuildContext context, scrollController) {
+                        return Container(
+                          clipBehavior: Clip.hardEdge,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(25),
+                              topRight: Radius.circular(25),
                             ),
-                            color: Colors.grey[200],
                           ),
-                          height: double.infinity,
-                          width: double.infinity,
-                          child:SingleChildScrollView(
-                            physics: const ScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(15),
+                          child: CustomScrollView(
+                            controller: scrollController,
+                            slivers: [
+                              SliverToBoxAdapter(
+                                child: SingleChildScrollView(
+                                  physics: const ScrollPhysics(),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        'Transformative EECP Treatment Center${details.cityAddr}',
-                                        style: const TextStyle(
-                                          fontFamily: 'FontPoppins',
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 15,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                      const SizedBox(
-                                        height: 15,
-                                      ),
-                                       Text(
-                                        aboutCenterTxt.trim(),
-                                        style: const TextStyle(
-                                            fontFamily: 'FontPoppins',
-                                            fontWeight: FontWeight.w500,
-                                            fontSize:12,
-                                            letterSpacing:0.2,
-                                            color: Colors.black),
-                                         softWrap:true,
-                                      ),
-                                      const Divider(
-                                        height: 30,
-                                        thickness: 5,
-                                        color: AppColors.primaryColor,
-                                      ),
-                                      SizedBox(
-                                        width: MediaQuery.of(context).size.width,
+                                      Padding(
+                                        padding: const EdgeInsets.all(15),
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
                                           children: [
-                                             Text(
-                                              aboutEECP.trim(),
-                                              textAlign: TextAlign.justify,
+                                            Text(
+                                              'Transformative EECP Treatment Center${details.cityAddr}',
                                               style: const TextStyle(
-                                                  fontFamily: 'FontPoppins',
-                                                  height: 1.5,
-                                                  fontWeight: FontWeight.w500,
-                                                  fontSize:12,
-                                                  letterSpacing:0.2,
-                                                  color: Colors.black),
+                                                fontFamily: 'FontPoppins',
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 15,
+                                                color: Colors.black,
+                                              ),
                                             ),
                                             const SizedBox(
                                               height: 15,
                                             ),
-                                            Column(
-                                              children: [
-                                                _buildTimelineTile(
-                                                  icon: Icons.check_circle,
-                                                  title: 'No Pain',
-                                                  isCompleted: true,
-                                                ),
-                                                _buildTimelineTile(
-                                                  icon: Icons.check_circle,
-                                                  title: 'No Surgery',
-                                                  isCompleted: true,
-                                                ),
-                                                _buildTimelineTile(
-                                                  icon: Icons.check_circle,
-                                                  title: 'No Hospitalization',
-                                                  isCompleted: true,
-                                                ),
-                                                _buildTimelineTile(
-                                                  icon: Icons.check_circle,
-                                                  title: 'US-FDA Approved',
-                                                  isCompleted: true,
-                                                ),
-                                              ],
+                                            Text(
+                                              aboutCenterTxt.trim(),
+                                              style: const TextStyle(
+                                                  fontFamily: 'FontPoppins',
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize:12,
+                                                  letterSpacing:0.2,
+                                                  color: Colors.black),
+                                              softWrap:true,
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                      const Divider(
-                                          height: 30,
-                                          thickness: 5,
-                                          color: AppColors.primaryDark),
-                                      const Text(
-                                          'Benefits of EECP Therapy Compared to Bypass Surgery (CABG)',
-                                          style: TextStyle(
-                                              fontFamily: 'FontPoppins',
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
-                                              color: Colors.black)),
-                                      SingleExpansionList(items: items),
-                                      /* const Text(
+                                            const Divider(
+                                              height: 30,
+                                              thickness: 5,
+                                              color: AppColors.primaryColor,
+                                            ),
+                                            SizedBox(
+                                              width: MediaQuery.of(context).size.width,
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    aboutEECP.trim(),
+                                                    textAlign: TextAlign.justify,
+                                                    style: const TextStyle(
+                                                        fontFamily: 'FontPoppins',
+                                                        height: 1.5,
+                                                        fontWeight: FontWeight.w500,
+                                                        fontSize:12,
+                                                        letterSpacing:0.2,
+                                                        color: Colors.black),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 15,
+                                                  ),
+                                                  Column(
+                                                    children: [
+                                                      _buildTimelineTile(
+                                                        icon: Icons.check_circle,
+                                                        title: 'No Pain',
+                                                        isCompleted: true,
+                                                      ),
+                                                      _buildTimelineTile(
+                                                        icon: Icons.check_circle,
+                                                        title: 'No Surgery',
+                                                        isCompleted: true,
+                                                      ),
+                                                      _buildTimelineTile(
+                                                        icon: Icons.check_circle,
+                                                        title: 'No Hospitalization',
+                                                        isCompleted: true,
+                                                      ),
+                                                      _buildTimelineTile(
+                                                        icon: Icons.check_circle,
+                                                        title: 'US-FDA Approved',
+                                                        isCompleted: true,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const Divider(
+                                                height: 30,
+                                                thickness: 5,
+                                                color: AppColors.primaryDark),
+                                            const Text(
+                                                'Benefits of EECP Therapy Compared to Bypass Surgery (CABG)',
+                                                style: TextStyle(
+                                                    fontFamily: 'FontPoppins',
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                    color: Colors.black)),
+                                            SingleExpansionList(items: items),
+                                            /* const Text(
                                         'Location',
                                         style: TextStyle(
                                             fontFamily: 'FontPoppins',
@@ -266,7 +275,7 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                             fontSize: 14,
                                             color: Colors.black),
                                       ),*/
-                                      /* const SizedBox(
+                                            /* const SizedBox(
                                         height: 15,
                                       ),
                                       ClipRRect(
@@ -287,16 +296,20 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
                                           ),
                                         ),
                                       ),*/
-                                      const SizedBox(
-                                        height: 70,
+                                            const SizedBox(
+                                              height: 70,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                      ),
+                        );
+                      },
                     ),
                   ],
                 );
@@ -312,11 +325,11 @@ class _CenterDetailsPageScreenState extends State<CenterDetailsPageScreen> {
             child: Container(
               height: 65,
               decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    top: BorderSide(
-                        width: 0.4, color: Colors.grey.withOpacity(0.6)),
-                  ),
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(
+                      width: 0.4, color: Colors.grey.withOpacity(0.6)),
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.only(top: 8, left: 20, right: 20),

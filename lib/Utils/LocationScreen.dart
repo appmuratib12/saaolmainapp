@@ -167,6 +167,7 @@ Future<Position?> _determinePosition(BuildContext context) async {
     Navigator.pop(context);
     return null;
   }
+
   LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
     permission = await Geolocator.requestPermission();
@@ -178,7 +179,7 @@ Future<Position?> _determinePosition(BuildContext context) async {
 
   if (permission == LocationPermission.deniedForever) {
     Navigator.pop(context);
-    if (Platform.isIOS) {
+    if (Platform.isAndroid) {
       await showDialog(
         context: context,
         builder: (context) => AlertDialog(

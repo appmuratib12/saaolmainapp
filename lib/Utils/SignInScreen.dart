@@ -106,6 +106,8 @@ class _SignInScreenState extends   State<SignInScreen> {
       _showSnackBar('Please enter valid details.', Colors.red);
     }
   }
+
+
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -240,6 +242,8 @@ class _SignInScreenState extends   State<SignInScreen> {
     await prefs.setString('GoogleUserID', firebaseUser.uid);
     await prefs.setString('GoogleUserProfile', firebaseUser.photoURL ?? '');
   }
+
+
   Future<void> _signInWithApple() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
