@@ -133,7 +133,6 @@ class _SignInScreenState extends   State<SignInScreen> {
     }
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -306,6 +305,102 @@ class _SignInScreenState extends   State<SignInScreen> {
       );
     }
   }
+
+  Future<void> _signInWithApple1() async {
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      // Request Apple ID credentials
+      print('[AppleSignIn] Starting Apple Sign-In flow...');
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      print('[AppleSignIn] Received Apple credentials:');
+      print(' - Email: ${appleCredential.email}');
+      print(' - Given Name: ${appleCredential.givenName}');
+      print(' - Family Name: ${appleCredential.familyName}');
+      print(' - Identity Token: ${appleCredential.identityToken}');
+      print(' - Auth Code: ${appleCredential.authorizationCode}');
+      print(' - User ID: ${appleCredential.userIdentifier}');
+      final oauthCredential = OAuthProvider("apple.com").credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+      print('[AppleSignIn] Signing in with Firebase...');
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(oauthCredential);
+      final user = userCredential.user;
+
+      final displayName = appleCredential.givenName ?? '';
+      final email = appleCredential.email ?? user?.email ?? '';
+      final userId = user?.uid ?? appleCredential.userIdentifier ?? '';
+
+      await prefs.setString(ApiConstants.APPLE_LOGIN_METHOD, 'apple');
+      await prefs.setString(ApiConstants.APPLE_NAME, displayName);
+      await prefs.setString(ApiConstants.APPLE_EMAIL, email);
+      await prefs.setString(ApiConstants.APPLE_IDENTIFIER_TOKEN, appleCredential.identityToken ?? '');
+      await prefs.setString(ApiConstants.IDENTIFIER_TOKEN, userId);
+
+      print('User ID: $userId');
+      print('Email: $email');
+      print('Full Name: ${appleCredential.givenName} ${appleCredential.familyName}');
+
+      final provider = Provider.of<DataClass>(context, listen: false);
+
+      await provider.sendGoogleUserData(
+        name: displayName.trim(),
+        email: email,
+        googleId: userId,
+        token: appleCredential.identityToken ?? '',
+        image: dummyImageUrl,
+      );
+
+      final response = provider.googleUserResponse;
+      final response1 = provider.googleExistingUserResponse;
+
+      if (response != null && response.message != null && response.status == 'success') {
+        print('[AppleSignIn] New user registered: ${response.message}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response.message.toString(),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (response1 != null && response1.message != null && response1.status == 'success') {
+        print('[AppleSignIn] Existing user logged in: ${response1.message}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              response1.message.toString(),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      await prefs.setBool(ApiConstants.IS_LOGIN, true);
+      FirebaseMessage("Welcome to SAAOL - Science and Art of Living!", "Let's start your Health journey.");
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ShareLocationScreen()),
+      );
+    } catch (e) {
+      print('Error during Apple Sign-In: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Apple Sign-In failed"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -578,7 +673,7 @@ class _SignInScreenState extends   State<SignInScreen> {
                            ),
                            const SizedBox(height: 30),
                            GestureDetector(
-                             onTap: () => _signInWithApple(),
+                             onTap: () => _signInWithApple1(),
                              child: Container(
                                height: 50,
                                margin: const EdgeInsets.symmetric(horizontal: 20),
