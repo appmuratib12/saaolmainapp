@@ -6,6 +6,8 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDocumentTypes</key>
+	<array/>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -21,25 +23,10 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>MKDirectionsRequest</string>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.apple.maps.directionsrequest</string>
-			</array>
-			<key>LSHandlerRank</key>
-			<string>Alternate</string>
-		</dict>
-	</array>
-
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-
+	<key>NSCameraUsageDescription</key>
+    <string>This app uses the camera to let you take a profile photo to personalize your account, and to capture photos of your prescriptions, which are used for medical review and consultation purposes.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+     <string>This app uses the photo library to let you upload prescriptions from your gallery and to share screenshots in Help &amp; Support when reporting an issue.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -51,30 +38,20 @@
 			</array>
 		</dict>
 	</array>
-
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>GMSApiKey</key>
 	<string>AIzaSyBYXVWaCWeNSWGZCzyHksOBzW7zHlZHDQE</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>MKDirectionsApplicationSupportedModes</key>
-	<array>
-		<string>MKDirectionsModeOther</string>
-	</array>
-
-	<!-- Required Privacy Permissions -->
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app uses your location to provide location-based features and services.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>We use your location to provide relevant services even in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need your location to show nearby centers.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>This app requires access to the camera to allow users to capture photos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app requires access to your photo library to allow users to select and upload images.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app uses your location to provide location-based features and services.</string>
-
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -82,7 +59,6 @@
 		<string>remote-notification</string>
 		<string>fetch</string>
 	</array>
-
 	<key>UILaunchImages</key>
 	<array>
 		<dict>
@@ -94,7 +70,6 @@
 			<string>{750, 1334}</string>
 		</dict>
 	</array>
-
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen.storyboard</string>
 	<key>UIMainStoryboardFile</key>
